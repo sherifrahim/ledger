@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+B=app/src/main/java/com/sherif/ledger
+echo "Applying LDL v1.2: neutral rebalance..."
+
+cat > "$B/core/designsystem/theme/LedgerColors.kt" << 'EOF'
 package com.sherif.ledger.core.designsystem.theme
 
 import androidx.compose.material3.darkColorScheme
@@ -193,3 +199,8 @@ val LedgerDarkColors = LedgerColors(
 )
 
 val LocalLedgerColors = staticCompositionLocalOf { LedgerLightColors }
+EOF
+
+echo "Done. LedgerColors.kt rebalanced to neutral graphite."
+echo "Run: git add -A && git commit -m 'fix(theme): rebalance palette to neutral graphite, emerald accent only'"
+echo "Then: ./gradlew assembleDebug"
