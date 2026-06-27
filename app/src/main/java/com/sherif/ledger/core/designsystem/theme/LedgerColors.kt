@@ -5,8 +5,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-// ── Emerald accent ramp (unchanged, used only for meaning) ──
-
 val LedgerEmerald50 = Color(0xFFECFDF5)
 val LedgerEmerald100 = Color(0xFFD1FAE5)
 val LedgerEmerald200 = Color(0xFFA7F3D0)
@@ -19,8 +17,6 @@ val LedgerEmerald800 = Color(0xFF065F46)
 val LedgerEmerald900 = Color(0xFF064E3B)
 val LedgerEmerald950 = Color(0xFF022C22)
 
-// ── Neutral palette (rebalanced: no green in structural colors) ──
-
 val LedgerInk = Color(0xFF111111)
 val LedgerGraphite = Color(0xFF525252)
 val LedgerMist = Color(0xFFF5F5F5)
@@ -29,16 +25,14 @@ val LedgerLine = Color(0xFFE0E0E0)
 
 val LedgerDarkInk = Color(0xFFE8E8E8)
 val LedgerDarkGraphite = Color(0xFFA0A0A0)
-val LedgerDarkSurface = Color(0xFF141414)
-val LedgerDarkSurfaceHigh = Color(0xFF1C1C1C)
+val LedgerDarkSurface = Color(0xFF111111)
+val LedgerDarkSurfaceHigh = Color(0xFF191919)
 val LedgerDarkBackground = Color(0xFF0A0A0A)
-val LedgerDarkLine = Color(0xFF262626)
+val LedgerDarkLine = Color(0xFF222222)
 
 val LedgerSuccess = Color(0xFF047857)
 val LedgerWarning = Color(0xFFB7791F)
 val LedgerError = Color(0xFFBA1A1A)
-
-// ── Material schemes (fed underneath, neutral structural colors) ──
 
 val LedgerLightColorScheme = lightColorScheme(
     primary = LedgerEmerald700,
@@ -98,20 +92,14 @@ val LedgerDarkColorScheme = darkColorScheme(
     scrim = Color.Black,
 )
 
-// ── LDL semantic layer ──
-
 enum class LedgerSurfaceLevel { Level0, Level1, Level2, Level3 }
 
 /**
- * The LDL semantic color contract, read through [LedgerTheme.colors].
+ * LDL semantic color contract.
  *
- * Structural colors (surfaces, labels, separators) are pure neutral graphite.
- * Emerald appears only through [tint], [income], and [success] to communicate
- * financial meaning or interactivity. If every green element were removed the
- * app would still look complete.
- *
- * Hero atmosphere tokens carry the only ambient teal in the entire palette,
- * applied at very low opacity so the glow reads as depth, not color.
+ * Hero glow tokens are brighter base hues applied at low alpha through
+ * scale and rotate transforms to create aurora-like volumetric bands.
+ * The luminosity comes from the base color; the subtlety from the alpha.
  */
 data class LedgerColors(
     val isDark: Boolean,
@@ -163,21 +151,21 @@ val LedgerLightColors = LedgerColors(
     warning = Color(0xFFB7791F),
     success = LedgerEmerald700,
     neutral = Color(0xFF737373),
-    heroGlowPrimary = Color(0xFFD8E8E4),
-    heroGlowSecondary = Color(0xFFCCDDD7),
-    heroGlowWarm = Color(0xFFF0EDE0),
+    heroGlowPrimary = Color(0xFFB8E0D8),
+    heroGlowSecondary = Color(0xFFA0D4CA),
+    heroGlowWarm = Color(0xFFE8E0C8),
 )
 
 val LedgerDarkColors = LedgerColors(
     isDark = true,
     surfaceLevel0 = Color(0xFF0A0A0A),
-    surfaceLevel1 = Color(0xFF141414),
-    surfaceLevel2 = Color(0xFF1C1C1C),
-    surfaceLevel3 = Color(0xFF242424),
+    surfaceLevel1 = Color(0xFF111111),
+    surfaceLevel2 = Color(0xFF191919),
+    surfaceLevel3 = Color(0xFF212121),
     label = Color(0xFFE8E8E8),
     secondaryLabel = Color(0xFFA0A0A0),
     tertiaryLabel = Color(0xFF6E6E6E),
-    separator = Color(0xFF262626),
+    separator = Color(0xFF222222),
     tint = LedgerEmerald300,
     onTint = LedgerEmerald950,
     income = LedgerEmerald300,
@@ -187,9 +175,9 @@ val LedgerDarkColors = LedgerColors(
     warning = Color(0xFFF0B860),
     success = LedgerEmerald300,
     neutral = Color(0xFF8A8A8A),
-    heroGlowPrimary = Color(0xFF0F1F1D),
-    heroGlowSecondary = Color(0xFF082220),
-    heroGlowWarm = Color(0xFF1A1A14),
+    heroGlowPrimary = Color(0xFF1B6B62),
+    heroGlowSecondary = Color(0xFF0F7D74),
+    heroGlowWarm = Color(0xFF4A4830),
 )
 
 val LocalLedgerColors = staticCompositionLocalOf { LedgerLightColors }
