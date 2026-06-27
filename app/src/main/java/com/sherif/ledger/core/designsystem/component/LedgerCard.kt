@@ -15,10 +15,17 @@ import com.sherif.ledger.core.designsystem.theme.LedgerElevation
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 
 /**
- * Ledger Design System Card
+ * Ledger Design System Card.
  *
- * Every card in the application should be built from this component.
+ * @deprecated Superseded by [LedgerSurface], which expresses hierarchy through
+ * semantic surface levels instead of elevation. Retained for exactly one commit
+ * so the repository compiles during migration, then removed once every call site
+ * has moved to [LedgerSurface].
  */
+@Deprecated(
+    message = "Use LedgerSurface. Surfaces express hierarchy through semantic " +
+        "surface levels, not elevation. Removed in the follow-up migration commit.",
+)
 @Composable
 fun LedgerCard(
     modifier: Modifier = Modifier,
