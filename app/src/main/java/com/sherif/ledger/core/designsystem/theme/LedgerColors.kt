@@ -92,30 +92,14 @@ val LedgerDarkColorScheme = darkColorScheme(
     scrim = Color.Black,
 )
 
-/**
- * Semantic surface hierarchy for LDL.
- *
- * A component declares the intent of its surface rather than a color or an
- * elevation. The theme resolves intent to a concrete tone per light and dark.
- * In LDL these levels are tonal steps, not shadows, matching the Apple
- * grouped-list grammar where depth reads through tone and hairlines.
- *
- * Level0 app background. Level1 the primary grouped section that holds content.
- * Level2 a nested block inside a section. Level3 transient top layer, sheets and
- * menus.
- */
 enum class LedgerSurfaceLevel { Level0, Level1, Level2, Level3 }
 
 /**
  * The LDL semantic color contract, read through [LedgerTheme.colors].
  *
- * Components never reference raw palette constants or Material color roles. They
- * ask for meaning: a surface level, a label, a separator, or a financial
- * semantic such as income or expense. This is the layer that lets Ledger drop
- * Material's visual identity while keeping Material as the toolkit underneath.
- *
- * Financial semantics carry the Monzo layer of LDL: direction and status of
- * money are always communicated by a dedicated color, never by decoration.
+ * Hero atmosphere tokens define the ambient glow behind the balance.
+ * They are base hues; composables apply their own alpha per layer to
+ * build depth without hardcoding raw color literals.
  */
 data class LedgerColors(
     val isDark: Boolean,
@@ -136,8 +120,10 @@ data class LedgerColors(
     val warning: Color,
     val success: Color,
     val neutral: Color,
+    val heroGlowPrimary: Color,
+    val heroGlowSecondary: Color,
+    val heroGlowWarm: Color,
 ) {
-    /** Resolves a semantic surface level to its concrete tone. */
     fun surface(level: LedgerSurfaceLevel): Color = when (level) {
         LedgerSurfaceLevel.Level0 -> surfaceLevel0
         LedgerSurfaceLevel.Level1 -> surfaceLevel1
@@ -165,6 +151,9 @@ val LedgerLightColors = LedgerColors(
     warning = Color(0xFFB7791F),
     success = LedgerEmerald700,
     neutral = Color(0xFF6B7770),
+    heroGlowPrimary = Color(0xFFD4EDE7),
+    heroGlowSecondary = Color(0xFFC8E6DD),
+    heroGlowWarm = Color(0xFFF0EDE0),
 )
 
 val LedgerDarkColors = LedgerColors(
@@ -186,7 +175,9 @@ val LedgerDarkColors = LedgerColors(
     warning = Color(0xFFF0B860),
     success = LedgerEmerald300,
     neutral = Color(0xFF9CA9A2),
+    heroGlowPrimary = Color(0xFF122624),
+    heroGlowSecondary = Color(0xFF0A2D2A),
+    heroGlowWarm = Color(0xFF1C1C16),
 )
 
-/** Theme-provided LDL colors. Read via [LedgerTheme.colors], never directly. */
 val LocalLedgerColors = staticCompositionLocalOf { LedgerLightColors }

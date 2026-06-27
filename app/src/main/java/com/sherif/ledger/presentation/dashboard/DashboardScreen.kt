@@ -107,39 +107,49 @@ fun DashboardScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0)) {
+    val colors = LedgerTheme.colors
 
+    Box(Modifier.fillMaxSize().background(colors.surfaceLevel0)) {
+
+        // Aurora atmosphere: multiple diffuse layers, no visible geometry.
         Canvas(Modifier.fillMaxSize()) {
+            // Broad teal wash across the upper third
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF142A28).copy(alpha = 0.6f), Color.Transparent),
-                    center = Offset(size.width * 0.5f, size.height * 0.04f),
-                    radius = size.width * 1.0f,
+                    colors = listOf(colors.heroGlowPrimary.copy(alpha = 0.55f), Color.Transparent),
+                    center = Offset(size.width * 0.5f, size.height * 0.02f),
+                    radius = size.width * 1.3f,
                 ),
             )
+            // Secondary band, offset left and slightly lower
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF0C2E2B).copy(alpha = 0.25f), Color.Transparent),
-                    center = Offset(size.width * 0.3f, size.height * 0.10f),
-                    radius = size.width * 0.6f,
+                    colors = listOf(colors.heroGlowSecondary.copy(alpha = 0.3f), Color.Transparent),
+                    center = Offset(size.width * 0.25f, size.height * 0.10f),
+                    radius = size.width * 0.7f,
                 ),
             )
+            // Warm highlight, offset right, barely visible
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF1E1E18).copy(alpha = 0.12f), Color.Transparent),
-                    center = Offset(size.width * 0.75f, size.height * 0.07f),
-                    radius = size.width * 0.45f,
+                    colors = listOf(colors.heroGlowWarm.copy(alpha = 0.14f), Color.Transparent),
+                    center = Offset(size.width * 0.8f, size.height * 0.06f),
+                    radius = size.width * 0.5f,
+                ),
+            )
+            // Deep secondary bloom below the primary, very faint
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(colors.heroGlowSecondary.copy(alpha = 0.12f), Color.Transparent),
+                    center = Offset(size.width * 0.6f, size.height * 0.18f),
+                    radius = size.width * 0.55f,
                 ),
             )
         }
 
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                bottom = 40.dp,
-            ),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(28.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -164,12 +174,13 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp)
-            .padding(top = 12.dp, bottom = 36.dp)
+            .padding(top = 12.dp, bottom = 40.dp)
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Top bar: notification + avatar, right-aligned. No greeting.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,7 +194,7 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             Icon(
                 Icons.Filled.Notifications,
                 contentDescription = "Notifications",
-                tint = Color.White.copy(alpha = 0.4f),
+                tint = Color.White.copy(alpha = 0.35f),
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.width(16.dp))
@@ -191,23 +202,24 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.08f)),
+                    .background(Color.White.copy(alpha = 0.07f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     state.userName.take(1),
                     style = LedgerTextStyles.Caption,
-                    color = Color.White.copy(alpha = 0.5f),
+                    color = Color.White.copy(alpha = 0.4f),
                 )
             }
         }
 
         Spacer(Modifier.weight(1f))
 
+        // The money. Centered. Nothing competes.
         Text(
             "Total balance",
             style = LedgerTextStyles.Caption,
-            color = Color.White.copy(alpha = 0.35f),
+            color = Color.White.copy(alpha = 0.3f),
             modifier = Modifier.graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
             },
@@ -234,12 +246,12 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             Text(
                 state.balanceCurrency,
                 style = LedgerTextStyles.Body,
-                color = Color.White.copy(alpha = 0.3f),
+                color = Color.White.copy(alpha = 0.25f),
             )
             Icon(
                 Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.3f),
+                tint = Color.White.copy(alpha = 0.25f),
                 modifier = Modifier.size(16.dp),
             )
         }
