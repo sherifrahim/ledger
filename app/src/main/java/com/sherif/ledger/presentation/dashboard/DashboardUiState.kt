@@ -5,6 +5,8 @@ data class DashboardUiState(
     val userName: String,
     val currentMonth: String,
     val totalSpent: String,
+    val balanceAmount: String = "",
+    val balanceCurrency: String = "AED",
     val budgetProgress: Float,
     val expense: String,
     val income: String,
@@ -18,9 +20,11 @@ data class TransactionUiModel(
     val category: String,
     val amount: String,
     val isExpense: Boolean = true,
+    val date: String = "Today",
 )
 
 data class InsightUiModel(
     val title: String,
     val subtitle: String,
+    val indicator: String = "",
 )
