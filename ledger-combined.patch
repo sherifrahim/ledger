@@ -1,0 +1,1455 @@
+From 0925add90542e283beb842fd0eccbbcf2d383d7a Mon Sep 17 00:00:00 2001
+From: Claude <assistant@local>
+Date: Sat, 27 Jun 2026 13:08:15 +0000
+Subject: [PATCH] feat(ldl): LDL foundation, semantic migration, and
+ LedgerCollapsingHero
+
+Squashed: Commit A (LDL foundation), Commit B (dashboard migration),
+and the Living Hero (collapsing scroll-driven hero).
+
+Includes: LedgerColors with surface levels and financial semantics via
+CompositionLocal, LedgerTheme as the single LDL entry point, LedgerSurface
+and LedgerHairline primitives, LedgerBorder and LedgerOpacity tokens,
+LedgerCard deleted, all dashboard components repointed from Material
+colorScheme to LedgerTheme.colors, DashboardScreen rebuilt on Box +
+LazyColumn + LedgerCollapsingHero overlay with scroll-driven transformation,
+snap behavior (experimental), KDoc on every new primitive.
+---
+ .../designsystem/component/LedgerAmount.kt    |   9 +-
+ .../core/designsystem/component/LedgerCard.kt |  57 -----
+ .../designsystem/component/LedgerHairline.kt  |  31 +++
+ .../component/LedgerSectionTitle.kt           |  10 +-
+ .../designsystem/component/LedgerStatCard.kt  |  24 +-
+ .../designsystem/component/LedgerSurface.kt   |  59 +++++
+ .../component/LedgerTransactionRow.kt         |  19 +-
+ .../component/hero/LedgerCollapsingHero.kt    | 100 +++++++++
+ .../core/designsystem/theme/LedgerColors.kt   | 100 +++++++++
+ .../core/designsystem/theme/LedgerTheme.kt    |  54 ++++-
+ .../core/designsystem/tokens/LedgerBorder.kt  |  15 ++
+ .../core/designsystem/tokens/LedgerOpacity.kt |  16 ++
+ .../presentation/dashboard/DashboardScreen.kt | 205 ++++++++++++++++--
+ .../dashboard/DashboardUiState.kt             |  25 +--
+ .../dashboard/components/GreetingHeader.kt    |  40 ++--
+ .../dashboard/components/InsightSection.kt    |  50 ++---
+ .../components/MonthlySummaryCard.kt          |   6 +-
+ .../dashboard/components/QuickStatsSection.kt |  68 +++---
+ .../components/RecentTransactionsSection.kt   |  39 ++--
+ .../dashboard/preview/DashboardPreviewData.kt |  53 +----
+ 20 files changed, 694 insertions(+), 286 deletions(-)
+ delete mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerCard.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerHairline.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerBorder.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerOpacity.kt
+
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAmount.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAmount.kt
+index ed1fd32..b9b09e4 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAmount.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAmount.kt
+@@ -1,6 +1,5 @@
+ package com.sherif.ledger.core.designsystem.component
+ 
+-import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+@@ -9,6 +8,7 @@ import androidx.compose.ui.text.TextStyle
+ import androidx.compose.ui.text.font.FontFamily
+ import androidx.compose.ui.unit.sp
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ 
+ enum class LedgerAmountStyle {
+     Small,
+@@ -19,15 +19,16 @@ enum class LedgerAmountStyle {
+ /**
+  * LDS amount text for money values.
+  *
+- * The caller must provide the final display string so formatting and currency
+- * decisions remain in the appropriate feature or domain layer.
++ * The caller provides the final display string so formatting and currency
++ * decisions stay in the appropriate feature or domain layer. Direction and
++ * status are expressed through [color], drawn from LDL financial semantics.
+  */
+ @Composable
+ fun LedgerAmount(
+     amount: String,
+     modifier: Modifier = Modifier,
+     style: LedgerAmountStyle = LedgerAmountStyle.Regular,
+-    color: Color = MaterialTheme.colorScheme.onSurface,
++    color: Color = LedgerTheme.colors.label,
+ ) {
+     val textStyle: TextStyle = when (style) {
+         LedgerAmountStyle.Small -> LedgerTextStyles.Mono.copy(
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerCard.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerCard.kt
+deleted file mode 100644
+index a1a24d7..0000000
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerCard.kt
++++ /dev/null
+@@ -1,57 +0,0 @@
+-package com.sherif.ledger.core.designsystem.component
+-
+-import androidx.compose.foundation.BorderStroke
+-import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.ColumnScope
+-import androidx.compose.foundation.layout.PaddingValues
+-import androidx.compose.foundation.layout.padding
+-import androidx.compose.material3.Card
+-import androidx.compose.material3.CardDefaults
+-import androidx.compose.material3.MaterialTheme
+-import androidx.compose.runtime.Composable
+-import androidx.compose.ui.Modifier
+-import androidx.compose.ui.graphics.Color
+-import com.sherif.ledger.core.designsystem.theme.LedgerElevation
+-import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+-
+-/**
+- * Ledger Design System Card
+- *
+- * Every card in the application should be built from this component.
+- */
+-@Composable
+-fun LedgerCard(
+-    modifier: Modifier = Modifier,
+-    contentPadding: PaddingValues = PaddingValues(LedgerSpacing.Medium),
+-
+-    containerColor: Color = MaterialTheme.colorScheme.surface,
+-
+-    border: BorderStroke? = BorderStroke(
+-        width = LedgerElevation.None,
+-        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f),
+-    ),
+-
+-    content: @Composable ColumnScope.() -> Unit,
+-) {
+-
+-    Card(
+-        modifier = modifier,
+-        shape = MaterialTheme.shapes.large,
+-        border = border,
+-        colors = CardDefaults.cardColors(
+-            containerColor = containerColor,
+-            contentColor = MaterialTheme.colorScheme.onSurface,
+-        ),
+-        elevation = CardDefaults.cardElevation(
+-            defaultElevation = LedgerElevation.Raised,
+-        ),
+-    ) {
+-
+-        Column(
+-            modifier = Modifier.padding(contentPadding),
+-            content = content,
+-        )
+-
+-    }
+-
+-}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerHairline.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerHairline.kt
+new file mode 100644
+index 0000000..bed1b4f
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerHairline.kt
+@@ -0,0 +1,31 @@
++package com.sherif.ledger.core.designsystem.component
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++
++/**
++ * LedgerHairline is the LDL separator, replacing Material's Divider.
++ *
++ * LDL groups content with thin hairlines instead of elevation or heavy rules, so
++ * this is intentionally the thinnest visible line. Insets are the caller's
++ * responsibility, matching inset grouped lists where separators indent to align
++ * with content rather than running to the screen edge.
++ */
++@Composable
++fun LedgerHairline(
++    modifier: Modifier = Modifier,
++    color: Color = LedgerTheme.colors.separator,
++) {
++    Box(
++        modifier = modifier
++            .fillMaxWidth()
++            .height(LedgerTheme.border.Hairline)
++            .background(color),
++    )
++}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSectionTitle.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSectionTitle.kt
+index dcfe821..1d527f1 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSectionTitle.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSectionTitle.kt
+@@ -1,16 +1,16 @@
+ package com.sherif.ledger.core.designsystem.component
+ 
+-import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ 
+ /**
+- * Standard LDS section heading.
++ * Standard LDL section heading.
+  *
+- * Use this to label logical screen groups such as "Recent transactions",
+- * "Budgets", or "Analytics".
++ * Sits above an inset grouped surface to label it, in the Apple grouped-list
++ * grammar where the header is outside the rounded group rather than inside it.
+  */
+ @Composable
+ fun LedgerSectionTitle(
+@@ -21,6 +21,6 @@ fun LedgerSectionTitle(
+         text = text,
+         modifier = modifier,
+         style = LedgerTextStyles.Section,
+-        color = MaterialTheme.colorScheme.onBackground,
++        color = LedgerTheme.colors.label,
+     )
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerStatCard.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerStatCard.kt
+index 4a31f7a..1670a1f 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerStatCard.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerStatCard.kt
+@@ -2,28 +2,37 @@ package com.sherif.ledger.core.designsystem.component
+ 
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ 
+ /**
+- * Compact LDS card for displaying one dashboard metric.
++ * Compact LDL surface for one dashboard metric.
+  *
+- * Pass preformatted values from the screen layer; this component does not
+- * calculate balances, totals, or trends.
++ * Built on [LedgerSurface] at Level1, so a metric tile reads as a grouped
++ * section on the Level0 page rather than a floating Material card. Pass
++ * preformatted values from the screen layer; this carries no business logic.
+  */
+ @Composable
+ fun LedgerStatCard(
+     label: String,
+     value: String,
+     modifier: Modifier = Modifier,
++    valueColor: Color = LedgerTheme.colors.label,
+     supportingText: String? = null,
+ ) {
+-    LedgerCard(modifier = modifier) {
++    LedgerSurface(
++        modifier = modifier,
++        level = LedgerSurfaceLevel.Level1,
++        contentPadding = PaddingValues(LedgerSpacing.Medium),
++    ) {
+         Column(
+             modifier = Modifier.fillMaxWidth(),
+             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XSmall),
+@@ -31,17 +40,18 @@ fun LedgerStatCard(
+             Text(
+                 text = label,
+                 style = LedgerTextStyles.Label,
+-                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                color = LedgerTheme.colors.secondaryLabel,
+             )
+             LedgerAmount(
+                 amount = value,
+                 style = LedgerAmountStyle.Large,
++                color = valueColor,
+             )
+             if (supportingText != null) {
+                 Text(
+                     text = supportingText,
+                     style = LedgerTextStyles.Caption,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    color = LedgerTheme.colors.secondaryLabel,
+                 )
+             }
+         }
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt
+new file mode 100644
+index 0000000..210d4e3
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt
+@@ -0,0 +1,59 @@
++package com.sherif.ledger.core.designsystem.component
++
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ColumnScope
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.Surface
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Shape
++import androidx.compose.ui.unit.dp
++import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
++
++/**
++ * LedgerSurface is the fundamental bounded surface in LDL.
++ *
++ * Unlike a Material Card, a surface communicates hierarchy through a semantic
++ * [LedgerSurfaceLevel] resolved by the theme, never through elevation. LDL keeps
++ * surfaces flat and separates them with tone and hairlines, matching the Apple
++ * grouped-list grammar that anchors Ledger's foundation.
++ *
++ * Components should request a surface level rather than a raw color, so the
++ * meaning of a surface stays stable even when the palette changes. It is built
++ * on a Material Surface only as plumbing, with elevation forced flat.
++ */
++@Composable
++fun LedgerSurface(
++    modifier: Modifier = Modifier,
++    level: LedgerSurfaceLevel = LedgerSurfaceLevel.Level1,
++    shape: Shape = LedgerRadius.Small,
++    hairlineBorder: Boolean = false,
++    contentPadding: PaddingValues = PaddingValues(0.dp),
++    content: @Composable ColumnScope.() -> Unit,
++) {
++    val colors = LedgerTheme.colors
++    val border = if (hairlineBorder) {
++        BorderStroke(LedgerTheme.border.Hairline, colors.separator)
++    } else {
++        null
++    }
++
++    Surface(
++        modifier = modifier,
++        shape = shape,
++        color = colors.surface(level),
++        contentColor = colors.label,
++        border = border,
++        tonalElevation = 0.dp,
++        shadowElevation = 0.dp,
++    ) {
++        Column(
++            modifier = Modifier.padding(contentPadding),
++            content = content,
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt
+index 3e48084..3dda0ca 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt
+@@ -19,12 +19,14 @@ import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.graphics.Color
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ 
+ /**
+- * Standard LDS row for displaying transaction-like summaries.
++ * Standard LDL row for transaction-like summaries.
+  *
+- * This is a presentational component only. It accepts display strings and does
+- * not depend on transaction entities, repositories, parsers, or ViewModels.
++ * Presentational only. Accepts display strings and does not depend on entities,
++ * repositories, parsers, or ViewModels. Money direction is communicated through
++ * [amountColor] from LDL financial semantics, never through decoration.
+  */
+ @Composable
+ fun LedgerTransactionRow(
+@@ -34,7 +36,8 @@ fun LedgerTransactionRow(
+     subtitle: String? = null,
+     metadata: String? = null,
+     tag: String? = null,
+-    accentColor: Color = MaterialTheme.colorScheme.primary,
++    accentColor: Color = LedgerTheme.colors.tint,
++    amountColor: Color = LedgerTheme.colors.label,
+ ) {
+     Row(
+         modifier = modifier
+@@ -46,7 +49,7 @@ fun LedgerTransactionRow(
+             modifier = Modifier
+                 .size(LedgerSpacing.XxLarge)
+                 .clip(MaterialTheme.shapes.small)
+-                .background(accentColor.copy(alpha = 0.14f)),
++                .background(accentColor.copy(alpha = LedgerTheme.opacity.Fill)),
+             contentAlignment = Alignment.Center,
+         ) {
+             Text(
+@@ -63,14 +66,14 @@ fun LedgerTransactionRow(
+             Text(
+                 text = title,
+                 style = LedgerTextStyles.Label,
+-                color = MaterialTheme.colorScheme.onSurface,
++                color = LedgerTheme.colors.label,
+             )
+             val supportingText = listOfNotNull(subtitle, metadata).joinToString(" - ")
+             if (supportingText.isNotEmpty()) {
+                 Text(
+                     text = supportingText,
+                     style = LedgerTextStyles.Caption,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    color = LedgerTheme.colors.secondaryLabel,
+                 )
+             }
+             if (tag != null) {
+@@ -78,6 +81,6 @@ fun LedgerTransactionRow(
+             }
+         }
+         Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
+-        LedgerAmount(amount = amount)
++        LedgerAmount(amount = amount, color = amountColor)
+     }
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+new file mode 100644
+index 0000000..c9fd8a4
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+@@ -0,0 +1,100 @@
++package com.sherif.ledger.core.designsystem.component.hero
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Brush
++import androidx.compose.ui.unit.Dp
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.lerp
++import com.sherif.ledger.core.designsystem.tokens.LedgerGradients
++
++/**
++ * Dimension and transition defaults for [LedgerCollapsingHero].
++ *
++ * Every magic number that controls the hero's structure lives here so the
++ * component body stays free of inline constants. Values are hypotheses:
++ * adjust after running on a real device, not from a specification.
++ */
++object LedgerHeroDefaults {
++
++    /** Hero height when fully expanded (scroll offset zero). */
++    val ExpandedHeight: Dp = 280.dp
++
++    /** Hero height when fully collapsed (pinned compact header). */
++    val CollapsedHeight: Dp = 56.dp
++
++    /** Bottom corner radius at full expansion. Reaches 0 dp when compact. */
++    val CornerRadius: Dp = 32.dp
++
++    /** Default gradient background. */
++    val Background: Brush = LedgerGradients.Emerald
++}
++
++/**
++ * A reusable scroll-driven collapsing hero surface.
++ *
++ * The container interpolates its height, corner radius, and background
++ * between an expanded and a compact state as [collapseProgress] moves
++ * from 0 (expanded) to 1 (compact). It makes no decisions about the
++ * content inside: two composable slots receive the current progress so
++ * each caller can choreograph its own entry, exit, and internal
++ * transitions independently.
++ *
++ * Both slots are always composed and overlaid. The expanded slot fills
++ * the hero. The compact slot is pinned to the top at [collapsedHeight].
++ * Callers control visibility (typically via `graphicsLayer { alpha }`)
++ * so the container stays agnostic to crossfade timing.
++ *
++ * This is LDL infrastructure. It carries no business logic, no
++ * dashboard state, and no navigation awareness. Screens provide meaning
++ * through the slots.
++ *
++ * @param collapseProgress 0f = fully expanded, 1f = fully compact.
++ * @param expandedContent Slot for the full hero layout. Receives progress.
++ * @param compactContent  Slot for the pinned compact header. Receives progress.
++ */
++@Composable
++fun LedgerCollapsingHero(
++    collapseProgress: Float,
++    modifier: Modifier = Modifier,
++    expandedHeight: Dp = LedgerHeroDefaults.ExpandedHeight,
++    collapsedHeight: Dp = LedgerHeroDefaults.CollapsedHeight,
++    cornerRadius: Dp = LedgerHeroDefaults.CornerRadius,
++    background: Brush = LedgerHeroDefaults.Background,
++    expandedContent: @Composable (collapseProgress: Float) -> Unit,
++    compactContent: @Composable (collapseProgress: Float) -> Unit,
++) {
++    val currentHeight = lerp(expandedHeight, collapsedHeight, collapseProgress)
++    val currentRadius = lerp(cornerRadius, 0.dp, collapseProgress)
++
++    Box(
++        modifier = modifier
++            .fillMaxWidth()
++            .height(currentHeight)
++            .clip(
++                RoundedCornerShape(
++                    bottomStart = currentRadius,
++                    bottomEnd = currentRadius,
++                ),
++            )
++            .background(background),
++    ) {
++        Box(Modifier.fillMaxSize()) {
++            expandedContent(collapseProgress)
++        }
++        Box(
++            Modifier
++                .fillMaxWidth()
++                .height(collapsedHeight),
++        ) {
++            compactContent(collapseProgress)
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerColors.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerColors.kt
+index 47626ff..c01afee 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerColors.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerColors.kt
+@@ -2,6 +2,7 @@ package com.sherif.ledger.core.designsystem.theme
+ 
+ import androidx.compose.material3.darkColorScheme
+ import androidx.compose.material3.lightColorScheme
++import androidx.compose.runtime.staticCompositionLocalOf
+ import androidx.compose.ui.graphics.Color
+ 
+ val LedgerEmerald50 = Color(0xFFECFDF5)
+@@ -90,3 +91,102 @@ val LedgerDarkColorScheme = darkColorScheme(
+     inversePrimary = LedgerEmerald700,
+     scrim = Color.Black,
+ )
++
++/**
++ * Semantic surface hierarchy for LDL.
++ *
++ * A component declares the intent of its surface rather than a color or an
++ * elevation. The theme resolves intent to a concrete tone per light and dark.
++ * In LDL these levels are tonal steps, not shadows, matching the Apple
++ * grouped-list grammar where depth reads through tone and hairlines.
++ *
++ * Level0 app background. Level1 the primary grouped section that holds content.
++ * Level2 a nested block inside a section. Level3 transient top layer, sheets and
++ * menus.
++ */
++enum class LedgerSurfaceLevel { Level0, Level1, Level2, Level3 }
++
++/**
++ * The LDL semantic color contract, read through [LedgerTheme.colors].
++ *
++ * Components never reference raw palette constants or Material color roles. They
++ * ask for meaning: a surface level, a label, a separator, or a financial
++ * semantic such as income or expense. This is the layer that lets Ledger drop
++ * Material's visual identity while keeping Material as the toolkit underneath.
++ *
++ * Financial semantics carry the Monzo layer of LDL: direction and status of
++ * money are always communicated by a dedicated color, never by decoration.
++ */
++data class LedgerColors(
++    val isDark: Boolean,
++    val surfaceLevel0: Color,
++    val surfaceLevel1: Color,
++    val surfaceLevel2: Color,
++    val surfaceLevel3: Color,
++    val label: Color,
++    val secondaryLabel: Color,
++    val tertiaryLabel: Color,
++    val separator: Color,
++    val tint: Color,
++    val onTint: Color,
++    val income: Color,
++    val expense: Color,
++    val pending: Color,
++    val refund: Color,
++    val warning: Color,
++    val success: Color,
++    val neutral: Color,
++) {
++    /** Resolves a semantic surface level to its concrete tone. */
++    fun surface(level: LedgerSurfaceLevel): Color = when (level) {
++        LedgerSurfaceLevel.Level0 -> surfaceLevel0
++        LedgerSurfaceLevel.Level1 -> surfaceLevel1
++        LedgerSurfaceLevel.Level2 -> surfaceLevel2
++        LedgerSurfaceLevel.Level3 -> surfaceLevel3
++    }
++}
++
++val LedgerLightColors = LedgerColors(
++    isDark = false,
++    surfaceLevel0 = Color(0xFFF2F3F5),
++    surfaceLevel1 = Color(0xFFFFFFFF),
++    surfaceLevel2 = Color(0xFFF6F7F9),
++    surfaceLevel3 = Color(0xFFFFFFFF),
++    label = Color(0xFF0F1714),
++    secondaryLabel = Color(0xFF5B6B64),
++    tertiaryLabel = Color(0xFF8A9A92),
++    separator = Color(0xFFE2E7E4),
++    tint = LedgerEmerald700,
++    onTint = Color(0xFFFFFFFF),
++    income = LedgerEmerald700,
++    expense = Color(0xFFC0362C),
++    pending = Color(0xFFB7791F),
++    refund = Color(0xFF2563EB),
++    warning = Color(0xFFB7791F),
++    success = LedgerEmerald700,
++    neutral = Color(0xFF6B7770),
++)
++
++val LedgerDarkColors = LedgerColors(
++    isDark = true,
++    surfaceLevel0 = Color(0xFF08110E),
++    surfaceLevel1 = Color(0xFF111C18),
++    surfaceLevel2 = Color(0xFF182520),
++    surfaceLevel3 = Color(0xFF1F2C27),
++    label = Color(0xFFE6F2EC),
++    secondaryLabel = Color(0xFFA7B8B0),
++    tertiaryLabel = Color(0xFF7C8B84),
++    separator = Color(0xFF2B3B34),
++    tint = LedgerEmerald300,
++    onTint = LedgerEmerald950,
++    income = LedgerEmerald300,
++    expense = Color(0xFFF97066),
++    pending = Color(0xFFF0B860),
++    refund = Color(0xFF60A5FA),
++    warning = Color(0xFFF0B860),
++    success = LedgerEmerald300,
++    neutral = Color(0xFF9CA9A2),
++)
++
++/** Theme-provided LDL colors. Read via [LedgerTheme.colors], never directly. */
++val LocalLedgerColors = staticCompositionLocalOf { LedgerLightColors }
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt
+index 13ae1a2..f25f27f 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt
+@@ -6,14 +6,24 @@ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.dynamicDarkColorScheme
+ import androidx.compose.material3.dynamicLightColorScheme
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.CompositionLocalProvider
++import androidx.compose.runtime.ReadOnlyComposable
+ import androidx.compose.ui.platform.LocalContext
++import com.sherif.ledger.core.designsystem.tokens.LedgerBorder
++import com.sherif.ledger.core.designsystem.tokens.LedgerOpacity
++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+ 
+ /**
+- * Applies the Ledger Design System theme on top of Material 3.
++ * Applies the Ledger Design Language.
+  *
+- * Dynamic color is available for Android 12 and above, but it is disabled by
+- * default so Ledger keeps its emerald-based brand palette unless explicitly
+- * requested by the caller.
++ * Material3 stays underneath purely as a toolkit: it still receives a
++ * [androidx.compose.material3.ColorScheme] so stray Material widgets do not
++ * render broken. LDL components, however, read meaning from [LedgerTheme], not
++ * from Material color roles. That separation is what lets Ledger shed Material's
++ * visual identity without rebuilding the component toolkit.
++ *
++ * Dynamic color remains available only as an explicit opt in and is off by
++ * default, so Ledger keeps its own palette rather than adopting the device's.
+  */
+ @Composable
+ fun LedgerTheme(
+@@ -31,10 +41,34 @@ fun LedgerTheme(
+         else -> LedgerLightColorScheme
+     }
+ 
+-    MaterialTheme(
+-        colorScheme = colorScheme,
+-        typography = LedgerTypography,
+-        shapes = LedgerShapes,
+-        content = content,
+-    )
++    val ledgerColors = if (darkTheme) LedgerDarkColors else LedgerLightColors
++
++    CompositionLocalProvider(LocalLedgerColors provides ledgerColors) {
++        MaterialTheme(
++            colorScheme = colorScheme,
++            typography = LedgerTypography,
++            shapes = LedgerShapes,
++            content = content,
++        )
++    }
++}
++
++/**
++ * The single semantic entry point for LDL.
++ *
++ * Components reach design decisions through this object rather than importing
++ * tokens piecemeal or reading Material roles, so the vocabulary stays one
++ * consistent surface. Only [colors] varies with light and dark, so only it flows
++ * through a CompositionLocal. The rest are stable tokens exposed directly, which
++ * keeps the theme honest and avoids CompositionLocals that never change.
++ */
++object LedgerTheme {
++    val colors: LedgerColors
++        @Composable @ReadOnlyComposable get() = LocalLedgerColors.current
++
++    val radius get() = LedgerRadius
++    val border get() = LedgerBorder
++    val opacity get() = LedgerOpacity
++    val motion get() = LedgerMotion
++    val elevation get() = LedgerElevation
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerBorder.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerBorder.kt
+new file mode 100644
+index 0000000..46fdfde
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerBorder.kt
+@@ -0,0 +1,15 @@
++package com.sherif.ledger.core.designsystem.tokens
++
++import androidx.compose.ui.unit.dp
++
++/**
++ * Border widths for LDL.
++ *
++ * LDL separates content with hairlines instead of shadows or heavy rules, so a
++ * single shared Hairline keeps every separator and surface edge identical rather
++ * than scattering ad-hoc widths across components.
++ */
++object LedgerBorder {
++    /** The standard hairline boundary between LDL content groups. */
++    val Hairline = 1.dp
++}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerOpacity.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerOpacity.kt
+new file mode 100644
+index 0000000..55034bc
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerOpacity.kt
+@@ -0,0 +1,16 @@
++package com.sherif.ledger.core.designsystem.tokens
++
++/**
++ * Opacity tokens for LDL states and subtle fills.
++ *
++ * Named opacities keep disabled and tinted-fill treatments consistent instead of
++ * scattering magic alpha values. Anything that is not a named state should use a
++ * solid semantic color, not a faded one.
++ */
++object LedgerOpacity {
++    /** Content that is present but not interactive. */
++    const val Disabled = 0.38f
++
++    /** Subtle tinted fills, such as a category swatch behind an avatar glyph. */
++    const val Fill = 0.12f
++}
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+index 044445d..9405d1e 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+@@ -1,48 +1,213 @@
+ package com.sherif.ledger.presentation.dashboard
+ 
++import androidx.compose.animation.core.Spring
++import androidx.compose.animation.core.spring
++import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.rememberScrollState
+-import androidx.compose.foundation.verticalScroll
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.rememberLazyListState
++import androidx.compose.foundation.gestures.animateScrollBy
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.derivedStateOf
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.graphicsLayer
++import androidx.compose.ui.platform.LocalDensity
+ import androidx.compose.ui.unit.dp
+-import com.sherif.ledger.presentation.dashboard.components.GreetingHeader
++import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
++import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
++import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ import com.sherif.ledger.presentation.dashboard.components.InsightSection
+-import com.sherif.ledger.presentation.dashboard.components.MonthlySummaryCard
+ import com.sherif.ledger.presentation.dashboard.components.QuickStatsSection
+ import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSection
+ import com.sherif.ledger.presentation.dashboard.preview.DashboardPreviewData
+ 
++/**
++ * Transition thresholds for the dashboard hero content.
++ * All values are hypotheses. Tune after device testing.
++ */
++private object HeroTransitions {
++    const val GreetingExit = 0.3f
++    const val GreetingTranslationPx = 80f
++    const val MonthExit = 0.5f
++    const val ExpandedExit = 0.7f
++    const val CompactEnter = 0.6f
++}
++
++private object HeroSnap {
++    const val Enabled = true
++    const val ZoneStart = 0.3f
++    const val ZoneEnd = 0.7f
++    const val DampingRatio = 0.82f
++    val Stiffness = Spring.StiffnessMediumLow
++}
++
+ @Composable
+ fun DashboardScreen(
+     state: DashboardUiState = DashboardPreviewData.state,
+ ) {
+-    Column(
++    val expandedHeight = LedgerHeroDefaults.ExpandedHeight
++    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
++    val maxOffsetPx = with(LocalDensity.current) {
++        (expandedHeight - collapsedHeight).toPx()
++    }
++
++    val listState = rememberLazyListState()
++
++    val collapseProgress by remember {
++        derivedStateOf {
++            if (listState.firstVisibleItemIndex > 0) {
++                1f
++            } else {
++                (listState.firstVisibleItemScrollOffset / maxOffsetPx).coerceIn(0f, 1f)
++            }
++        }
++    }
++
++    if (HeroSnap.Enabled) {
++        LaunchedEffect(listState.isScrollInProgress) {
++            if (!listState.isScrollInProgress && listState.firstVisibleItemIndex == 0) {
++                val p = collapseProgress
++                if (p in HeroSnap.ZoneStart..HeroSnap.ZoneEnd) {
++                    val targetPx = if (p > 0.5f) maxOffsetPx else 0f
++                    val currentPx = listState.firstVisibleItemScrollOffset.toFloat()
++                    listState.animateScrollBy(
++                        value = targetPx - currentPx,
++                        animationSpec = spring(
++                            dampingRatio = HeroSnap.DampingRatio,
++                            stiffness = HeroSnap.Stiffness,
++                        ),
++                    )
++                }
++            }
++        }
++    }
++
++    Box(
+         modifier = Modifier
+             .fillMaxSize()
+-            .verticalScroll(rememberScrollState())
+-            .padding(horizontal = 24.dp, vertical = 32.dp),
+-        verticalArrangement = Arrangement.spacedBy(32.dp),
++            .background(LedgerTheme.colors.surfaceLevel0),
+     ) {
++        LazyColumn(
++            state = listState,
++            contentPadding = PaddingValues(
++                start = LedgerSpacing.Large,
++                end = LedgerSpacing.Large,
++                bottom = LedgerSpacing.XLarge,
++            ),
++            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge),
++            modifier = Modifier.fillMaxSize(),
++        ) {
++            item(key = "hero_spacer") {
++                Spacer(Modifier.height(expandedHeight))
++            }
++            item(key = "stats") {
++                QuickStatsSection(state)
++            }
++            item(key = "transactions") {
++                RecentTransactionsSection(state)
++            }
++            item(key = "insights") {
++                InsightSection(state)
++            }
++        }
+ 
+-        GreetingHeader(
+-            greeting = state.greeting,
+-            userName = state.userName,
+-        )
+-
+-        MonthlySummaryCard(
+-            month = state.currentMonth,
+-            totalSpent = state.totalSpent,
+-            progress = state.budgetProgress,
++        LedgerCollapsingHero(
++            collapseProgress = collapseProgress,
++            expandedContent = { progress -> ExpandedHeroContent(progress, state) },
++            compactContent = { progress -> CompactHeroContent(progress, state) },
+         )
++    }
++}
+ 
+-        QuickStatsSection(state)
++@Composable
++private fun ExpandedHeroContent(progress: Float, state: DashboardUiState) {
++    Column(
++        modifier = Modifier
++            .fillMaxSize()
++            .padding(horizontal = 24.dp)
++            .padding(top = 20.dp, bottom = 28.dp)
++            .graphicsLayer {
++                alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
++            },
++        verticalArrangement = Arrangement.SpaceBetween,
++    ) {
++        // Greeting: quiet, secondary. The user, not the data.
++        Column(
++            modifier = Modifier.graphicsLayer {
++                alpha = (1f - progress / HeroTransitions.GreetingExit).coerceIn(0f, 1f)
++                translationY = -(progress * HeroTransitions.GreetingTranslationPx)
++            },
++        ) {
++            Text(
++                text = "${state.greeting},",
++                style = LedgerTextStyles.Caption,
++                color = Color.White.copy(alpha = 0.60f),
++            )
++            Text(
++                text = state.userName,
++                style = LedgerTextStyles.Title,
++                color = Color.White,
++            )
++        }
+ 
+-        RecentTransactionsSection(state)
++        // The money. Nothing else competes.
++        Column {
++            Text(
++                text = state.totalSpent,
++                style = LedgerTextStyles.Display,
++                color = Color.White,
++            )
++            Spacer(Modifier.height(6.dp))
++            Text(
++                text = state.currentMonth,
++                style = LedgerTextStyles.Caption,
++                color = Color.White.copy(alpha = 0.56f),
++                modifier = Modifier.graphicsLayer {
++                    alpha = (1f - progress / HeroTransitions.MonthExit).coerceIn(0f, 1f)
++                },
++            )
++        }
++    }
++}
+ 
+-        InsightSection(state)
++@Composable
++private fun CompactHeroContent(progress: Float, state: DashboardUiState) {
++    Row(
++        modifier = Modifier
++            .fillMaxSize()
++            .padding(horizontal = 20.dp)
++            .graphicsLayer {
++                alpha = ((progress - HeroTransitions.CompactEnter) /
++                    (1f - HeroTransitions.CompactEnter)).coerceIn(0f, 1f)
++            },
++        verticalAlignment = Alignment.CenterVertically,
++    ) {
++        Text(
++            text = state.totalSpent,
++            style = LedgerTextStyles.Section,
++            color = Color.White,
++            modifier = Modifier.weight(1f),
++        )
++        Text(
++            text = state.currentMonth,
++            style = LedgerTextStyles.Label,
++            color = Color.White.copy(alpha = 0.72f),
++        )
+     }
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardUiState.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardUiState.kt
+index b696151..396391d 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardUiState.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardUiState.kt
+@@ -1,43 +1,26 @@
+ package com.sherif.ledger.presentation.dashboard
+ 
+ data class DashboardUiState(
+-
+     val greeting: String,
+-
+     val userName: String,
+-
+     val currentMonth: String,
+-
+     val totalSpent: String,
+-
+     val budgetProgress: Float,
+-
+     val expense: String,
+-
+     val income: String,
+-
+     val savings: String,
+-
+     val recentTransactions: List<TransactionUiModel>,
+-
+-    val insights: List<InsightUiModel>
+-
++    val insights: List<InsightUiModel>,
+ )
+ 
+ data class TransactionUiModel(
+-
+     val merchant: String,
+-
+     val category: String,
+-
+-    val amount: String
+-
++    val amount: String,
++    val isExpense: Boolean = true,
+ )
+ 
+ data class InsightUiModel(
+-
+     val title: String,
+-
+-    val subtitle: String
+-
++    val subtitle: String,
+ )
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/GreetingHeader.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/GreetingHeader.kt
+index 4a5d3ce..10de90c 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/GreetingHeader.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/GreetingHeader.kt
+@@ -1,44 +1,32 @@
+ package com.sherif.ledger.presentation.dashboard.components
+ 
+ import androidx.compose.foundation.layout.Column
+-import androidx.compose.ui.text.font.FontWeight
+-import androidx.compose.ui.unit.sp
+ import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ 
+ /**
+  * Dashboard greeting shown at the top of the Home screen.
+  */
+ @Composable
+ fun GreetingHeader(
+-
+     greeting: String,
+-
+     userName: String,
+-
+-    modifier: Modifier = Modifier
+-
++    modifier: Modifier = Modifier,
+ ) {
+-
+-    Column(
+-        modifier = modifier.fillMaxWidth()
+-    ) {
+-
+-Text(
+-    text = "$greeting,",
+-    style = MaterialTheme.typography.bodyLarge,
+-    color = MaterialTheme.colorScheme.onSurfaceVariant
+-)
+-
+-Text(
+-    text = userName,
+-    fontSize = 34.sp,
+-    fontWeight = FontWeight.Bold,
+-    color = MaterialTheme.colorScheme.onSurface
+-)
++    Column(modifier = modifier.fillMaxWidth()) {
++        Text(
++            text = "$greeting,",
++            style = LedgerTextStyles.Body,
++            color = LedgerTheme.colors.secondaryLabel,
++        )
++        Text(
++            text = userName,
++            style = LedgerTextStyles.Headline,
++            color = LedgerTheme.colors.label,
++        )
+     }
+-
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/InsightSection.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/InsightSection.kt
+index a9fd19d..c56013d 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/InsightSection.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/InsightSection.kt
+@@ -2,14 +2,18 @@ package com.sherif.ledger.presentation.dashboard.components
+ 
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.unit.dp
+-import com.sherif.ledger.core.designsystem.component.LedgerCard
++import com.sherif.ledger.core.designsystem.component.LedgerHairline
+ import com.sherif.ledger.core.designsystem.component.LedgerSectionTitle
++import com.sherif.ledger.core.designsystem.component.LedgerSurface
++import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ import com.sherif.ledger.presentation.dashboard.DashboardUiState
+ 
+ @Composable
+@@ -17,41 +21,35 @@ fun InsightSection(
+     state: DashboardUiState,
+     modifier: Modifier = Modifier,
+ ) {
+-
+     Column(
+         modifier = modifier,
+-        verticalArrangement = Arrangement.spacedBy(12.dp),
++        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
+     ) {
++        LedgerSectionTitle(text = "Insights")
+ 
+-        LedgerSectionTitle(
+-            text = "Insights",
+-        )
+-
+-        state.insights.forEach {
+-
+-            LedgerCard {
+-
++        LedgerSurface(level = LedgerSurfaceLevel.Level1) {
++            state.insights.forEachIndexed { index, insight ->
+                 Column(
+-                    modifier = Modifier.padding(20.dp),
+-                    verticalArrangement = Arrangement.spacedBy(4.dp),
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .padding(LedgerSpacing.Medium),
++                    verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
+                 ) {
+-
+                     Text(
+-                        text = it.title,
+-                        style = MaterialTheme.typography.titleMedium,
++                        text = insight.title,
++                        style = LedgerTextStyles.Label,
++                        color = LedgerTheme.colors.label,
+                     )
+-
+                     Text(
+-                        text = it.subtitle,
+-                        style = MaterialTheme.typography.bodyMedium,
++                        text = insight.subtitle,
++                        style = LedgerTextStyles.Caption,
++                        color = LedgerTheme.colors.secondaryLabel,
+                     )
+-
+                 }
+-
++                if (index != state.insights.lastIndex) {
++                    LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.Medium))
++                }
+             }
+-
+         }
+-
+     }
+-
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/MonthlySummaryCard.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/MonthlySummaryCard.kt
+index 1c31eec..596b799 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/MonthlySummaryCard.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/MonthlySummaryCard.kt
+@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
+ import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroCard
+ 
+ /**
+- * Dashboard-specific adapter around the reusable LedgerHeroCard.
++ * Dashboard adapter around the reusable LedgerHeroCard.
+  */
+ @Composable
+ fun MonthlySummaryCard(
+@@ -14,13 +14,11 @@ fun MonthlySummaryCard(
+     progress: Float,
+     modifier: Modifier = Modifier,
+ ) {
+-
+     LedgerHeroCard(
+         modifier = modifier,
+         title = month,
+         value = totalSpent,
+-        subtitle = "Monthly spending",
++        subtitle = "",
+         progress = progress,
+     )
+-
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/QuickStatsSection.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/QuickStatsSection.kt
+index 7721445..34649fd 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/QuickStatsSection.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/QuickStatsSection.kt
+@@ -1,58 +1,48 @@
+ package com.sherif.ledger.presentation.dashboard.components
+ 
+ import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+-import com.sherif.ledger.core.designsystem.component.LedgerStatCard
++import androidx.compose.ui.graphics.Color
++import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ import com.sherif.ledger.presentation.dashboard.DashboardUiState
+ 
+ @Composable
+ fun QuickStatsSection(
+-
+-    state: DashboardUiState
+-
++    state: DashboardUiState,
++    modifier: Modifier = Modifier,
+ ) {
+-
+     Row(
+-
+-        modifier = Modifier.fillMaxWidth(),
+-
+-        horizontalArrangement = Arrangement.SpaceBetween
+-
++        modifier = modifier.fillMaxWidth(),
++        horizontalArrangement = Arrangement.SpaceBetween,
+     ) {
++        StatMetric("Expense", state.expense, LedgerTheme.colors.expense)
++        StatMetric("Income", state.income, LedgerTheme.colors.income)
++        StatMetric("Savings", state.savings, LedgerTheme.colors.label)
++    }
++}
+ 
+-        LedgerStatCard(
+-
+-            modifier = Modifier.weight(1f),
+-
+-            label = "Expense",
+-
+-            value = state.expense
+-
+-        )
+-
+-        LedgerStatCard(
+-
+-            modifier = Modifier.weight(1f),
+-
+-            label = "Income",
+-
+-            value = state.income
+-
++@Composable
++private fun StatMetric(label: String, value: String, color: Color) {
++    Column {
++        Text(
++            text = label,
++            style = LedgerTextStyles.Caption,
++            color = LedgerTheme.colors.tertiaryLabel,
+         )
+-
+-        LedgerStatCard(
+-
+-            modifier = Modifier.weight(1f),
+-
+-            label = "Savings",
+-
+-            value = state.savings
+-
++        Spacer(Modifier.height(LedgerSpacing.XxSmall))
++        Text(
++            text = value,
++            style = LedgerTextStyles.Section,
++            color = color,
+         )
+-
+     }
+-
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt
+index ec399c4..0b8cf69 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt
+@@ -2,11 +2,16 @@ package com.sherif.ledger.presentation.dashboard.components
+ 
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.unit.dp
++import com.sherif.ledger.core.designsystem.component.LedgerHairline
+ import com.sherif.ledger.core.designsystem.component.LedgerSectionTitle
++import com.sherif.ledger.core.designsystem.component.LedgerSurface
+ import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
++import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ import com.sherif.ledger.presentation.dashboard.DashboardUiState
+ 
+ @Composable
+@@ -16,22 +21,26 @@ fun RecentTransactionsSection(
+ ) {
+     Column(
+         modifier = modifier,
+-        verticalArrangement = Arrangement.spacedBy(12.dp),
++        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
+     ) {
++        LedgerSectionTitle(text = "Recent Activity")
+ 
+-        LedgerSectionTitle(
+-            text = "Recent Activity",
+-        )
+-
+-        state.recentTransactions.forEach {
+-
+-            LedgerTransactionRow(
+-                title = it.merchant,
+-                subtitle = it.category,
+-                amount = it.amount,
+-            )
+-
++        LedgerSurface(
++            level = LedgerSurfaceLevel.Level1,
++            contentPadding = PaddingValues(horizontal = LedgerSpacing.Medium),
++        ) {
++            state.recentTransactions.forEachIndexed { index, txn ->
++                val sign = if (txn.isExpense) "-" else "+"
++                LedgerTransactionRow(
++                    title = txn.merchant,
++                    subtitle = txn.category,
++                    amount = "$sign${txn.amount}",
++                    amountColor = if (txn.isExpense) LedgerTheme.colors.expense else LedgerTheme.colors.income,
++                )
++                if (index != state.recentTransactions.lastIndex) {
++                    LedgerHairline()
++                }
++            }
+         }
+-
+     }
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/preview/DashboardPreviewData.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/preview/DashboardPreviewData.kt
+index 75fefaf..f3d0868 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/preview/DashboardPreviewData.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/preview/DashboardPreviewData.kt
+@@ -1,63 +1,28 @@
+ package com.sherif.ledger.presentation.dashboard.preview
+ 
+-import com.sherif.ledger.presentation.dashboard.*
++import com.sherif.ledger.presentation.dashboard.DashboardUiState
++import com.sherif.ledger.presentation.dashboard.InsightUiModel
++import com.sherif.ledger.presentation.dashboard.TransactionUiModel
+ 
+ object DashboardPreviewData {
+ 
+     val state = DashboardUiState(
+-
+         greeting = "Good Evening",
+-
+         userName = "Sherif",
+-
+         currentMonth = "June Spending",
+-
+         totalSpent = "AED 2,840.25",
+-
+         budgetProgress = 0.62f,
+-
+         expense = "AED 1,950",
+-
+         income = "AED 5,200",
+-
+         savings = "AED 3,250",
+-
+         recentTransactions = listOf(
+-
+-            TransactionUiModel(
+-                "Amazon",
+-                "Shopping",
+-                "AED 52"
+-            ),
+-
+-            TransactionUiModel(
+-                "Carrefour",
+-                "Groceries",
+-                "AED 126"
+-            ),
+-
+-            TransactionUiModel(
+-                "Costa Coffee",
+-                "Coffee",
+-                "AED 19"
+-            )
+-
++            TransactionUiModel("Amazon", "Shopping", "AED 52", isExpense = true),
++            TransactionUiModel("Carrefour", "Groceries", "AED 126", isExpense = true),
++            TransactionUiModel("Costa Coffee", "Coffee", "AED 19", isExpense = true),
+         ),
+-
+         insights = listOf(
+-
+-            InsightUiModel(
+-                "Food spending",
+-                "12% lower than last week"
+-            ),
+-
+-            InsightUiModel(
+-                "Subscriptions",
+-                "Netflix renews tomorrow"
+-            )
+-
+-        )
+-
++            InsightUiModel("Food spending", "12% lower than last week"),
++            InsightUiModel("Subscriptions", "Netflix renews tomorrow"),
++        ),
+     )
+-
+ }
+-- 
+2.43.0
+

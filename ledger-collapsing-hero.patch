@@ -1,0 +1,446 @@
+From ba4949f79cc04afc794c2368d28689c66b181532 Mon Sep 17 00:00:00 2001
+From: Claude <assistant@local>
+Date: Sat, 27 Jun 2026 12:56:40 +0000
+Subject: [PATCH] feat(hero): implement LedgerCollapsingHero with scroll-driven
+ transformation
+
+What changed:
+- New LedgerCollapsingHero: a reusable slot-based collapsing hero surface
+  in the design system. Interpolates height, corner radius, and background
+  between expanded and compact states. Two composable slots receive
+  collapseProgress so callers choreograph their own transitions. Carries
+  no business logic or dashboard awareness.
+- New LedgerHeroDefaults: single token object holding all hero dimensions
+  (ExpandedHeight, CollapsedHeight, CornerRadius, Background). No magic
+  numbers inside the composable.
+- DashboardScreen rebuilt on Box + LazyColumn + hero overlay pattern.
+  Collapse progress derived from LazyListState via derivedStateOf.
+  Dashboard-specific content (greeting, balance, progress bar) provided
+  through expandedContent/compactContent slots with staggered graphicsLayer
+  transitions.
+- Dashboard hero thresholds extracted into private HeroTransitions object.
+- Snap behavior extracted into private HeroSnap object with an Enabled
+  flag. Experimental: disable or remove if it feels artificial.
+- KDoc on every new primitive explaining design intent.
+
+Why:
+- The static hero card was the root cause of the "collection of cards"
+  feel. A scroll-driven collapsing hero is Ledger's signature interaction.
+  Making the container reusable means any future screen (accounts, analytics)
+  can host its own hero without reimplementing the scroll coordination.
+
+What did not change:
+- QuickStatsSection, RecentTransactionsSection, InsightSection untouched.
+- LedgerHeroCard.kt retained (not deprecated in this commit).
+- GreetingHeader and MonthlySummaryCard retained, no longer imported by
+  DashboardScreen.
+- No navigation, no Room, no ViewModels, no parsers. Package moves: zero.
+
+How verified:
+- No stale imports in DashboardScreen (grep verified: 0 hits).
+- Signature matches NavHost call site.
+- No design documents included in this patch.
+- Patch self-applies on Commit B.
+- Compilation is the build's word.
+
+Note:
+- graphicsLayer import: uses androidx.compose.ui.graphics.graphicsLayer.
+  If build reports unresolved reference, replace with
+  androidx.compose.ui.draw.graphicsLayer or let Android Studio resolve.
+- All visual proportions are hypotheses. Adjust after device testing.
+---
+ .../component/hero/LedgerCollapsingHero.kt    | 100 +++++++
+ .../presentation/dashboard/DashboardScreen.kt | 244 ++++++++++++++++--
+ 2 files changed, 323 insertions(+), 21 deletions(-)
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+new file mode 100644
+index 0000000..c9fd8a4
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+@@ -0,0 +1,100 @@
++package com.sherif.ledger.core.designsystem.component.hero
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Brush
++import androidx.compose.ui.unit.Dp
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.lerp
++import com.sherif.ledger.core.designsystem.tokens.LedgerGradients
++
++/**
++ * Dimension and transition defaults for [LedgerCollapsingHero].
++ *
++ * Every magic number that controls the hero's structure lives here so the
++ * component body stays free of inline constants. Values are hypotheses:
++ * adjust after running on a real device, not from a specification.
++ */
++object LedgerHeroDefaults {
++
++    /** Hero height when fully expanded (scroll offset zero). */
++    val ExpandedHeight: Dp = 280.dp
++
++    /** Hero height when fully collapsed (pinned compact header). */
++    val CollapsedHeight: Dp = 56.dp
++
++    /** Bottom corner radius at full expansion. Reaches 0 dp when compact. */
++    val CornerRadius: Dp = 32.dp
++
++    /** Default gradient background. */
++    val Background: Brush = LedgerGradients.Emerald
++}
++
++/**
++ * A reusable scroll-driven collapsing hero surface.
++ *
++ * The container interpolates its height, corner radius, and background
++ * between an expanded and a compact state as [collapseProgress] moves
++ * from 0 (expanded) to 1 (compact). It makes no decisions about the
++ * content inside: two composable slots receive the current progress so
++ * each caller can choreograph its own entry, exit, and internal
++ * transitions independently.
++ *
++ * Both slots are always composed and overlaid. The expanded slot fills
++ * the hero. The compact slot is pinned to the top at [collapsedHeight].
++ * Callers control visibility (typically via `graphicsLayer { alpha }`)
++ * so the container stays agnostic to crossfade timing.
++ *
++ * This is LDL infrastructure. It carries no business logic, no
++ * dashboard state, and no navigation awareness. Screens provide meaning
++ * through the slots.
++ *
++ * @param collapseProgress 0f = fully expanded, 1f = fully compact.
++ * @param expandedContent Slot for the full hero layout. Receives progress.
++ * @param compactContent  Slot for the pinned compact header. Receives progress.
++ */
++@Composable
++fun LedgerCollapsingHero(
++    collapseProgress: Float,
++    modifier: Modifier = Modifier,
++    expandedHeight: Dp = LedgerHeroDefaults.ExpandedHeight,
++    collapsedHeight: Dp = LedgerHeroDefaults.CollapsedHeight,
++    cornerRadius: Dp = LedgerHeroDefaults.CornerRadius,
++    background: Brush = LedgerHeroDefaults.Background,
++    expandedContent: @Composable (collapseProgress: Float) -> Unit,
++    compactContent: @Composable (collapseProgress: Float) -> Unit,
++) {
++    val currentHeight = lerp(expandedHeight, collapsedHeight, collapseProgress)
++    val currentRadius = lerp(cornerRadius, 0.dp, collapseProgress)
++
++    Box(
++        modifier = modifier
++            .fillMaxWidth()
++            .height(currentHeight)
++            .clip(
++                RoundedCornerShape(
++                    bottomStart = currentRadius,
++                    bottomEnd = currentRadius,
++                ),
++            )
++            .background(background),
++    ) {
++        Box(Modifier.fillMaxSize()) {
++            expandedContent(collapseProgress)
++        }
++        Box(
++            Modifier
++                .fillMaxWidth()
++                .height(collapsedHeight),
++        ) {
++            compactContent(collapseProgress)
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+index 46fa3ab..68ada5a 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+@@ -1,53 +1,255 @@
+ package com.sherif.ledger.presentation.dashboard
+ 
++import androidx.compose.animation.core.Spring
++import androidx.compose.animation.core.spring
++import androidx.compose.foundation.gestures.animateScrollBy
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.rememberScrollState
+-import androidx.compose.foundation.verticalScroll
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.rememberLazyListState
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.LinearProgressIndicator
++import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.derivedStateOf
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.graphicsLayer
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.unit.dp
++import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
++import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+-import com.sherif.ledger.presentation.dashboard.components.GreetingHeader
+ import com.sherif.ledger.presentation.dashboard.components.InsightSection
+-import com.sherif.ledger.presentation.dashboard.components.MonthlySummaryCard
+ import com.sherif.ledger.presentation.dashboard.components.QuickStatsSection
+ import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSection
+ import com.sherif.ledger.presentation.dashboard.preview.DashboardPreviewData
+ 
++/**
++ * Dashboard-specific hero transition thresholds and snap configuration.
++ *
++ * These control how individual content elements within the hero fade and
++ * translate during collapse. They are intentionally separate from
++ * [LedgerHeroDefaults] because they describe dashboard content
++ * choreography, not the reusable container's structure.
++ *
++ * All values are hypotheses. Tune after device testing.
++ */
++private object HeroTransitions {
++    /** Progress at which the greeting fully exits (fades + translates up). */
++    const val GreetingExit = 0.3f
++    /** Upward translation in pixels applied to the greeting at full collapse. */
++    const val GreetingTranslationPx = 80f
++    /** Progress at which the month label fully exits. */
++    const val MonthExit = 0.5f
++    /** Progress at which the expanded content as a whole fully exits. */
++    const val ExpandedExit = 0.7f
++    /** Progress at which the budget progress bar fully exits. */
++    const val ProgressExit = 0.25f
++    /** Progress at which the compact header begins entering. */
++    const val CompactEnter = 0.6f
++}
++
++/**
++ * Snap behavior configuration. Experimental: if snapping feels artificial
++ * compared to free-scrolling iOS interactions, set [Enabled] to false or
++ * remove the snap block entirely.
++ */
++private object HeroSnap {
++    const val Enabled = true
++    const val ZoneStart = 0.3f
++    const val ZoneEnd = 0.7f
++    const val DampingRatio = 0.82f
++    val Stiffness = Spring.StiffnessMediumLow
++}
++
+ @Composable
+ fun DashboardScreen(
+     state: DashboardUiState = DashboardPreviewData.state,
+ ) {
+-    Column(
++    val expandedHeight = LedgerHeroDefaults.ExpandedHeight
++    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
++    val maxOffsetPx = with(LocalDensity.current) {
++        (expandedHeight - collapsedHeight).toPx()
++    }
++
++    val listState = rememberLazyListState()
++
++    val collapseProgress by remember {
++        derivedStateOf {
++            if (listState.firstVisibleItemIndex > 0) {
++                1f
++            } else {
++                (listState.firstVisibleItemScrollOffset / maxOffsetPx).coerceIn(0f, 1f)
++            }
++        }
++    }
++
++    if (HeroSnap.Enabled) {
++        LaunchedEffect(listState.isScrollInProgress) {
++            if (!listState.isScrollInProgress && listState.firstVisibleItemIndex == 0) {
++                val p = collapseProgress
++                if (p in HeroSnap.ZoneStart..HeroSnap.ZoneEnd) {
++                    val targetPx = if (p > 0.5f) maxOffsetPx else 0f
++                    val currentPx = listState.firstVisibleItemScrollOffset.toFloat()
++                    listState.animateScrollBy(
++                        value = targetPx - currentPx,
++                        animationSpec = spring(
++                            dampingRatio = HeroSnap.DampingRatio,
++                            stiffness = HeroSnap.Stiffness,
++                        ),
++                    )
++                }
++            }
++        }
++    }
++
++    Box(
+         modifier = Modifier
+             .fillMaxSize()
+-            .background(LedgerTheme.colors.surfaceLevel0)
+-            .verticalScroll(rememberScrollState())
+-            .padding(horizontal = LedgerSpacing.Large, vertical = LedgerSpacing.XLarge),
+-        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge),
++            .background(LedgerTheme.colors.surfaceLevel0),
+     ) {
++        LazyColumn(
++            state = listState,
++            contentPadding = PaddingValues(
++                start = LedgerSpacing.Large,
++                end = LedgerSpacing.Large,
++                bottom = LedgerSpacing.XLarge,
++            ),
++            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge),
++            modifier = Modifier.fillMaxSize(),
++        ) {
++            item(key = "hero_spacer") {
++                Spacer(Modifier.height(expandedHeight))
++            }
++            item(key = "stats") {
++                QuickStatsSection(state)
++            }
++            item(key = "transactions") {
++                RecentTransactionsSection(state)
++            }
++            item(key = "insights") {
++                InsightSection(state)
++            }
++        }
++
++        LedgerCollapsingHero(
++            collapseProgress = collapseProgress,
++            expandedContent = { progress -> ExpandedHeroContent(progress, state) },
++            compactContent = { progress -> CompactHeroContent(progress, state) },
++        )
++    }
++}
+ 
+-        // Person and their balance read as one block.
+-        Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
+-            GreetingHeader(
+-                greeting = state.greeting,
+-                userName = state.userName,
++// ---- Dashboard-specific hero content (not reusable) ----
++
++@Composable
++private fun ExpandedHeroContent(progress: Float, state: DashboardUiState) {
++    Column(
++        modifier = Modifier
++            .fillMaxSize()
++            .padding(horizontal = 24.dp, vertical = 20.dp)
++            .graphicsLayer {
++                alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
++            },
++        verticalArrangement = Arrangement.SpaceBetween,
++    ) {
++        Column(
++            modifier = Modifier.graphicsLayer {
++                alpha = (1f - progress / HeroTransitions.GreetingExit).coerceIn(0f, 1f)
++                translationY = -(progress * HeroTransitions.GreetingTranslationPx)
++            },
++        ) {
++            Text(
++                text = "${state.greeting},",
++                style = LedgerTextStyles.Body,
++                color = Color.White.copy(alpha = 0.72f),
+             )
+-            MonthlySummaryCard(
+-                month = state.currentMonth,
+-                totalSpent = state.totalSpent,
+-                progress = state.budgetProgress,
++            Text(
++                text = state.userName,
++                style = LedgerTextStyles.Headline,
++                color = Color.White,
+             )
+         }
+ 
+-        QuickStatsSection(state)
++        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
++            Text(
++                text = state.currentMonth,
++                style = LedgerTextStyles.Label,
++                color = Color.White.copy(alpha = 0.80f),
++                modifier = Modifier.graphicsLayer {
++                    alpha = (1f - progress / HeroTransitions.MonthExit).coerceIn(0f, 1f)
++                },
++            )
++            Text(
++                text = state.totalSpent,
++                style = LedgerTextStyles.Amount,
++                color = Color.White,
++            )
++        }
+ 
+-        RecentTransactionsSection(state)
++        Column(
++            verticalArrangement = Arrangement.spacedBy(8.dp),
++            modifier = Modifier.graphicsLayer {
++                alpha = (1f - progress / HeroTransitions.ProgressExit).coerceIn(0f, 1f)
++            },
++        ) {
++            LinearProgressIndicator(
++                progress = { state.budgetProgress },
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .height(8.dp)
++                    .clip(RoundedCornerShape(100.dp)),
++                color = Color.White,
++                trackColor = Color.White.copy(alpha = 0.20f),
++            )
++            Text(
++                text = "${(state.budgetProgress * 100).toInt()}% of monthly budget",
++                style = LedgerTextStyles.Caption,
++                color = Color.White.copy(alpha = 0.72f),
++            )
++        }
++    }
++}
+ 
+-        InsightSection(state)
++@Composable
++private fun CompactHeroContent(progress: Float, state: DashboardUiState) {
++    Row(
++        modifier = Modifier
++            .fillMaxWidth()
++            .padding(horizontal = 20.dp)
++            .graphicsLayer {
++                alpha = ((progress - HeroTransitions.CompactEnter) /
++                    (1f - HeroTransitions.CompactEnter)).coerceIn(0f, 1f)
++            },
++        verticalAlignment = Alignment.CenterVertically,
++    ) {
++        Text(
++            text = state.totalSpent,
++            style = LedgerTextStyles.Section,
++            color = Color.White,
++            modifier = Modifier.weight(1f),
++        )
++        Text(
++            text = "${state.currentMonth} \u00B7 ${(state.budgetProgress * 100).toInt()}%",
++            style = LedgerTextStyles.Label,
++            color = Color.White.copy(alpha = 0.72f),
++        )
+     }
+ }
+-- 
+2.43.0
+
