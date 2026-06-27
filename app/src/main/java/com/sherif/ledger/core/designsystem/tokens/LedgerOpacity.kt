@@ -1,16 +1,22 @@
 package com.sherif.ledger.core.designsystem.tokens
 
 /**
- * Opacity tokens for LDL states and subtle fills.
+ * LDL opacity tokens.
  *
- * Named opacities keep disabled and tinted-fill treatments consistent instead of
- * scattering magic alpha values. Anything that is not a named state should use a
- * solid semantic color, not a faded one.
+ * Named opacities replace scattered magic alpha values. Each token describes
+ * an intent so composables read as meaning rather than measurement.
  */
 object LedgerOpacity {
-    /** Content that is present but not interactive. */
+    /** Non-interactive content that must remain visible. */
     const val Disabled = 0.38f
-
-    /** Subtle tinted fills, such as a category swatch behind an avatar glyph. */
+    /** Tinted fills behind avatars and swatches. */
     const val Fill = 0.12f
+    /** Barely visible backgrounds (ghost buttons, subtle containers). */
+    const val Subtle = 0.06f
+    /** Quiet supporting text and icons (hero labels, metadata). */
+    const val Muted = 0.22f
+    /** Secondary content visible but not prominent. */
+    const val Secondary = 0.45f
+    /** Scrim or overlay behind modals. */
+    const val Overlay = 0.60f
 }

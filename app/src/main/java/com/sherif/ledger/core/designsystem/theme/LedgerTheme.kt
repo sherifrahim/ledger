@@ -10,20 +10,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import com.sherif.ledger.core.designsystem.tokens.LedgerBorder
+import com.sherif.ledger.core.designsystem.tokens.LedgerIconSize
 import com.sherif.ledger.core.designsystem.tokens.LedgerOpacity
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 /**
  * Applies the Ledger Design Language.
  *
- * Material3 stays underneath purely as a toolkit: it still receives a
- * [androidx.compose.material3.ColorScheme] so stray Material widgets do not
- * render broken. LDL components, however, read meaning from [LedgerTheme], not
- * from Material color roles. That separation is what lets Ledger shed Material's
- * visual identity without rebuilding the component toolkit.
- *
- * Dynamic color remains available only as an explicit opt in and is off by
- * default, so Ledger keeps its own palette rather than adopting the device's.
+ * Material3 remains underneath as a toolkit. LDL components read
+ * [LedgerTheme] for semantic decisions, not Material color roles.
  */
 @Composable
 fun LedgerTheme(
@@ -36,11 +31,9 @@ fun LedgerTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> LedgerDarkColorScheme
         else -> LedgerLightColorScheme
     }
-
     val ledgerColors = if (darkTheme) LedgerDarkColors else LedgerLightColors
 
     CompositionLocalProvider(LocalLedgerColors provides ledgerColors) {
@@ -54,21 +47,18 @@ fun LedgerTheme(
 }
 
 /**
- * The single semantic entry point for LDL.
+ * Single semantic entry point for LDL.
  *
- * Components reach design decisions through this object rather than importing
- * tokens piecemeal or reading Material roles, so the vocabulary stays one
- * consistent surface. Only [colors] varies with light and dark, so only it flows
- * through a CompositionLocal. The rest are stable tokens exposed directly, which
- * keeps the theme honest and avoids CompositionLocals that never change.
+ * Only [colors] varies with light/dark (CompositionLocal). Everything
+ * else is stable tokens exposed directly.
  */
 object LedgerTheme {
     val colors: LedgerColors
         @Composable @ReadOnlyComposable get() = LocalLedgerColors.current
-
     val radius get() = LedgerRadius
     val border get() = LedgerBorder
     val opacity get() = LedgerOpacity
     val motion get() = LedgerMotion
     val elevation get() = LedgerElevation
+    val iconSize get() = LedgerIconSize
 }

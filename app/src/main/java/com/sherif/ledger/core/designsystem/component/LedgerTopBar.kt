@@ -3,19 +3,13 @@ package com.sherif.ledger.core.designsystem.component
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
-/**
- * Standard LDS top app bar for primary app destinations.
- *
- * Supply navigation and action icons through slots so screens can remain
- * responsible for behavior while LDS owns visual styling.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LedgerTopBar(
@@ -24,21 +18,15 @@ fun LedgerTopBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    val colors = LedgerTheme.colors
     CenterAlignedTopAppBar(
-        title = {
-            Text(
-                text = title,
-                style = LedgerTextStyles.Section,
-            )
-        },
-        modifier = modifier,
-        navigationIcon = navigationIcon,
-        actions = actions,
+        title = { Text(title, style = LedgerTextStyles.Section) },
+        modifier = modifier, navigationIcon = navigationIcon, actions = actions,
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            titleContentColor = MaterialTheme.colorScheme.onBackground,
-            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
-            actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+            containerColor = colors.surfaceLevel0,
+            titleContentColor = colors.label,
+            navigationIconContentColor = colors.label,
+            actionIconContentColor = colors.label,
         ),
     )
 }
