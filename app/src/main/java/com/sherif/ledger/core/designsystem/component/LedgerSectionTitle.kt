@@ -1,16 +1,16 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 /**
- * Standard LDS section heading.
+ * Standard LDL section heading.
  *
- * Use this to label logical screen groups such as "Recent transactions",
- * "Budgets", or "Analytics".
+ * Sits above an inset grouped surface to label it, in the Apple grouped-list
+ * grammar where the header is outside the rounded group rather than inside it.
  */
 @Composable
 fun LedgerSectionTitle(
@@ -21,6 +21,6 @@ fun LedgerSectionTitle(
         text = text,
         modifier = modifier,
         style = LedgerTextStyles.Section,
-        color = MaterialTheme.colorScheme.onBackground,
+        color = LedgerTheme.colors.label,
     )
 }
