@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+B=app/src/main/java/com/sherif/ledger
+echo "Applying LDL v1.5: cinematic identity pass..."
+
+cat > "$B/presentation/dashboard/DashboardScreen.kt" << 'EOF'
 package com.sherif.ledger.presentation.dashboard
 
 import androidx.compose.animation.core.spring
@@ -368,3 +374,8 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
         )
     }
 }
+EOF
+
+echo "Done. 1 file written."
+echo "Run: git add -A && git commit -m 'feat(home): v1.5 cinematic directional lighting with surface continuity'"
+echo "Then: ./gradlew assembleDebug"
