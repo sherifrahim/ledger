@@ -19,12 +19,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 /**
- * Standard LDS row for displaying transaction-like summaries.
+ * Standard LDL row for transaction-like summaries.
  *
- * This is a presentational component only. It accepts display strings and does
- * not depend on transaction entities, repositories, parsers, or ViewModels.
+ * Presentational only. Accepts display strings and does not depend on entities,
+ * repositories, parsers, or ViewModels. Money direction is communicated through
+ * [amountColor] from LDL financial semantics, never through decoration.
  */
 @Composable
 fun LedgerTransactionRow(
@@ -34,7 +36,8 @@ fun LedgerTransactionRow(
     subtitle: String? = null,
     metadata: String? = null,
     tag: String? = null,
-    accentColor: Color = MaterialTheme.colorScheme.primary,
+    accentColor: Color = LedgerTheme.colors.tint,
+    amountColor: Color = LedgerTheme.colors.label,
 ) {
     Row(
         modifier = modifier
@@ -46,7 +49,7 @@ fun LedgerTransactionRow(
             modifier = Modifier
                 .size(LedgerSpacing.XxLarge)
                 .clip(MaterialTheme.shapes.small)
-                .background(accentColor.copy(alpha = 0.14f)),
+                .background(accentColor.copy(alpha = LedgerTheme.opacity.Fill)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -63,14 +66,14 @@ fun LedgerTransactionRow(
             Text(
                 text = title,
                 style = LedgerTextStyles.Label,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = LedgerTheme.colors.label,
             )
             val supportingText = listOfNotNull(subtitle, metadata).joinToString(" - ")
             if (supportingText.isNotEmpty()) {
                 Text(
                     text = supportingText,
                     style = LedgerTextStyles.Caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = LedgerTheme.colors.secondaryLabel,
                 )
             }
             if (tag != null) {
@@ -78,6 +81,6 @@ fun LedgerTransactionRow(
             }
         }
         Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
-        LedgerAmount(amount = amount)
+        LedgerAmount(amount = amount, color = amountColor)
     }
 }

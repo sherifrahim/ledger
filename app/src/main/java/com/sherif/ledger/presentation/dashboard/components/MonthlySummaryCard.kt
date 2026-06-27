@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroCard
 
 /**
- * Dashboard-specific adapter around the reusable LedgerHeroCard.
+ * Dashboard adapter around the reusable LedgerHeroCard.
  */
 @Composable
 fun MonthlySummaryCard(
@@ -14,13 +14,11 @@ fun MonthlySummaryCard(
     progress: Float,
     modifier: Modifier = Modifier,
 ) {
-
     LedgerHeroCard(
         modifier = modifier,
         title = month,
         value = totalSpent,
-        subtitle = "Monthly spending",
+        subtitle = "",
         progress = progress,
     )
-
 }
