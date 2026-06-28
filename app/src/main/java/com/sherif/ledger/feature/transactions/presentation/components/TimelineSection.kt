@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.transactions.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,7 +20,7 @@ import com.sherif.ledger.feature.transactions.presentation.TransactionGroupUi
  * Composes [TimelineDateHeader], [DaySummary], and a grouped
  * [LedgerSurface] of [TransactionRow] entries separated by
  * [LedgerHairline]. This is the repeating unit that
- * TransactionsScreen will render per date group.
+ * TransactionsScreen renders per date group.
  */
 @Composable
 fun TimelineSection(
@@ -28,7 +29,7 @@ fun TimelineSection(
     onTransactionClick: ((String) -> Unit)? = null,
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
     ) {
         TimelineDateHeader(title = group.title)

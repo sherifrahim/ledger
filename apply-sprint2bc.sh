@@ -1,3 +1,10 @@
+#!/bin/bash
+set -e
+B=app/src/main/java/com/sherif/ledger
+echo "Applying Sprint 2B refinements + Sprint 2C..."
+
+# ---- TransactionRow.kt (refined) ----
+cat > "$B/feature/transactions/presentation/components/TransactionRow.kt" << 'EOF'
 package com.sherif.ledger.feature.transactions.presentation.components
 
 import androidx.compose.foundation.clickable
@@ -150,3 +157,172 @@ private fun MerchantCategory.displayName(): String = when (this) {
     MerchantCategory.Travel -> "Travel"
     MerchantCategory.Education -> "Education"
 }
+EOF
+
+# ---- TimelineSection.kt (fillMaxWidth) ----
+cat > "$B/feature/transactions/presentation/components/TimelineSection.kt" << 'EOF'
+package com.sherif.ledger.feature.transactions.presentation.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.sherif.ledger.core.designsystem.component.LedgerHairline
+import com.sherif.ledger.core.designsystem.component.LedgerSurface
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+import com.sherif.ledger.feature.transactions.presentation.TransactionGroupUi
+
+/**
+ * One complete day in the financial timeline.
+ *
+ * Composes [TimelineDateHeader], [DaySummary], and a grouped
+ * [LedgerSurface] of [TransactionRow] entries separated by
+ * [LedgerHairline]. This is the repeating unit that
+ * TransactionsScreen renders per date group.
+ */
+@Composable
+fun TimelineSection(
+    group: TransactionGroupUi,
+    modifier: Modifier = Modifier,
+    onTransactionClick: ((String) -> Unit)? = null,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
+    ) {
+        TimelineDateHeader(title = group.title)
+        DaySummary(summary = group.summary)
+
+        LedgerSurface(
+            level = LedgerSurfaceLevel.Level1,
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            group.transactions.forEachIndexed { index, txn ->
+                TransactionRow(
+                    transaction = txn,
+                    onClick = onTransactionClick?.let { { it(txn.id) } },
+                )
+                if (index != group.transactions.lastIndex) {
+                    LedgerHairline(modifier = Modifier.padding(start = 68.dp))
+                }
+            }
+        }
+    }
+}
+EOF
+
+# ---- TransactionsScreen.kt (Sprint 2C) ----
+cat > "$B/feature/transactions/presentation/TransactionsScreen.kt" << 'EOF'
+package com.sherif.ledger.feature.transactions.presentation
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.sherif.ledger.core.designsystem.component.LedgerSearchBar
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.feature.transactions.presentation.components.TimelineSection
+import com.sherif.ledger.feature.transactions.presentation.preview.TransactionsPreviewData
+
+@Composable
+fun TransactionsScreen(
+    state: TransactionsUiState = TransactionsPreviewData.state,
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(LedgerTheme.colors.surfaceLevel0),
+        contentPadding = PaddingValues(
+            top = LedgerSpacing.XLarge,
+            bottom = LedgerSpacing.ScreenBottom,
+        ),
+    ) {
+        item(key = "title") {
+            Text(
+                "Transactions",
+                style = LedgerTextStyles.Headline,
+                color = LedgerTheme.colors.label,
+                modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
+            )
+            Spacer(Modifier.height(LedgerSpacing.XxLarge))
+        }
+
+        item(key = "search") {
+            LedgerSearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                placeholder = "Search transactions",
+                modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
+            )
+            Spacer(Modifier.height(LedgerSpacing.Section))
+        }
+
+        items(state.groups, key = { it.id }) { group ->
+            TimelineSection(group = group)
+            Spacer(Modifier.height(LedgerSpacing.Section))
+        }
+    }
+}
+EOF
+
+# ---- MainActivity.kt (DevScreen + Transactions) ----
+cat > "$B/MainActivity.kt" << 'EOF'
+package com.sherif.ledger
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
+import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
+import com.sherif.ledger.presentation.navigation.LedgerNavHost
+import dagger.hilt.android.AndroidEntryPoint
+
+enum class DevScreen { Dashboard, Accounts, Transactions }
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            LedgerTheme {
+                when (DEV_ACTIVE_SCREEN) {
+                    DevScreen.Dashboard -> LedgerNavHost()
+                    DevScreen.Accounts -> AccountsScreen()
+                    DevScreen.Transactions -> TransactionsScreen()
+                }
+            }
+        }
+    }
+
+    companion object {
+        val DEV_ACTIVE_SCREEN = DevScreen.Dashboard
+    }
+}
+EOF
+
+echo "Done. 4 files written."
+echo "Run: git add -A && git commit -m 'feat(transactions): sprint 2B refinements + 2C transactions screen'"
+echo "Then: ./gradlew assembleDebug"
