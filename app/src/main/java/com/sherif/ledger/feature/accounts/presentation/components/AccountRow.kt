@@ -34,19 +34,6 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.accounts.presentation.AccountUi
 
-/**
- * Stateless expandable account row.
- *
- * Expansion state is owned by the caller. This lets the screen hold
- * state today and a ViewModel hold it tomorrow without changing this
- * component. The pattern becomes canonical for every expandable row
- * in Ledger.
- *
- * @param account     Display model for the account.
- * @param expanded    Whether the detail section is visible.
- * @param onExpandToggle Called when the user taps the row.
- * @param logoPainter Optional image painter for merchant/bank logos.
- */
 @Composable
 fun AccountRow(
     account: AccountUi,
@@ -91,69 +78,38 @@ fun AccountRow(
 
         AnimatedVisibility(
             visible = expanded,
-            enter = expandVertically(
-                animationSpec = spring(
-                    dampingRatio = LedgerMotion.CardSpringDamping,
-                    stiffness = LedgerMotion.CardSpringStiffness,
-                ),
-            ),
-            exit = shrinkVertically(
-                animationSpec = spring(
-                    dampingRatio = LedgerMotion.CardSpringDamping,
-                    stiffness = LedgerMotion.CardSpringStiffness,
-                ),
-            ),
+            enter = expandVertically(animationSpec = spring(dampingRatio = LedgerMotion.CardSpringDamping, stiffness = LedgerMotion.CardSpringStiffness)),
+            exit = shrinkVertically(animationSpec = spring(dampingRatio = LedgerMotion.CardSpringDamping, stiffness = LedgerMotion.CardSpringStiffness)),
         ) {
-            ExpandedDetail(account)
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(start = 70.dp, end = LedgerSpacing.Group, bottom = LedgerSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Content),
+            ) {
+                if (account.accountNumber.isNotEmpty()) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Account", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
+                        Text(account.accountNumber, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.secondaryLabel)
+                    }
+                }
+                if (account.lastActivity.isNotEmpty()) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Last activity", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
+                        Text(account.lastActivity, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.secondaryLabel)
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun ExpandedDetail(account: AccountUi) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 70.dp, end = LedgerSpacing.Group, bottom = LedgerSpacing.Small),
-        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Content),
-    ) {
-        if (account.accountNumber.isNotEmpty()) {
-            DetailLine("Account", account.accountNumber)
-        }
-        if (account.lastActivity.isNotEmpty()) {
-            DetailLine("Last activity", account.lastActivity)
-        }
-    }
-}
-
-@Composable
-private fun DetailLine(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
-        Text(value, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.secondaryLabel)
-    }
-}
-
-@Composable
-private fun AccountAvatar(
-    name: String,
-    accent: Color,
-    modifier: Modifier = Modifier,
-    painter: Painter? = null,
-) {
+private fun AccountAvatar(name: String, accent: Color, modifier: Modifier = Modifier, painter: Painter? = null) {
     Box(
-        modifier = modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(accent.copy(alpha = LedgerTheme.opacity.Fill)),
+        modifier = modifier.size(40.dp).clip(CircleShape).background(accent.copy(alpha = LedgerTheme.opacity.Fill)),
         contentAlignment = Alignment.Center,
     ) {
         if (painter != null) {
-            androidx.compose.foundation.Image(
-                painter = painter,
-                contentDescription = name,
-                modifier = Modifier.size(40.dp).clip(CircleShape),
-            )
+            androidx.compose.foundation.Image(painter = painter, contentDescription = name, modifier = Modifier.size(40.dp).clip(CircleShape))
         } else {
             Text(name.take(1).uppercase(), style = LedgerTextStyles.Label, color = accent)
         }

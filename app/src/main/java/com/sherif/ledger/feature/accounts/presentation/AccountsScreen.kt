@@ -33,20 +33,11 @@ import com.sherif.ledger.feature.accounts.presentation.preview.AccountsPreviewDa
 fun AccountsScreen(
     state: AccountsUiState = AccountsPreviewData.state,
 ) {
-    // Accordion: one row expanded at a time. Null = all collapsed.
-    // Today this lives here. Tomorrow it moves to AccountsViewModel.
     var expandedAccountId by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LedgerTheme.colors.surfaceLevel0),
-        contentPadding = PaddingValues(
-            start = LedgerSpacing.Screen,
-            end = LedgerSpacing.Screen,
-            top = LedgerSpacing.XLarge,
-            bottom = LedgerSpacing.ScreenBottom,
-        ),
+        modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
+        contentPadding = PaddingValues(start = LedgerSpacing.Screen, end = LedgerSpacing.Screen, top = LedgerSpacing.XLarge, bottom = LedgerSpacing.ScreenBottom),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item(key = "header") {
@@ -55,11 +46,7 @@ fun AccountsScreen(
                 Spacer(Modifier.height(LedgerSpacing.XLarge))
                 Text("Net Worth", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
                 Spacer(Modifier.height(LedgerSpacing.Inline))
-                Text(
-                    "${state.netWorthCurrency} ${state.netWorth}",
-                    style = LedgerTextStyles.Amount,
-                    color = Color.White,
-                )
+                Text("${state.netWorthCurrency} ${state.netWorth}", style = LedgerTextStyles.Amount, color = Color.White)
                 Spacer(Modifier.height(LedgerSpacing.Group))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
@@ -83,17 +70,12 @@ fun AccountsScreen(
                         Text(section.title, style = LedgerTextStyles.Section, color = LedgerTheme.colors.secondaryLabel)
                         Text(section.total, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
                     }
-                    LedgerSurface(
-                        level = LedgerSurfaceLevel.Level1,
-                        contentPadding = PaddingValues(0.dp),
-                    ) {
+                    LedgerSurface(level = LedgerSurfaceLevel.Level1, contentPadding = PaddingValues(0.dp)) {
                         section.accounts.forEachIndexed { index, account ->
                             AccountRow(
                                 account = account,
                                 expanded = expandedAccountId == account.id,
-                                onExpandToggle = {
-                                    expandedAccountId = if (expandedAccountId == account.id) null else account.id
-                                },
+                                onExpandToggle = { expandedAccountId = if (expandedAccountId == account.id) null else account.id },
                             )
                             if (index != section.accounts.lastIndex) {
                                 LedgerHairline(modifier = Modifier.padding(start = 70.dp))
