@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
+import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
@@ -37,7 +38,10 @@ fun AccountsScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
-        contentPadding = PaddingValues(start = LedgerSpacing.Screen, end = LedgerSpacing.Screen, top = LedgerSpacing.XLarge, bottom = LedgerSpacing.ScreenBottom),
+        contentPadding = PaddingValues(
+            start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
+            top = LedgerSpacing.XLarge, bottom = LedgerSpacing.ScreenBottom,
+        ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item(key = "header") {
@@ -46,7 +50,11 @@ fun AccountsScreen(
                 Spacer(Modifier.height(LedgerSpacing.XLarge))
                 Text("Net Worth", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
                 Spacer(Modifier.height(LedgerSpacing.Inline))
-                Text("${state.netWorthCurrency} ${state.netWorth}", style = LedgerTextStyles.Amount, color = Color.White)
+                Text(
+                    "${state.netWorthCurrency} ${state.netWorth}",
+                    style = LedgerTextStyles.Amount,
+                    color = LedgerTheme.colors.label,
+                )
                 Spacer(Modifier.height(LedgerSpacing.Group))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
@@ -66,10 +74,10 @@ fun AccountsScreen(
         state.sections.forEach { section ->
             item(key = "section_${section.title}") {
                 Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Content)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(section.title, style = LedgerTextStyles.Section, color = LedgerTheme.colors.secondaryLabel)
-                        Text(section.total, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
-                    }
+                    LedgerSectionHeader(
+                        title = section.title,
+                        trailing = section.total,
+                    )
                     LedgerSurface(level = LedgerSurfaceLevel.Level1, contentPadding = PaddingValues(0.dp)) {
                         section.accounts.forEachIndexed { index, account ->
                             AccountRow(
@@ -78,7 +86,7 @@ fun AccountsScreen(
                                 onExpandToggle = { expandedAccountId = if (expandedAccountId == account.id) null else account.id },
                             )
                             if (index != section.accounts.lastIndex) {
-                                LedgerHairline(modifier = Modifier.padding(start = 70.dp))
+                                LedgerHairline(modifier = Modifier.padding(start = 68.dp))
                             }
                         }
                     }
