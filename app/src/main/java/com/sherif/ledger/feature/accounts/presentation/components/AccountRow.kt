@@ -65,11 +65,6 @@ fun AccountRow(
         label = "chevron",
     )
 
-    val expandSpring = spring<Int>(
-        dampingRatio = LedgerMotion.CardSpringDamping,
-        stiffness = LedgerMotion.CardSpringStiffness,
-    )
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -102,28 +97,49 @@ fun AccountRow(
             )
         }
 
-        AnimatedVisibility(
-            visible = expanded,
-            enter = expandVertically(expandSpring) + fadeIn(spring(dampingRatio = LedgerMotion.CardSpringDamping, stiffness = LedgerMotion.CardSpringStiffness)),
-            exit = shrinkVertically(expandSpring) + fadeOut(spring(dampingRatio = LedgerMotion.CardSpringDamping, stiffness = LedgerMotion.CardSpringStiffness)),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 68.dp, end = LedgerSpacing.Group, bottom = LedgerSpacing.Small),
-                verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Content),
-            ) {
-                if (account.accountNumber.isNotEmpty()) {
-                    DetailLine("Account", account.accountNumber)
-                }
-                if (account.lastActivity.isNotEmpty()) {
-                    DetailLine("Last activity", account.lastActivity)
-                }
-            }
+AnimatedVisibility(
+    visible = expanded,
+    enter = expandVertically(
+        animationSpec = spring(
+            dampingRatio = LedgerMotion.CardSpringDamping,
+            stiffness = LedgerMotion.CardSpringStiffness,
+        ),
+    ) + fadeIn(
+        animationSpec = spring(
+            dampingRatio = LedgerMotion.CardSpringDamping,
+            stiffness = LedgerMotion.CardSpringStiffness,
+        ),
+    ),
+    exit = shrinkVertically(
+        animationSpec = spring(
+            dampingRatio = LedgerMotion.CardSpringDamping,
+            stiffness = LedgerMotion.CardSpringStiffness,
+        ),
+    ) + fadeOut(
+        animationSpec = spring(
+            dampingRatio = LedgerMotion.CardSpringDamping,
+            stiffness = LedgerMotion.CardSpringStiffness,
+        ),
+    ),
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                start = 68.dp,
+                end = LedgerSpacing.Group,
+                bottom = LedgerSpacing.Small,
+            ),
+        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Content),
+    ) {
+        if (account.accountNumber.isNotEmpty()) {
+            DetailLine("Account", account.accountNumber)
+        }
+        if (account.lastActivity.isNotEmpty()) {
+            DetailLine("Last activity", account.lastActivity)
         }
     }
 }
-
 @Composable
 private fun DetailLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
