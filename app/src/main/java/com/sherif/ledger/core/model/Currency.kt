@@ -2,26 +2,18 @@ package com.sherif.ledger.core.model
 
 import java.util.Locale
 
-/**
- * Strongly typed ISO-like currency code used by Ledger money values.
- */
 @JvmInline
 value class CurrencyCode(val value: String) {
-    init {
-        require(value.matches(CURRENCY_CODE_PATTERN)) {
-            "Currency code must contain exactly three uppercase letters."
-        }
-    }
-
+    init { require(value.matches(CURRENCY_CODE_PATTERN)) { "Currency code must contain exactly three uppercase letters." } }
     override fun toString(): String = value
-
-    private companion object {
-        val CURRENCY_CODE_PATTERN = Regex("[A-Z]{3}")
-    }
+    private companion object { val CURRENCY_CODE_PATTERN = Regex("[A-Z]{3}") }
 }
 
 /**
- * Strongly typed currency metadata used for formatting and currency-safe money operations.
+ * Currency metadata used for formatting and currency-safe money operations.
+ *
+ * Ledger supports dual currency (AED and INR). Additional currencies can be
+ * added by extending this companion.
  */
 data class Currency(
     val code: CurrencyCode,
@@ -34,29 +26,11 @@ data class Currency(
     }
 
     companion object {
-        /** United Arab Emirates dirham. */
-        val AED = Currency(
-            code = CurrencyCode("AED"),
-            symbol = "AED",
-            fractionDigits = 2,
-        )
+        val AED = Currency(CurrencyCode("AED"), "AED", 2)
+        val INR = Currency(CurrencyCode("INR"), "\u20B9", 2)
+        val USD = Currency(CurrencyCode("USD"), "$", 2)
 
-        /** United States dollar. */
-        val USD = Currency(
-            code = CurrencyCode("USD"),
-            symbol = "$",
-            fractionDigits = 2,
-        )
-
-        /** Creates currency metadata from a normalized three-letter code. */
-        fun of(
-            code: String,
-            symbol: String = code.uppercase(Locale.US),
-            fractionDigits: Int = 2,
-        ): Currency = Currency(
-            code = CurrencyCode(code.uppercase(Locale.US)),
-            symbol = symbol,
-            fractionDigits = fractionDigits,
-        )
+        fun of(code: String, symbol: String = code.uppercase(Locale.US), fractionDigits: Int = 2): Currency =
+            Currency(CurrencyCode(code.uppercase(Locale.US)), symbol, fractionDigits)
     }
 }
