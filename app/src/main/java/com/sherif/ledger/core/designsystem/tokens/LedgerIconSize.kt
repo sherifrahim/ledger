@@ -13,5 +13,8 @@ object LedgerIconSize {
     val Small: Dp = 16.dp
     val Medium: Dp = 20.dp
     val Large: Dp = 24.dp
+    val XLarge: Dp = 32.dp
+    val Huge: Dp = 48.dp
+    val Massive: Dp = 64.dp
     val Navigation: Dp = 24.dp
 }

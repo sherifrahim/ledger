@@ -17,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.sherif.ledger.core.designsystem.component.LedgerSearchBar
+import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.transactions.presentation.components.TimelineSection
@@ -31,17 +33,24 @@ fun TransactionsScreen(
     var searchQuery by remember { mutableStateOf("") }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
-        contentPadding = PaddingValues(top = LedgerSpacing.XLarge, bottom = LedgerSpacing.ScreenBottom),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(LedgerTheme.colors.surfaceLevel0),
+        contentPadding = PaddingValues(
+            top = LedgerSpacing.XxLarge,
+            bottom = LedgerSpacing.ScreenBottom,
+        ),
     ) {
         item(key = "title") {
             Text(
-                "Transactions",
-                style = LedgerTextStyles.Headline,
+                text = "Activity",
+                style = LedgerTextStyles.Display.copy(
+                    fontSize = LedgerTextStyles.Title.fontSize * 1.5f,
+                ),
                 color = LedgerTheme.colors.label,
                 modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
             )
-            Spacer(Modifier.height(LedgerSpacing.XxLarge))
+            Spacer(Modifier.height(LedgerSpacing.Large))
         }
 
         item(key = "search") {
@@ -55,7 +64,11 @@ fun TransactionsScreen(
         }
 
         items(state.groups, key = { it.id }) { group ->
-            TimelineSection(group = group, onTransactionClick = onTransactionClick)
+            TimelineSection(
+                group = group,
+                onTransactionClick = onTransactionClick,
+                modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
+            )
             Spacer(Modifier.height(LedgerSpacing.Section))
         }
     }

@@ -124,7 +124,6 @@ fun DashboardScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
-            item(key = "stats") { QuickStatsSection(state) }
             item(key = "transactions") { RecentTransactionsSection(state, onSeeAllClick = onNavigateToTransactions) }
             item(key = "insights") { InsightSection(state) }
         }
@@ -149,12 +148,13 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
     ) {
+        // Identity Frame
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column {
                 Text(
                     text = state.greeting,
                     style = LedgerTextStyles.Caption,
@@ -162,43 +162,33 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 )
                 Text(
                     text = state.userName,
-                    style = LedgerTextStyles.Title,
-                    color = Color.White.copy(alpha = 0.60f),
+                    style = LedgerTextStyles.Label,
+                    color = Color.White.copy(alpha = 0.50f),
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Filled.Notifications,
-                    contentDescription = "Notifications",
-                    tint = Color.White.copy(alpha = 0.22f),
-                    modifier = Modifier
-                        .size(LedgerTheme.iconSize.Small)
-                        .ledgerClickable { /* TODO */ },
+            Box(
+                modifier = Modifier
+                    .size(LedgerTheme.iconSize.Large)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .ledgerClickable { /* TODO */ },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    state.userName.take(1),
+                    style = LedgerTextStyles.Caption,
+                    color = Color.White.copy(alpha = 0.25f),
                 )
-                Spacer(Modifier.width(LedgerSpacing.Medium))
-                Box(
-                    modifier = Modifier
-                        .size(LedgerTheme.iconSize.Large)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.05f))
-                        .ledgerClickable { /* TODO */ },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        state.userName.take(1),
-                        style = LedgerTextStyles.Caption,
-                        color = Color.White.copy(alpha = 0.25f),
-                    )
-                }
             }
         }
 
         Spacer(Modifier.weight(1f))
 
+        // The Monolith
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = "Account total",
-                style = LedgerTextStyles.Caption,
+                style = LedgerTextStyles.Mono.copy(fontSize = 12.sp),
                 color = Color.White.copy(alpha = 0.40f),
                 modifier = Modifier.graphicsLayer {
                     alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
@@ -207,26 +197,55 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             Spacer(Modifier.height(LedgerSpacing.XSmall))
             LedgerAmount(
                 amount = "${state.balanceCurrency} ${state.balanceAmount}",
-                style = LedgerAmountStyle.Display,
+                style = LedgerAmountStyle.Monolith,
                 color = Color.White,
                 modifier = Modifier
-                    .fillMaxWidth()
                     .graphicsLayer {
                         alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
-                        scaleX = 1f - (progress * 0.08f)
-                        scaleY = 1f - (progress * 0.08f)
-                        translationX = -(progress * 20f)
+                        val scale = 1f - (progress * 0.15f)
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = -(progress * 40f)
                     },
             )
-            Spacer(Modifier.height(LedgerSpacing.XxSmall))
-            Text(
-                text = state.currentMonth,
-                style = LedgerTextStyles.Mono.copy(fontSize = 12.sp),
-                color = Color.White.copy(alpha = 0.35f),
-                modifier = Modifier.graphicsLayer {
-                    alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
+        }
+
+        Spacer(Modifier.height(LedgerSpacing.Large))
+
+        // Satellite Metrics (Income & Expense Flow)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    alpha = (1f - (progress * 1.5f)).coerceIn(0f, 1f)
+                    translationY = progress * 20f
                 },
-            )
+            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge),
+        ) {
+            Column {
+                Text(
+                    "Income",
+                    style = LedgerTextStyles.Caption,
+                    color = Color.White.copy(alpha = 0.30f),
+                )
+                LedgerAmount(
+                    amount = state.income,
+                    style = LedgerAmountStyle.Regular,
+                    color = Color.White.copy(alpha = 0.70f),
+                )
+            }
+            Column {
+                Text(
+                    "Expense",
+                    style = LedgerTextStyles.Caption,
+                    color = Color.White.copy(alpha = 0.30f),
+                )
+                LedgerAmount(
+                    amount = state.expense,
+                    style = LedgerAmountStyle.Regular,
+                    color = LedgerTheme.colors.expense.copy(alpha = 0.90f),
+                )
+            }
         }
 
         Spacer(Modifier.weight(0.4f))
@@ -247,15 +266,24 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
+        Column {
+            Text(
+                text = "Total balance",
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.tertiaryLabel,
+            )
+            LedgerAmount(
+                amount = "${state.balanceCurrency} ${state.balanceAmount}",
+                style = LedgerAmountStyle.Regular,
+                color = LedgerTheme.colors.label,
+            )
+        }
+        
+        // Compact secondary info
         Text(
-            text = "June Balance",
-            style = LedgerTextStyles.Label,
-            color = LedgerTheme.colors.secondaryLabel,
-        )
-        LedgerAmount(
-            amount = "${state.balanceCurrency} ${state.balanceAmount}",
-            style = LedgerAmountStyle.Regular,
-            color = LedgerTheme.colors.label,
+            text = state.currentMonth,
+            style = LedgerTextStyles.Mono.copy(fontSize = 11.sp),
+            color = LedgerTheme.colors.tertiaryLabel,
         )
     }
 }
