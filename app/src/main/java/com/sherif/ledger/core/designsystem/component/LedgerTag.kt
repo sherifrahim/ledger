@@ -1,13 +1,12 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -29,8 +28,12 @@ fun LedgerTag(
     val shape = LedgerRadius.Small
     Box(
         modifier = modifier
-            .clip(shape)
-            .background(containerColor)
+            .ledgerSurface(
+                shape = shape,
+                backgroundColor = containerColor,
+                borderColor = Color.Transparent,
+                borderWidth = 0.dp,
+            )
             .padding(
                 horizontal = LedgerSpacing.Small,
                 vertical = LedgerSpacing.XxSmall,

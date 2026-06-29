@@ -1,7 +1,5 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -9,7 +7,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
@@ -59,14 +56,14 @@ fun LedgerButton(
 
     Box(
         modifier = modifier
-            .clip(shape)
-            .then(
-                if (borderColor != Color.Transparent) {
-                    Modifier.border(0.5.dp, borderColor, shape)
-                } else Modifier,
+            .ledgerSurface(
+                shape = shape,
+                backgroundColor = backgroundColor,
+                borderColor = borderColor,
+                borderWidth = if (borderColor == Color.Transparent) 0.dp else 0.5.dp,
+                onClick = onClick,
+                enabled = enabled,
             )
-            .background(backgroundColor)
-            .ledgerClickable(enabled = enabled, onClick = onClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {

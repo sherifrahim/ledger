@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import com.sherif.ledger.core.designsystem.theme.LedgerMotion
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 /**
  * LDL click modifier: no ripple, subtle press compression.
@@ -22,7 +23,7 @@ fun Modifier.ledgerClickable(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ): Modifier = composed {
-
+    val haptics = LedgerTheme.haptics
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -39,6 +40,9 @@ fun Modifier.ledgerClickable(
         interactionSource = interactionSource,
         indication = null,
         enabled = enabled,
-        onClick = onClick,
+        onClick = {
+            haptics.selection()
+            onClick()
+        },
     )
 }

@@ -4,18 +4,53 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import com.sherif.ledger.core.designsystem.theme.LedgerMotion
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+
+/**
+ * LDL foundation for surfaces.
+ *
+ * Applies the canonical "Carved" aesthetic: clip, tonal background,
+ * hairline border, and optional micro-spring interaction.
+ */
+fun Modifier.ledgerSurface(
+    level: LedgerSurfaceLevel = LedgerSurfaceLevel.Level1,
+    shape: Shape = LedgerRadius.Small,
+    backgroundColor: Color? = null,
+    borderColor: Color? = null,
+    borderWidth: Dp = 0.5.dp,
+    onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+): Modifier = composed {
+    val colors = LedgerTheme.colors
+    val resolvedBackground = backgroundColor ?: colors.surface(level)
+    val resolvedBorderColor = borderColor ?: colors.separator.copy(
+        alpha = LedgerTheme.motion.SurfaceBorderAlpha,
+    )
+
+    this
+        .clip(shape)
+        .background(resolvedBackground)
+        .border(width = borderWidth, color = resolvedBorderColor, shape = shape)
+        .then(
+            if (onClick != null) {
+                Modifier.ledgerClickable(enabled = enabled, onClick = onClick)
+            } else Modifier,
+        )
+}
 
 /**
  * LDL grouped content surface.
@@ -37,17 +72,10 @@ fun LedgerSurface(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = LedgerRadius.Small
-val borderColor = LedgerTheme.colors.separator.copy(
-    alpha = LedgerMotion.SurfaceBorderAlpha,
-)
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
-            .clip(shape)
-            .background(LedgerTheme.colors.surface(level))
-            .border(width = 0.5.dp, color = borderColor, shape = shape)
+            .ledgerSurface(level = level, onClick = onClick)
             .padding(contentPadding),
         content = content,
     )

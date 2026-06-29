@@ -1,6 +1,5 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -14,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
@@ -36,7 +36,11 @@ fun LedgerTopBar(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(colors.surfaceLevel0)
+            .ledgerSurface(
+                level = LedgerSurfaceLevel.Level0,
+                shape = androidx.compose.ui.graphics.RectangleShape,
+                borderWidth = 0.dp,
+            )
             .padding(horizontal = LedgerSpacing.Medium),
     ) {
         Box(
