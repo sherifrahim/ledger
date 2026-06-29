@@ -9,9 +9,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +23,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
+import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -36,8 +39,8 @@ fun InsightSection(
 ) {
     if (state.insights.isEmpty()) return
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-        Text("Insights", style = LedgerTextStyles.Section, color = LedgerTheme.colors.label)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
+        LedgerSectionHeader(title = "Insights")
 
         LedgerSurface(
             level = LedgerSurfaceLevel.Level1,
@@ -47,7 +50,8 @@ fun InsightSection(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small),
+                        .ledgerClickable { /* TODO */ }
+                        .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Group),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
@@ -61,9 +65,10 @@ fun InsightSection(
                         Text(insight.indicator, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.income)
                     } else {
                         Icon(
-                            Icons.Filled.KeyboardArrowRight,
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
                             tint = LedgerTheme.colors.tertiaryLabel,
+                            modifier = Modifier.size(LedgerTheme.iconSize.Small),
                         )
                     }
                 }

@@ -21,6 +21,7 @@ data class TransactionUiModel(
     val amount: String,
     val isExpense: Boolean = true,
     val date: String = "Today",
+    val merchantAccentHue: Long = 0xFF8A8A8A,
 )
 
 data class InsightUiModel(

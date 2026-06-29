@@ -1,9 +1,6 @@
 package com.sherif.ledger.presentation.navigation
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,17 +17,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -91,31 +87,12 @@ private fun LedgerTabItem(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.12f else 1.0f,
-        animationSpec = LedgerAnimations.microSpring(),
-        label = "${label}_scale",
-    )
-    val iconAlpha by animateFloatAsState(
-        targetValue = if (selected) 1.0f else 0.45f,
-        animationSpec = LedgerAnimations.microSpring(),
-        label = "${label}_iconAlpha",
-    )
-    val labelAlpha by animateFloatAsState(
-        targetValue = if (selected) 1.0f else 0.0f,
-        animationSpec = LedgerAnimations.microSpring(),
-        label = "${label}_labelAlpha",
-    )
-
     val color = if (selected) LedgerTheme.colors.tint else LedgerTheme.colors.tertiaryLabel
+    val alpha = if (selected) 1.0f else 0.45f
 
     Column(
         modifier = Modifier
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-                onClick = onClick,
-            )
+            .ledgerClickable(onClick = onClick)
             .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Inline),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -124,18 +101,15 @@ private fun LedgerTabItem(
             contentDescription = label,
             tint = color,
             modifier = Modifier
-                .size(24.dp)
-                .scale(iconScale)
-                .graphicsLayer { alpha = iconAlpha },
+                .size(LedgerTheme.iconSize.Medium)
+                .graphicsLayer { this.alpha = alpha },
         )
-        if (labelAlpha > 0.01f) {
+        if (selected) {
             Text(
                 label,
                 style = LedgerTextStyles.Caption,
                 color = color,
-                modifier = Modifier
-                    .padding(top = LedgerSpacing.XxSmall)
-                    .graphicsLayer { alpha = labelAlpha },
+                modifier = Modifier.padding(top = LedgerSpacing.XxSmall),
             )
         }
     }

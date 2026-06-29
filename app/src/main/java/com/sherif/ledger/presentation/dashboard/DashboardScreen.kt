@@ -35,12 +35,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -52,20 +52,21 @@ import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSec
 import com.sherif.ledger.presentation.dashboard.preview.DashboardPreviewData
 
 private object HeroTransitions {
-    const val TopBarExit = 0.25f
-    const val TopBarTranslationPx = 60f
-    const val BalanceLabelExit = 0.35f
-    const val CurrencyExit = 0.4f
-    const val ExpandedExit = 0.65f
-    const val CompactEnter = 0.55f
+    const val TopBarExit = 0.20f
+    const val TopBarTranslationPx = 40f
+    const val BalanceLabelExit = 0.30f
+    const val AmountExit = 0.50f
+    const val CurrencyExit = 0.55f
+    const val ExpandedExit = 0.60f
+    const val CompactEnter = 0.65f
 }
 
 private object HeroSnap {
     const val Enabled = true
-    const val ZoneStart = 0.3f
-    const val ZoneEnd = 0.7f
-    const val DampingRatio = 0.88f
-    const val Stiffness = 300f
+    const val ZoneStart = 0.25f
+    const val ZoneEnd = 0.75f
+    const val DampingRatio = 0.92f
+    const val Stiffness = 200f
 }
 
 @Composable
@@ -116,9 +117,9 @@ fun DashboardScreen(
             contentPadding = PaddingValues(
                 start = LedgerSpacing.Group,
                 end = LedgerSpacing.Group,
-                bottom = LedgerSpacing.XxLarge,
+                bottom = LedgerSpacing.ScreenBottom,
             ),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
             modifier = Modifier.fillMaxSize(),
         ) {
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
@@ -155,69 +156,96 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                     alpha = (1f - progress / HeroTransitions.TopBarExit).coerceIn(0f, 1f)
                     translationY = -(progress * HeroTransitions.TopBarTranslationPx)
                 },
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                Icons.Filled.Notifications,
-                contentDescription = "Notifications",
-                tint = Color.White.copy(alpha = 0.22f),
-                modifier = Modifier.size(LedgerTheme.iconSize.Small),
-            )
-            Spacer(Modifier.width(LedgerSpacing.Medium))
-            Box(
-                modifier = Modifier
-                    .size(LedgerTheme.iconSize.Large)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f)),
-                contentAlignment = Alignment.Center,
-            ) {
+            Column {
                 Text(
-                    state.userName.take(1),
+                    text = state.greeting,
                     style = LedgerTextStyles.Caption,
                     color = Color.White.copy(alpha = 0.25f),
                 )
+                Text(
+                    text = state.userName,
+                    style = LedgerTextStyles.Label,
+                    color = Color.White.copy(alpha = 0.50f),
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Notifications,
+                    contentDescription = "Notifications",
+                    tint = Color.White.copy(alpha = 0.22f),
+                    modifier = Modifier
+                        .size(LedgerTheme.iconSize.Small)
+                        .ledgerClickable { /* TODO */ },
+                )
+                Spacer(Modifier.width(LedgerSpacing.Medium))
+                Box(
+                    modifier = Modifier
+                        .size(LedgerTheme.iconSize.Large)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.05f))
+                        .ledgerClickable { /* TODO */ },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        state.userName.take(1),
+                        style = LedgerTextStyles.Caption,
+                        color = Color.White.copy(alpha = 0.25f),
+                    )
+                }
             }
         }
 
         Spacer(Modifier.weight(1f))
 
         Text(
-            "Total balance",
+            "Available balance",
             style = LedgerTextStyles.Caption,
-            color = Color.White.copy(alpha = 0.22f),
+            color = Color.White.copy(alpha = 0.30f),
             modifier = Modifier.graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
             },
         )
-        Spacer(Modifier.height(LedgerSpacing.Small))
+        Spacer(Modifier.height(LedgerSpacing.XSmall))
         LedgerAmount(
             amount = state.balanceAmount,
             style = LedgerAmountStyle.Display,
             color = Color.White,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
+                    scaleX = 1f - (progress * 0.05f)
+                    scaleY = 1f - (progress * 0.05f)
+                },
         )
         Spacer(Modifier.height(LedgerSpacing.XxSmall))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.graphicsLayer {
-                alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
-            },
+            modifier = Modifier
+                .graphicsLayer {
+                    alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
+                }
+                .ledgerClickable { /* TODO: Currency Picker */ }
+                .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.XxSmall),
         ) {
             Text(
                 state.balanceCurrency,
-                style = LedgerTextStyles.Body,
-                color = Color.White.copy(alpha = 0.18f),
+                style = LedgerTextStyles.Label,
+                color = Color.White.copy(alpha = 0.40f),
             )
+            Spacer(Modifier.width(LedgerSpacing.XxSmall))
             Icon(
                 Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.18f),
+                tint = Color.White.copy(alpha = 0.30f),
                 modifier = Modifier.size(LedgerTheme.iconSize.Small),
             )
         }
 
-        Spacer(Modifier.weight(0.5f))
+        Spacer(Modifier.weight(0.6f))
     }
 }
 
@@ -235,10 +263,15 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "${state.balanceCurrency} ${state.balanceAmount}",
-            style = LedgerTextStyles.Section,
-            color = Color.White,
+            text = "Balance",
+            style = LedgerTextStyles.Label,
+            color = LedgerTheme.colors.secondaryLabel,
             modifier = Modifier.weight(1f),
+        )
+        LedgerAmount(
+            amount = "${state.balanceCurrency} ${state.balanceAmount}",
+            style = LedgerAmountStyle.Regular,
+            color = LedgerTheme.colors.label,
         )
     }
 }

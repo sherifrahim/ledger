@@ -33,4 +33,7 @@ object LedgerSpacing {
     val Section: Dp = 28.dp
     /** Bottom safe area padding. */
     val ScreenBottom: Dp = XxxLarge
+
+    /** Standard indent for list items with avatars (IconLarge + Medium Spacing). */
+    val AvatarIndent: Dp = 56.dp
 }

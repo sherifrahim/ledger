@@ -18,10 +18,10 @@ object DashboardPreviewData {
         income = "AED 5,200",
         savings = "AED 3,250",
         recentTransactions = listOf(
-            TransactionUiModel("Amazon", "Shopping", "AED 52", isExpense = true, date = "Today"),
-            TransactionUiModel("Carrefour", "Groceries", "AED 126", isExpense = true, date = "Today"),
-            TransactionUiModel("Costa Coffee", "Coffee", "AED 19", isExpense = true, date = "Yesterday"),
-            TransactionUiModel("Salary", "Income", "AED 5,200", isExpense = false, date = "May 31"),
+            TransactionUiModel("Amazon", "Shopping", "AED 52", isExpense = true, date = "Today", merchantAccentHue = 0xFF232F3E),
+            TransactionUiModel("Carrefour", "Groceries", "AED 126", isExpense = true, date = "Today", merchantAccentHue = 0xFF0058A8),
+            TransactionUiModel("Costa Coffee", "Coffee", "AED 19", isExpense = true, date = "Yesterday", merchantAccentHue = 0xFF830025),
+            TransactionUiModel("Salary", "Income", "AED 5,200", isExpense = false, date = "May 31", merchantAccentHue = 0xFF047857),
         ),
         insights = listOf(
             InsightUiModel("Food spending", "12% lower than last week", "\u2193 12%"),
