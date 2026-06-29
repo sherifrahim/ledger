@@ -1,10 +1,10 @@
 package com.sherif.ledger.presentation.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.FactCheck
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.ReceiptLong
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,11 +21,34 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
-private enum class BottomTab(val route: String, val label: String, val icon: ImageVector) {
-    Home(LedgerRoute.Home.route, "Home", Icons.Rounded.Home),
-    Accounts(LedgerRoute.Accounts.route, "Accounts", Icons.Rounded.AccountBalance),
-    Activity(LedgerRoute.Transactions.route, "Activity", Icons.Rounded.ReceiptLong),
-    Review(LedgerRoute.ReviewInbox.route, "Review", Icons.Rounded.FactCheck),
+private enum class BottomTab(
+    val route: String,
+    val label: String,
+    val icon: ImageVector,
+) {
+    Home(
+        LedgerRoute.Home.route,
+        "Home",
+        Icons.Filled.Home,
+    ),
+
+    Accounts(
+        LedgerRoute.Accounts.route,
+        "Accounts",
+        Icons.Filled.AccountCircle,
+    ),
+
+    Activity(
+        LedgerRoute.Transactions.route,
+        "Activity",
+        Icons.Filled.List,
+    ),
+
+    Review(
+        LedgerRoute.ReviewInbox.route,
+        "Review",
+        Icons.Filled.CheckCircle,
+    ),
 }
 
 @Composable

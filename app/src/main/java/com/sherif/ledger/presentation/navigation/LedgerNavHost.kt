@@ -39,7 +39,13 @@ fun LedgerNavHost(
         popExitTransition = { popExitTransition },
     ) {
         composable(LedgerRoute.Home.route) {
-            DashboardScreen()
+            DashboardScreen(
+                onNavigateToTransactions = {
+                    navController.navigate(LedgerRoute.Transactions.route) {
+                        launchSingleTop = true
+                    }
+                },
+            )
         }
 
         composable(LedgerRoute.Accounts.route) {
@@ -66,7 +72,6 @@ fun LedgerNavHost(
             route = LedgerRoute.TransactionDetails.route,
             arguments = listOf(navArgument("transactionId") { type = NavType.StringType }),
         ) {
-            // TODO: Look up transaction by ID when ViewModel exists. Preview data for now.
             TransactionDetailsScreen()
         }
     }

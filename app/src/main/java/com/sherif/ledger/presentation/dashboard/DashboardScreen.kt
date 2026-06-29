@@ -74,6 +74,7 @@ private object HeroSnap {
 
 @Composable
 fun DashboardScreen(
+    onNavigateToTransactions: () -> Unit = {},
     state: DashboardUiState = DashboardPreviewData.state,
 ) {
     val expandedHeight = LedgerHeroDefaults.ExpandedHeight
@@ -244,7 +245,7 @@ fun DashboardScreen(
         ) {
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
             item(key = "stats") { QuickStatsSection(state) }
-            item(key = "transactions") { RecentTransactionsSection(state) }
+            item(key = "transactions") { RecentTransactionsSection(state, onSeeAllClick = onNavigateToTransactions) }
             item(key = "insights") { InsightSection(state) }
         }
 
