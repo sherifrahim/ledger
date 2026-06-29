@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import com.sherif.ledger.core.designsystem.theme.LedgerMotion
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,8 +38,9 @@ fun LedgerSurface(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = LedgerRadius.Small
-    val borderColor = LedgerTheme.colors.separator.copy(alpha = 0.20f)
-
+val borderColor = LedgerTheme.colors.separator.copy(
+    alpha = LedgerMotion.SurfaceBorderAlpha,
+)
     Column(
         modifier = modifier
             .fillMaxWidth()

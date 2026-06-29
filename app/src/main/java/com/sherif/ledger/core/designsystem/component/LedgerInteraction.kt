@@ -9,38 +9,36 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
-import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
+import com.sherif.ledger.core.designsystem.theme.LedgerMotion
 
 /**
  * LDL click modifier: no ripple, subtle press compression.
  *
- * On press the surface scales to 0.985 with a micro-spring, then
- * bounces back on release. The compression communicates "this is
- * interactive" without the Material ripple splash.
- *
- * Consumers: LedgerSurface (when onClick provided), AccountRow,
- * ReviewCard, and any future interactive surface.
+ * On press the surface compresses slightly with a micro spring, then
+ * settles naturally on release. This replaces the default Material ripple
+ * with Ledger's interaction language.
  */
 fun Modifier.ledgerClickable(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ): Modifier = composed {
+
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+
     val scale by animateFloatAsState(
-        targetValue = if (isPressed && enabled) 0.985f else 1.0f,
-        animationSpec = LedgerAnimations.microSpring(),
+        targetValue = if (isPressed && enabled) LedgerMotion.PressScale else 1.0f,
+        animationSpec = LedgerMotion.microSpring(),
         label = "press_scale",
     )
-    this
-        .graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        }
-        .clickable(
-            interactionSource = interactionSource,
-            indication = null,
-            enabled = enabled,
-            onClick = onClick,
-        )
+
+    graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }.clickable(
+        interactionSource = interactionSource,
+        indication = null,
+        enabled = enabled,
+        onClick = onClick,
+    )
 }
