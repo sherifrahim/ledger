@@ -15,8 +15,11 @@ object DashboardPreviewData {
         balanceCurrency = "AED",
         budgetProgress = 0.62f,
         expense = "AED 1,950",
+        expenseChange = "↑ 8%",
         income = "AED 5,200",
+        incomeChange = "↑ 12%",
         savings = "AED 3,250",
+        savingsChange = "↑ 5%",
         recentTransactions = listOf(
             TransactionUiModel("Amazon", "Shopping", "AED 52", isExpense = true, date = "Today", merchantAccentHue = 0xFF232F3E),
             TransactionUiModel("Carrefour", "Groceries", "AED 126", isExpense = true, date = "Today", merchantAccentHue = 0xFF0058A8),

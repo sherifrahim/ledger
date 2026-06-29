@@ -28,7 +28,8 @@ fun RecentTransactionsSection(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
         LedgerSectionHeader(
-            title = "Recent activity",
+            title = "RECENT ACTIVITY",
+            titleColor = LedgerTheme.colors.tertiaryLabel,
             trailing = "See all",
             onTrailingClick = onSeeAllClick,
         )

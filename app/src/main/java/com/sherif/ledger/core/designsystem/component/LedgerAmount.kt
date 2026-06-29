@@ -16,7 +16,6 @@ enum class LedgerAmountStyle {
     Regular,
     Large,
     Display,
-    Monolith,
 }
 
 /**
@@ -44,12 +43,6 @@ fun LedgerAmount(
         LedgerAmountStyle.Display -> LedgerTextStyles.Display.copy(
             fontFamily = FontFamily.Monospace,
             textAlign = TextAlign.Center,
-        )
-        LedgerAmountStyle.Monolith -> LedgerTextStyles.Display.copy(
-            fontFamily = FontFamily.Monospace,
-            fontSize = 72.sp,
-            lineHeight = 76.sp,
-            letterSpacing = (-3).sp,
         )
     }
 

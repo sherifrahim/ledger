@@ -1,11 +1,13 @@
 package com.sherif.ledger.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,9 +21,8 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 /**
  * Standard LDL row for transaction-like summaries.
  *
- * Designed with a "Typography-First" architecture. Removed the standard
- * "initial-in-box" Android convention to prioritize information density
- * and clean rhythm.
+ * Re-integrated the merchant icon/box per mockup requirements while
+ * maintaining the refined atomic platform architecture.
  */
 @Composable
 fun LedgerTransactionRow(
@@ -41,6 +42,25 @@ fun LedgerTransactionRow(
             .padding(vertical = LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Merchant Icon / Brand Box (Restored per Mockup)
+        Box(
+            modifier = Modifier
+                .size(LedgerTheme.iconSize.Huge)
+                .ledgerSurface(
+                    backgroundColor = accentColor.copy(alpha = LedgerTheme.opacity.Fill),
+                    borderColor = Color.Transparent,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = title.firstOrNull()?.uppercaseChar()?.toString().orEmpty(),
+                style = LedgerTextStyles.Label,
+                color = accentColor,
+            )
+        }
+
+        Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
+
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),

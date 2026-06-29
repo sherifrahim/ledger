@@ -19,8 +19,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,17 +36,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
+import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.presentation.dashboard.components.InsightSection
@@ -147,6 +154,7 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Identity Frame
         Row(
@@ -154,101 +162,161 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text(
-                    text = state.greeting,
-                    style = LedgerTextStyles.Caption,
-                    color = Color.White.copy(alpha = 0.35f),
-                )
-                Text(
-                    text = state.userName,
-                    style = LedgerTextStyles.Label,
-                    color = Color.White.copy(alpha = 0.50f),
-                )
-            }
-            Box(
+            Text(
+                text = "Good morning, ${state.userName} 👋",
+                style = LedgerTextStyles.Label,
+                color = Color.White.copy(alpha = 0.60f),
+            )
+            Icon(
+                Icons.Filled.Notifications,
+                contentDescription = "Notifications",
+                tint = Color.White.copy(alpha = 0.40f),
                 modifier = Modifier
-                    .size(LedgerTheme.iconSize.Large)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f))
+                    .size(LedgerTheme.iconSize.Small)
                     .ledgerClickable { /* TODO */ },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    state.userName.take(1),
-                    style = LedgerTextStyles.Caption,
-                    color = Color.White.copy(alpha = 0.25f),
-                )
-            }
+            )
         }
 
         Spacer(Modifier.weight(1f))
 
-        // The Monolith
-        Column(modifier = Modifier.fillMaxWidth()) {
+        // Total Balance (Centered per Mockup)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Account total",
-                style = LedgerTextStyles.Mono.copy(fontSize = 12.sp),
-                color = Color.White.copy(alpha = 0.40f),
+                text = "TOTAL BALANCE",
+                style = LedgerTextStyles.Caption.copy(
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.5.sp,
+                ),
+                color = Color.White.copy(alpha = 0.35f),
                 modifier = Modifier.graphicsLayer {
                     alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
                 },
             )
-            Spacer(Modifier.height(LedgerSpacing.XSmall))
+            Spacer(Modifier.height(LedgerSpacing.XxSmall))
+            Text(
+                text = state.balanceCurrency,
+                style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold),
+                color = Color.White.copy(alpha = 0.50f),
+                modifier = Modifier.graphicsLayer {
+                    alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
+                },
+            )
             LedgerAmount(
-                amount = "${state.balanceCurrency} ${state.balanceAmount}",
-                style = LedgerAmountStyle.Monolith,
+                amount = state.balanceAmount,
+                style = LedgerAmountStyle.Display,
                 color = Color.White,
+                modifier = Modifier.graphicsLayer {
+                    alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
+                    val scale = 1f - (progress * 0.08f)
+                    scaleX = scale
+                    scaleY = scale
+                },
+            )
+            Spacer(Modifier.height(LedgerSpacing.Small))
+            // Currency Pill (Restored per Mockup)
+            Box(
                 modifier = Modifier
                     .graphicsLayer {
                         alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
-                        val scale = 1f - (progress * 0.15f)
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = -(progress * 40f)
-                    },
-            )
+                    }
+                    .ledgerSurface(
+                        backgroundColor = Color.White.copy(alpha = 0.05f),
+                        borderColor = Color.White.copy(alpha = 0.15f),
+                        shape = LedgerRadius.Full,
+                    )
+                    .ledgerClickable { /* TODO */ }
+                    .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.XxSmall),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = state.balanceCurrency,
+                        style = LedgerTextStyles.Caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                        color = Color.White.copy(alpha = 0.7f),
+                    )
+                    Spacer(Modifier.width(LedgerSpacing.XxSmall))
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.5f),
+                        modifier = Modifier.size(10.dp),
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(LedgerSpacing.Large))
 
-        // Satellite Metrics (Income & Expense Flow)
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    alpha = (1f - (progress * 1.5f)).coerceIn(0f, 1f)
-                    translationY = progress * 20f
-                },
-            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Column {
-                Text(
-                    "Income",
-                    style = LedgerTextStyles.Caption,
-                    color = Color.White.copy(alpha = 0.30f),
-                )
-                LedgerAmount(
-                    amount = state.income,
-                    style = LedgerAmountStyle.Regular,
-                    color = Color.White.copy(alpha = 0.70f),
-                )
-            }
-            Column {
-                Text(
-                    "Expense",
-                    style = LedgerTextStyles.Caption,
-                    color = Color.White.copy(alpha = 0.30f),
-                )
-                LedgerAmount(
-                    amount = state.expense,
-                    style = LedgerAmountStyle.Regular,
-                    color = LedgerTheme.colors.expense.copy(alpha = 0.90f),
-                )
-            }
+            MetricItem(
+                label = "INCOME",
+                value = state.income,
+                change = state.incomeChange,
+                icon = Icons.AutoMirrored.Filled.ArrowForward, // Placeholder for Upward
+                color = LedgerTheme.colors.income,
+            )
+            MetricItem(
+                label = "EXPENSES",
+                value = state.expense,
+                change = state.expenseChange,
+                icon = Icons.Filled.KeyboardArrowDown, // Placeholder for Downward
+                color = LedgerTheme.colors.expense,
+            )
+            MetricItem(
+                label = "SAVINGS",
+                value = state.savings,
+                change = state.savingsChange,
+                icon = Icons.Filled.Star, // Placeholder for Safe
+                color = Color.White.copy(alpha = 0.70f),
+            )
         }
 
         Spacer(Modifier.weight(0.4f))
+    }
+}
+
+@Composable
+private fun MetricItem(
+    label: String,
+    value: String,
+    change: String,
+    icon: ImageVector,
+    color: Color,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(LedgerTheme.iconSize.Medium)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(12.dp))
+        }
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        Text(
+            text = label,
+            style = LedgerTextStyles.Caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+            color = Color.White.copy(alpha = 0.35f),
+        )
+        Text(
+            text = value,
+            style = LedgerTextStyles.Label.copy(fontFamily = FontFamily.Monospace),
+            color = color,
+        )
+        Text(
+            text = change,
+            style = LedgerTextStyles.Caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+            color = color.copy(alpha = 0.8f),
+        )
+        Text(
+            text = "vs last month",
+            style = LedgerTextStyles.Caption.copy(fontSize = 8.sp),
+            color = Color.White.copy(alpha = 0.2f),
+        )
     }
 }
 

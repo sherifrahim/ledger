@@ -9,8 +9,11 @@ data class DashboardUiState(
     val balanceCurrency: String = "AED",
     val budgetProgress: Float,
     val expense: String,
+    val expenseChange: String = "",
     val income: String,
+    val incomeChange: String = "",
     val savings: String,
+    val savingsChange: String = "",
     val recentTransactions: List<TransactionUiModel>,
     val insights: List<InsightUiModel>,
 )
