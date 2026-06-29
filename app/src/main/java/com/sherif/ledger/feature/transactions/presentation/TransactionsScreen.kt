@@ -1,6 +1,7 @@
 package com.sherif.ledger.feature.transactions.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,17 +26,13 @@ import com.sherif.ledger.feature.transactions.presentation.preview.TransactionsP
 @Composable
 fun TransactionsScreen(
     state: TransactionsUiState = TransactionsPreviewData.state,
+    onTransactionClick: ((String) -> Unit)? = null,
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LedgerTheme.colors.surfaceLevel0),
-        contentPadding = PaddingValues(
-            top = LedgerSpacing.XLarge,
-            bottom = LedgerSpacing.ScreenBottom,
-        ),
+        modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
+        contentPadding = PaddingValues(top = LedgerSpacing.XLarge, bottom = LedgerSpacing.ScreenBottom),
     ) {
         item(key = "title") {
             Text(
@@ -58,7 +55,7 @@ fun TransactionsScreen(
         }
 
         items(state.groups, key = { it.id }) { group ->
-            TimelineSection(group = group)
+            TimelineSection(group = group, onTransactionClick = onTransactionClick)
             Spacer(Modifier.height(LedgerSpacing.Section))
         }
     }

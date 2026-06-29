@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -20,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
@@ -36,6 +34,7 @@ import com.sherif.ledger.feature.review.presentation.preview.ReviewInboxPreviewD
 @Composable
 fun ReviewInboxScreen(
     state: ReviewInboxUiState = ReviewInboxPreviewData.state,
+    onReviewItemClick: ((String) -> Unit)? = null,
 ) {
     var selectedFilter by remember { mutableStateOf(state.selectedFilter) }
     val filtered = when (selectedFilter) {
@@ -64,16 +63,9 @@ fun ReviewInboxScreen(
         }
 
         item("filters") {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Content),
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Content)) {
                 ReviewFilter.entries.forEach { filter ->
-                    FilterChip(
-                        label = filter.label,
-                        selected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter },
-                    )
+                    FilterChip(label = filter.label, selected = selectedFilter == filter, onClick = { selectedFilter = filter })
                 }
             }
         }
@@ -81,18 +73,16 @@ fun ReviewInboxScreen(
         if (filtered.isEmpty()) {
             item("empty") {
                 Spacer(Modifier.height(LedgerSpacing.XxLarge))
-                LedgerEmptyState(
-                    title = "All clear",
-                    message = "No transactions need review right now.",
-                )
+                LedgerEmptyState(title = "All clear", message = "No transactions need review right now.")
             }
         } else {
             items(filtered, key = { it.id }) { item ->
                 ReviewCard(
                     item = item,
-                    onConfirm = { /* preview only */ },
-                    onEdit = { /* preview only */ },
-                    onIgnore = { /* preview only */ },
+                    onConfirm = {},
+                    onEdit = {},
+                    onIgnore = {},
+                    onClick = { onReviewItemClick?.invoke(item.id) },
                 )
             }
         }
@@ -109,13 +99,9 @@ private fun SummaryCount(label: String, count: Int, color: androidx.compose.ui.g
 
 @Composable
 private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    val bg = if (selected) LedgerTheme.colors.tint else LedgerTheme.colors.surfaceLevel1
     val fg = if (selected) LedgerTheme.colors.onTint else LedgerTheme.colors.secondaryLabel
-
     LedgerSurface(
-        modifier = Modifier
-            .clip(LedgerShapes.small)
-            .clickable(onClick = onClick),
+        modifier = Modifier.clip(LedgerShapes.small).clickable(onClick = onClick),
         level = if (selected) LedgerSurfaceLevel.Level2 else LedgerSurfaceLevel.Level1,
         contentPadding = PaddingValues(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.Inline),
     ) {

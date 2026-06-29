@@ -4,15 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
-import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
-import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
-import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
-import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsScreen
+import com.sherif.ledger.presentation.navigation.LedgerBottomBar
 import com.sherif.ledger.presentation.navigation.LedgerNavHost
+import com.sherif.ledger.presentation.navigation.LedgerRoute
 import dagger.hilt.android.AndroidEntryPoint
-
-enum class DevScreen { Dashboard, Accounts, Transactions, TransactionDetails, ReviewInbox }
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -21,18 +24,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LedgerTheme {
-                when (DEV_ACTIVE_SCREEN) {
-                    DevScreen.Dashboard -> LedgerNavHost()
-                    DevScreen.Accounts -> AccountsScreen()
-                    DevScreen.Transactions -> TransactionsScreen()
-                    DevScreen.TransactionDetails -> TransactionDetailsScreen()
-                    DevScreen.ReviewInbox -> ReviewInboxScreen()
-                }
+                LedgerApp()
             }
         }
     }
+}
 
-    companion object {
-        val DEV_ACTIVE_SCREEN = DevScreen.Dashboard
+@Composable
+private fun LedgerApp() {
+    val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+    val tabRoutes = setOf(
+        LedgerRoute.Home.route,
+        LedgerRoute.Accounts.route,
+        LedgerRoute.Transactions.route,
+        LedgerRoute.ReviewInbox.route,
+    )
+
+    Scaffold(
+        bottomBar = {
+            if (currentRoute in tabRoutes) {
+                LedgerBottomBar(navController)
+            }
+        },
+    ) { padding ->
+        LedgerNavHost(navController, Modifier.padding(padding))
     }
 }
