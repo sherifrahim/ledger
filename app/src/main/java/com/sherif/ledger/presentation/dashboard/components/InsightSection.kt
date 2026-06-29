@@ -47,17 +47,17 @@ fun InsightSection(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
                         Text(insight.title, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
                         Text(insight.subtitle, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(LedgerSpacing.Small))
                     if (insight.indicator.isNotEmpty()) {
                         MiniSparkline()
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(LedgerSpacing.Small))
                         Text(insight.indicator, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.income)
                     } else {
                         Icon(
@@ -68,7 +68,7 @@ fun InsightSection(
                     }
                 }
                 if (index != state.insights.lastIndex) {
-                    LedgerHairline(modifier = Modifier.padding(start = 16.dp))
+                    LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.Medium))
                 }
             }
         }
@@ -87,6 +87,13 @@ private fun MiniSparkline(modifier: Modifier = Modifier) {
             val y = size.height * (1f - v)
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
-        drawPath(path, color = color, style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round))
+        drawPath(
+            path,
+            color = color,
+            style = Stroke(
+                width = LedgerTheme.border.Hairline.toPx() * 2f,
+                cap = StrokeCap.Round,
+            ),
+        )
     }
 }

@@ -38,13 +38,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
+import com.sherif.ledger.core.designsystem.component.LedgerAmount
+import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
-import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.presentation.dashboard.components.InsightSection
 import com.sherif.ledger.presentation.dashboard.components.QuickStatsSection
 import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSection
@@ -112,8 +113,12 @@ fun DashboardScreen(
 
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp),
+            contentPadding = PaddingValues(
+                start = LedgerSpacing.Group,
+                end = LedgerSpacing.Group,
+                bottom = LedgerSpacing.XxLarge,
+            ),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
             modifier = Modifier.fillMaxSize(),
         ) {
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
@@ -136,8 +141,8 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp)
-            .padding(top = 12.dp, bottom = 40.dp)
+            .padding(horizontal = LedgerSpacing.Group)
+            .padding(top = LedgerSpacing.Small, bottom = LedgerSpacing.XxLarge)
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
@@ -157,12 +162,12 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 Icons.Filled.Notifications,
                 contentDescription = "Notifications",
                 tint = Color.White.copy(alpha = 0.22f),
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(LedgerTheme.iconSize.Small),
             )
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(LedgerSpacing.Medium))
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(LedgerTheme.iconSize.Large)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center,
@@ -185,19 +190,14 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
             },
         )
-        Spacer(Modifier.height(10.dp))
-        Text(
-            state.balanceAmount,
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 54.sp,
-                lineHeight = 58.sp,
-                letterSpacing = (-1.5).sp,
-            ),
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        LedgerAmount(
+            amount = state.balanceAmount,
+            style = LedgerAmountStyle.Display,
             color = Color.White,
-            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(LedgerSpacing.XxSmall))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.graphicsLayer {
@@ -213,7 +213,7 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.18f),
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(LedgerTheme.iconSize.Small),
             )
         }
 
@@ -227,7 +227,7 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
         modifier = Modifier
             .fillMaxSize()
             .background(LedgerTheme.colors.surfaceLevel0)
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = LedgerSpacing.Group)
             .graphicsLayer {
                 alpha = ((progress - HeroTransitions.CompactEnter) /
                     (1f - HeroTransitions.CompactEnter)).coerceIn(0f, 1f)

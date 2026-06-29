@@ -1,6 +1,5 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,12 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -47,9 +44,11 @@ fun LedgerTransactionRow(
     ) {
         Box(
             modifier = Modifier
-                .size(LedgerSpacing.XxLarge)
-                .clip(MaterialTheme.shapes.small)
-                .background(accentColor.copy(alpha = LedgerTheme.opacity.Fill)),
+                .size(LedgerTheme.iconSize.Large)
+                .ledgerSurface(
+                    backgroundColor = accentColor.copy(alpha = LedgerTheme.opacity.Fill),
+                    borderColor = Color.Transparent,
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Text(

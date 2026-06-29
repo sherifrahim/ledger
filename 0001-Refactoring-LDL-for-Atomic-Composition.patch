@@ -1,0 +1,1403 @@
+From 64bb1217ef148742cd7f040dd76f34ce292f7574 Mon Sep 17 00:00:00 2001
+From: sherifrahim <28657313+sherifrahim@users.noreply.github.com>
+Date: Mon, 29 Jun 2026 22:12:57 +0400
+Subject: [PATCH] Refactoring LDL for Atomic Composition
+
+---
+ ...al-wrappers-with-pure-LDL-primitives.patch | 1158 +++++++++++++++++
+ .../designsystem/component/LedgerButton.kt    |   17 +-
+ .../component/LedgerInteraction.kt            |   10 +-
+ .../designsystem/component/LedgerSurface.kt   |   46 +-
+ .../core/designsystem/component/LedgerTag.kt  |   11 +-
+ .../designsystem/component/LedgerTopBar.kt    |    8 +-
+ 6 files changed, 1222 insertions(+), 28 deletions(-)
+ create mode 100644 0001-Replacing-Material-wrappers-with-pure-LDL-primitives.patch
+
+diff --git a/0001-Replacing-Material-wrappers-with-pure-LDL-primitives.patch b/0001-Replacing-Material-wrappers-with-pure-LDL-primitives.patch
+new file mode 100644
+index 0000000..49ad898
+--- /dev/null
++++ b/0001-Replacing-Material-wrappers-with-pure-LDL-primitives.patch
+@@ -0,0 +1,1158 @@
++From 3ee9648d1954bd671e30e41bf33ff86ca056e629 Mon Sep 17 00:00:00 2001
++From: sherifrahim <28657313+sherifrahim@users.noreply.github.com>
++Date: Mon, 29 Jun 2026 21:58:39 +0400
++Subject: [PATCH] Replacing Material wrappers with pure LDL primitives
++
++---
++ LEDGER_MANIFESTO.md                           | 287 ++++++++++++++++++
++ .../atmosphere/LedgerAtmosphere.kt            |  70 +++++
++ .../atmosphere/LedgerAtmosphereGlow.kt        | 135 ++++++++
++ .../designsystem/component/LedgerButton.kt    |  70 ++++-
++ .../core/designsystem/component/LedgerTag.kt  |  30 +-
++ .../designsystem/component/LedgerTopBar.kt    |  60 +++-
++ .../designsystem/haptics/LedgerHaptics.kt     |  83 +++++
++ .../designsystem/theme/LedgerAnimations.kt    |  18 +-
++ .../theme/LedgerNavigationMotion.kt           |  34 +++
++ .../core/designsystem/theme/LedgerTheme.kt    |  23 +-
++ .../presentation/dashboard/DashboardScreen.kt | 133 +-------
++ 11 files changed, 762 insertions(+), 181 deletions(-)
++ create mode 100644 LEDGER_MANIFESTO.md
++ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphere.kt
++ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt
++ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/haptics/LedgerHaptics.kt
++ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerNavigationMotion.kt
++
++diff --git a/LEDGER_MANIFESTO.md b/LEDGER_MANIFESTO.md
++new file mode 100644
++index 0000000..e03be5f
++--- /dev/null
+++++ b/LEDGER_MANIFESTO.md
++@@ -0,0 +1,287 @@
+++# LEDGER_MANIFESTO.md
+++
+++# Ledger Manifesto
+++
+++**Version:** 1.0
+++
+++---
+++
+++# We Are Not Building Another Finance App
+++
+++Ledger does not exist to record transactions.
+++
+++Ledger exists to create confidence.
+++
+++Money is emotional.
+++
+++Software should not amplify anxiety.
+++
+++Software should reduce it.
+++
+++Every interaction should help the user feel informed, calm and in control.
+++
+++---
+++
+++# Our Mission
+++
+++To build the most trustworthy personal finance experience possible.
+++
+++Not the most feature-rich.
+++
+++Not the flashiest.
+++
+++Not the loudest.
+++
+++The most trustworthy.
+++
+++---
+++
+++# A Financial Instrument
+++
+++Ledger should feel less like a mobile application and more like a precision instrument.
+++
+++A precision instrument never surprises its operator.
+++
+++It responds consistently.
+++
+++It behaves predictably.
+++
+++It communicates clearly.
+++
+++It earns trust through craftsmanship.
+++
+++Every interaction should reinforce that feeling.
+++
+++---
+++
+++# Calm Over Excitement
+++
+++Most financial applications compete for attention.
+++
+++Ledger refuses.
+++
+++Ledger never shouts.
+++
+++Ledger never pressures.
+++
+++Ledger never gamifies.
+++
+++Ledger never manipulates.
+++
+++The interface exists to reduce cognitive load, not increase engagement metrics.
+++
+++The reward is clarity.
+++
+++---
+++
+++# Every Pixel Must Have Purpose
+++
+++Nothing decorative.
+++
+++Nothing accidental.
+++
+++Nothing added because it is fashionable.
+++
+++Every element must answer a question.
+++
+++Every animation must communicate state.
+++
+++Every surface must establish hierarchy.
+++
+++Every interaction must increase confidence.
+++
+++If an element cannot justify its existence, it should not exist.
+++
+++---
+++
+++# Premium Is Not Luxury
+++
+++Premium is not expensive gradients.
+++
+++Premium is not excessive animation.
+++
+++Premium is not glass effects.
+++
+++Premium is consistency.
+++
+++Premium is restraint.
+++
+++Premium is precision.
+++
+++Premium is quality that becomes invisible.
+++
+++The user should remember how the product felt—not how many effects it contained.
+++
+++---
+++
+++# Motion Is Communication
+++
+++Motion exists to explain change.
+++
+++Motion is never decoration.
+++
+++The interface should never move simply because it can.
+++
+++Every transition should answer one question:
+++
+++"What changed?"
+++
+++If motion does not improve understanding, it should not exist.
+++
+++---
+++
+++# Space Is Information
+++
+++Whitespace is not empty.
+++
+++Whitespace establishes relationships.
+++
+++Spacing determines rhythm.
+++
+++Rhythm determines readability.
+++
+++Readable interfaces create confident users.
+++
+++---
+++
+++# Build Systems, Not Screens
+++
+++Screens are temporary.
+++
+++Systems are permanent.
+++
+++Every reusable capability belongs in Ledger's design language.
+++
+++Every primitive should make future features easier to build.
+++
+++The product grows by strengthening its foundation, not by multiplying screens.
+++
+++---
+++
+++# Consistency Creates Trust
+++
+++The same action should always feel the same.
+++
+++The same interaction should always behave the same.
+++
+++The same motion should always obey the same physics.
+++
+++Users build confidence through repetition.
+++
+++Ledger should never betray that confidence.
+++
+++---
+++
+++# The Interface Should Disappear
+++
+++The user should think about money.
+++
+++Not menus.
+++
+++Not buttons.
+++
+++Not navigation.
+++
+++Not animations.
+++
+++The interface succeeds when it becomes invisible.
+++
+++---
+++
+++# Intelligence Without Noise
+++
+++Ledger should understand context.
+++
+++Ledger should anticipate needs.
+++
+++Ledger should simplify decisions.
+++
+++But it should never overwhelm.
+++
+++Intelligence should feel quiet.
+++
+++The product should feel aware, never intrusive.
+++
+++---
+++
+++# Privacy Is Respect
+++
+++Financial information belongs to the user.
+++
+++Privacy is not a feature.
+++
+++It is a responsibility.
+++
+++The architecture should assume that trust is earned every day.
+++
+++---
+++
+++# Craftsmanship Over Velocity
+++
+++Fast development is meaningless if quality declines.
+++
+++Every contribution should improve the foundation.
+++
+++Temporary shortcuts become permanent maintenance.
+++
+++Quality compounds.
+++
+++So does technical debt.
+++
+++Choose quality.
+++
+++---
+++
+++# Technology Is Replaceable
+++
+++Frameworks evolve.
+++
+++Languages change.
+++
+++Platforms disappear.
+++
+++The philosophy must outlive the implementation.
+++
+++Ledger is defined by its principles, not by its technology stack.
+++
+++---
+++
+++# We Reject
+++
+++We reject unnecessary complexity.
+++
+++We reject visual noise.
+++
+++We reject manipulative engagement.
+++
+++We reject feature accumulation without purpose.
+++
+++We reject trends that compromise clarity.
+++
+++We reject inconsistency.
+++
+++We reject software that demands attention instead of deserving it.
+++
+++---
+++
+++# We Build For The Next Ten Years
+++
+++Every architectural decision should survive future growth.
+++
+++Every design decision should scale.
+++
+++Every component should be reusable.
+++
+++Every interaction should age gracefully.
+++
+++We optimize for longevity over novelty.
+++
+++---
+++
+++# The Final Principle
+++
+++Ledger should leave the user feeling more confident than before they opened it.
+++
+++Every decision—from architecture to typography, from interaction to animation—should move the product toward that single outcome.
+++
+++If a change does not increase confidence, it does not belong in Ledger.
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphere.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphere.kt
++new file mode 100644
++index 0000000..6a4b444
++--- /dev/null
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphere.kt
++@@ -0,0 +1,70 @@
+++package com.sherif.ledger.core.designsystem.atmosphere
+++
+++import androidx.compose.runtime.Composable
+++import androidx.compose.runtime.CompositionLocalProvider
+++import androidx.compose.runtime.ReadOnlyComposable
+++import androidx.compose.runtime.staticCompositionLocalOf
+++import androidx.compose.ui.graphics.Color
+++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+++
+++/**
+++ * LDL atmospheric configuration.
+++ *
+++ * Defines the environmental lighting and mood that penetrates surfaces.
+++ * This is the global state that [LedgerSurface] and other components
+++ * query to decide how to reflect light or apply translucency.
+++ */
+++data class Atmosphere(
+++    val primaryGlow: Color,
+++    val secondaryGlow: Color,
+++    val coolGlow: Color,
+++    val warmGlow: Color,
+++    val intensity: Float = 1.0f,
+++)
+++
+++val LocalLedgerAtmosphere = staticCompositionLocalOf {
+++    Atmosphere(
+++        primaryGlow = Color.Transparent,
+++        secondaryGlow = Color.Transparent,
+++        coolGlow = Color.Transparent,
+++        warmGlow = Color.Transparent,
+++        intensity = 0f,
+++    )
+++}
+++
+++/**
+++ * Entry point for atmospheric effects.
+++ */
+++object LedgerAtmosphere {
+++    val current: Atmosphere
+++        @Composable @ReadOnlyComposable get() = LocalLedgerAtmosphere.current
+++
+++    /**
+++     * Default calm atmosphere derived from theme colors.
+++     */
+++    @Composable
+++    @ReadOnlyComposable
+++    fun default(): Atmosphere {
+++        val colors = LedgerTheme.colors
+++        return Atmosphere(
+++            primaryGlow = colors.heroGlowPrimary,
+++            secondaryGlow = colors.heroGlowSecondary,
+++            coolGlow = colors.heroGlowCool,
+++            warmGlow = colors.heroGlowWarm,
+++        )
+++    }
+++}
+++
+++/**
+++ * Provides the [Atmosphere] to the [content].
+++ */
+++@Composable
+++fun LedgerAtmosphereProvider(
+++    atmosphere: Atmosphere = LedgerAtmosphere.default(),
+++    content: @Composable () -> Unit,
+++) {
+++    CompositionLocalProvider(
+++        LocalLedgerAtmosphere provides atmosphere,
+++        content = content,
+++    )
+++}
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt
++new file mode 100644
++index 0000000..35365b5
++--- /dev/null
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt
++@@ -0,0 +1,135 @@
+++package com.sherif.ledger.core.designsystem.atmosphere
+++
+++import androidx.compose.foundation.Canvas
+++import androidx.compose.runtime.Composable
+++import androidx.compose.ui.Modifier
+++import androidx.compose.ui.geometry.Offset
+++import androidx.compose.ui.geometry.Size
+++import androidx.compose.ui.graphics.Brush
+++import androidx.compose.ui.graphics.Color
+++import androidx.compose.ui.graphics.drawscope.rotate
+++import androidx.compose.ui.graphics.drawscope.scale
+++
+++/**
+++ * Renders the volumetric atmospheric glow.
+++ *
+++ * This component pulls from the current [Atmosphere] to create the
+++ * signature Ledger lighting effect. It should be placed at the
+++ * bottom of the Z-stack.
+++ */
+++@Composable
+++fun LedgerAtmosphereGlow(
+++    modifier: Modifier = Modifier,
+++    atmosphere: Atmosphere = LedgerAtmosphere.current,
+++) {
+++    val primary = atmosphere.primaryGlow
+++    val secondary = atmosphere.secondaryGlow
+++    val cool = atmosphere.coolGlow
+++    val warm = atmosphere.warmGlow
+++
+++    Canvas(modifier) {
+++        val w = size.width
+++        val h = size.height
+++
+++        // 1. Entry wash
+++        drawRect(
+++            brush = Brush.linearGradient(
+++                colors = listOf(
+++                    primary.copy(alpha = 0.22f),
+++                    primary.copy(alpha = 0.06f),
+++                    Color.Transparent,
+++                ),
+++                start = Offset(0f, 0f),
+++                end = Offset(w * 0.85f, h * 0.32f),
+++            ),
+++            size = Size(w, h * 0.38f),
+++        )
+++
+++        // 2. Light core
+++        rotate(-22f, Offset(w * 0.22f, h * 0.08f)) {
+++            scale(3.0f, 0.5f, Offset(w * 0.22f, h * 0.08f)) {
+++                drawCircle(
+++                    Brush.radialGradient(
+++                        listOf(secondary.copy(alpha = 0.18f), Color.Transparent),
+++                        Offset(w * 0.22f, h * 0.08f), h * 0.09f,
+++                    ),
+++                )
+++            }
+++        }
+++
+++        // 3. Cool temperature
+++        rotate(-28f, Offset(w * 0.48f, h * 0.04f)) {
+++            scale(3.2f, 0.35f, Offset(w * 0.48f, h * 0.04f)) {
+++                drawCircle(
+++                    Brush.radialGradient(
+++                        listOf(cool.copy(alpha = 0.10f), Color.Transparent),
+++                        Offset(w * 0.48f, h * 0.04f), h * 0.07f,
+++                    ),
+++                )
+++            }
+++        }
+++
+++        // 4. Mid-path
+++        rotate(-15f, Offset(w * 0.45f, h * 0.12f)) {
+++            scale(2.6f, 0.45f, Offset(w * 0.45f, h * 0.12f)) {
+++                drawCircle(
+++                    Brush.radialGradient(
+++                        listOf(primary.copy(alpha = 0.10f), Color.Transparent),
+++                        Offset(w * 0.45f, h * 0.12f), h * 0.08f,
+++                    ),
+++                )
+++            }
+++        }
+++
+++        // 5. Light spill
+++        rotate(-10f, Offset(w * 0.7f, h * 0.16f)) {
+++            scale(2.2f, 0.35f, Offset(w * 0.7f, h * 0.16f)) {
+++                drawCircle(
+++                    Brush.radialGradient(
+++                        listOf(primary.copy(alpha = 0.05f), Color.Transparent),
+++                        Offset(w * 0.7f, h * 0.16f), h * 0.06f,
+++                    ),
+++                )
+++            }
+++        }
+++
+++        // 6. Warm shadow
+++        rotate(8f, Offset(w * 0.55f, h * 0.24f)) {
+++            scale(3.5f, 0.3f, Offset(w * 0.55f, h * 0.24f)) {
+++                drawCircle(
+++                    Brush.radialGradient(
+++                        listOf(warm.copy(alpha = 0.05f), Color.Transparent),
+++                        Offset(w * 0.55f, h * 0.24f), h * 0.06f,
+++                    ),
+++                )
+++            }
+++        }
+++
+++        // 7. Surface continuity
+++        drawRect(
+++            brush = Brush.linearGradient(
+++                colors = listOf(
+++                    primary.copy(alpha = 0.04f),
+++                    cool.copy(alpha = 0.02f),
+++                    Color.Transparent,
+++                ),
+++                start = Offset(w * 0.1f, h * 0.20f),
+++                end = Offset(w * 0.8f, h * 0.42f),
+++            ),
+++            topLeft = Offset(0f, h * 0.18f),
+++            size = Size(w, h * 0.25f),
+++        )
+++
+++        // 8. Secondary cool wisp
+++        rotate(-35f, Offset(w * 0.6f, h * 0.02f)) {
+++            scale(2.5f, 0.25f, Offset(w * 0.6f, h * 0.02f)) {
+++                drawCircle(
+++                    Brush.radialGradient(
+++                        listOf(cool.copy(alpha = 0.06f), Color.Transparent),
+++                        Offset(w * 0.6f, h * 0.02f), h * 0.05f,
+++                    ),
+++                )
+++            }
+++        }
+++    }
+++}
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt
++index dc4fe13..a5ebcfc 100644
++--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt
++@@ -1,19 +1,29 @@
++ package com.sherif.ledger.core.designsystem.component
++ 
+++import androidx.compose.foundation.background
+++import androidx.compose.foundation.border
+++import androidx.compose.foundation.layout.Box
++ import androidx.compose.foundation.layout.PaddingValues
++-import androidx.compose.material3.Button
++-import androidx.compose.material3.ButtonDefaults
++-import androidx.compose.material3.OutlinedButton
+++import androidx.compose.foundation.layout.padding
++ import androidx.compose.material3.Text
++-import androidx.compose.material3.TextButton
++ import androidx.compose.runtime.Composable
+++import androidx.compose.ui.Alignment
++ import androidx.compose.ui.Modifier
++-import com.sherif.ledger.core.designsystem.theme.LedgerShapes
+++import androidx.compose.ui.draw.clip
+++import androidx.compose.ui.graphics.Color
+++import androidx.compose.ui.unit.dp
++ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
++ 
++ enum class LedgerButtonStyle { Primary, Secondary, Text }
++ 
+++/**
+++ * LDL standard button.
+++ *
+++ * Purged of Material 3 Button dependencies. Uses [ledgerClickable] for
+++ * micro-spring interaction and scale-based feedback.
+++ */
++ @Composable
++ fun LedgerButton(
++     text: String,
++@@ -22,12 +32,48 @@ fun LedgerButton(
++     enabled: Boolean = true,
++     style: LedgerButtonStyle = LedgerButtonStyle.Primary,
++ ) {
++-    val contentPadding = PaddingValues(horizontal = LedgerSpacing.XLarge, vertical = LedgerSpacing.Small)
++-    val shape = LedgerShapes.small
++-    when (style) {
++-        LedgerButtonStyle.Primary -> Button(onClick, modifier, enabled, shape = shape, contentPadding = contentPadding) { Text(text) }
++-        LedgerButtonStyle.Secondary -> OutlinedButton(onClick, modifier, enabled, shape = shape, contentPadding = contentPadding,
++-            colors = ButtonDefaults.outlinedButtonColors(contentColor = LedgerTheme.colors.tint)) { Text(text) }
++-        LedgerButtonStyle.Text -> TextButton(onClick, modifier, enabled, shape = shape, contentPadding = contentPadding) { Text(text) }
+++    val contentPadding = PaddingValues(
+++        horizontal = LedgerSpacing.XLarge,
+++        vertical = LedgerSpacing.Small,
+++    )
+++    val shape = LedgerRadius.Small
+++    val colors = LedgerTheme.colors
+++
+++    val (backgroundColor, contentColor, borderColor) = when (style) {
+++        LedgerButtonStyle.Primary -> Triple(
+++            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
+++            colors.onTint,
+++            Color.Transparent,
+++        )
+++        LedgerButtonStyle.Secondary -> Triple(
+++            Color.Transparent,
+++            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
+++            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
+++        )
+++        LedgerButtonStyle.Text -> Triple(
+++            Color.Transparent,
+++            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
+++            Color.Transparent,
+++        )
+++    }
+++
+++    Box(
+++        modifier = modifier
+++            .clip(shape)
+++            .then(
+++                if (borderColor != Color.Transparent) {
+++                    Modifier.border(0.5.dp, borderColor, shape)
+++                } else Modifier,
+++            )
+++            .background(backgroundColor)
+++            .ledgerClickable(enabled = enabled, onClick = onClick)
+++            .padding(contentPadding),
+++        contentAlignment = Alignment.Center,
+++    ) {
+++        Text(
+++            text = text,
+++            style = LedgerTheme.typography.labelLarge,
+++            color = contentColor,
+++        )
++     }
++ }
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt
++index 0151efc..1945da0 100644
++--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt
++@@ -1,17 +1,24 @@
++ package com.sherif.ledger.core.designsystem.component
++ 
++-import androidx.compose.foundation.layout.PaddingValues
+++import androidx.compose.foundation.background
+++import androidx.compose.foundation.layout.Box
++ import androidx.compose.foundation.layout.padding
++-import androidx.compose.material3.Surface
++ import androidx.compose.material3.Text
++ import androidx.compose.runtime.Composable
++ import androidx.compose.ui.Modifier
+++import androidx.compose.ui.draw.clip
++ import androidx.compose.ui.graphics.Color
++-import com.sherif.ledger.core.designsystem.theme.LedgerShapes
++ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
++ 
+++/**
+++ * LDL atomic tag.
+++ *
+++ * Purged of Material 3 Surface. Used for categories, transaction
+++ * metadata and status indicators.
+++ */
++ @Composable
++ fun LedgerTag(
++     text: String,
++@@ -19,7 +26,20 @@ fun LedgerTag(
++     containerColor: Color = LedgerTheme.colors.tint.copy(alpha = LedgerTheme.opacity.Fill),
++     contentColor: Color = LedgerTheme.colors.tint,
++ ) {
++-    Surface(modifier = modifier, shape = LedgerShapes.small, color = containerColor, contentColor = contentColor) {
++-        Text(text, Modifier.padding(PaddingValues(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.XxSmall)), style = LedgerTextStyles.Caption)
+++    val shape = LedgerRadius.Small
+++    Box(
+++        modifier = modifier
+++            .clip(shape)
+++            .background(containerColor)
+++            .padding(
+++                horizontal = LedgerSpacing.Small,
+++                vertical = LedgerSpacing.XxSmall,
+++            ),
+++    ) {
+++        Text(
+++            text = text,
+++            style = LedgerTextStyles.Caption,
+++            color = contentColor,
+++        )
++     }
++ }
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt
++index 5efb269..08904ac 100644
++--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt
++@@ -1,16 +1,28 @@
++ package com.sherif.ledger.core.designsystem.component
++ 
+++import androidx.compose.foundation.background
+++import androidx.compose.foundation.layout.Arrangement
+++import androidx.compose.foundation.layout.Box
+++import androidx.compose.foundation.layout.Row
++ import androidx.compose.foundation.layout.RowScope
++-import androidx.compose.material3.CenterAlignedTopAppBar
++-import androidx.compose.material3.ExperimentalMaterial3Api
+++import androidx.compose.foundation.layout.fillMaxWidth
+++import androidx.compose.foundation.layout.height
+++import androidx.compose.foundation.layout.padding
++ import androidx.compose.material3.Text
++-import androidx.compose.material3.TopAppBarDefaults
++ import androidx.compose.runtime.Composable
+++import androidx.compose.ui.Alignment
++ import androidx.compose.ui.Modifier
+++import androidx.compose.ui.unit.dp
+++import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++ 
++-@OptIn(ExperimentalMaterial3Api::class)
+++/**
+++ * LDL top navigation bar.
+++ *
+++ * Purged of Material 3 CenterAlignedTopAppBar. Follows the "Carved"
+++ * aesthetic where the top bar is a flat extension of the background.
+++ */
++ @Composable
++ fun LedgerTopBar(
++     title: String,
++@@ -19,14 +31,34 @@ fun LedgerTopBar(
++     actions: @Composable RowScope.() -> Unit = {},
++ ) {
++     val colors = LedgerTheme.colors
++-    CenterAlignedTopAppBar(
++-        title = { Text(title, style = LedgerTextStyles.Section) },
++-        modifier = modifier, navigationIcon = navigationIcon, actions = actions,
++-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
++-            containerColor = colors.surfaceLevel0,
++-            titleContentColor = colors.label,
++-            navigationIconContentColor = colors.label,
++-            actionIconContentColor = colors.label,
++-        ),
++-    )
+++
+++    Box(
+++        modifier = modifier
+++            .fillMaxWidth()
+++            .height(56.dp)
+++            .background(colors.surfaceLevel0)
+++            .padding(horizontal = LedgerSpacing.Medium),
+++    ) {
+++        Box(
+++            modifier = Modifier
+++                .align(Alignment.CenterStart),
+++        ) {
+++            navigationIcon()
+++        }
+++
+++        Text(
+++            text = title,
+++            style = LedgerTextStyles.Section,
+++            color = colors.label,
+++            modifier = Modifier.align(Alignment.Center),
+++        )
+++
+++        Row(
+++            modifier = Modifier.align(Alignment.CenterEnd),
+++            horizontalArrangement = Arrangement.End,
+++            verticalAlignment = Alignment.CenterVertically,
+++        ) {
+++            actions()
+++        }
+++    }
++ }
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/haptics/LedgerHaptics.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/haptics/LedgerHaptics.kt
++new file mode 100644
++index 0000000..09c2b67
++--- /dev/null
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/haptics/LedgerHaptics.kt
++@@ -0,0 +1,83 @@
+++package com.sherif.ledger.core.designsystem.haptics
+++
+++import androidx.compose.runtime.Composable
+++import androidx.compose.runtime.CompositionLocalProvider
+++import androidx.compose.runtime.ReadOnlyComposable
+++import androidx.compose.runtime.remember
+++import androidx.compose.runtime.staticCompositionLocalOf
+++import androidx.compose.ui.hapticfeedback.HapticFeedback
+++import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+++import androidx.compose.ui.platform.LocalHapticFeedback
+++
+++/**
+++ * LDL semantic haptic engine.
+++ *
+++ * Provides a vocabulary for tactile feedback that follows Ledger's
+++ * physical philosophy.
+++ */
+++interface LedgerHapticEngine {
+++    /** Selection change or soft tick. */
+++    fun selection()
+++
+++    /** Success confirmation. */
+++    fun success()
+++
+++    /** Error or critical alert. */
+++    fun error()
+++
+++    /** Physical impact, like a surface settling. */
+++    fun impact()
+++}
+++
+++/**
+++ * Default implementation using standard Android haptics.
+++ */
+++private class AndroidLedgerHapticEngine(
+++    private val hapticFeedback: HapticFeedback,
+++) : LedgerHapticEngine {
+++    override fun selection() {
+++        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+++    }
+++
+++    override fun success() {
+++        // Android doesn't have a built-in success haptic in the standard API
+++        // without low-level VibrationEffect, but we can simulate it.
+++        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+++    }
+++
+++    override fun error() {
+++        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+++    }
+++
+++    override fun impact() {
+++        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+++    }
+++}
+++
+++val LocalLedgerHaptics = staticCompositionLocalOf<LedgerHapticEngine> {
+++    object : LedgerHapticEngine {
+++        override fun selection() {}
+++        override fun success() {}
+++        override fun error() {}
+++        override fun impact() {}
+++    }
+++}
+++
+++object LedgerHaptics {
+++    val current: LedgerHapticEngine
+++        @Composable @ReadOnlyComposable get() = LocalLedgerHaptics.current
+++}
+++
+++/**
+++ * Provides the [LedgerHapticEngine] to the [content].
+++ */
+++@Composable
+++fun LedgerHapticProvider(content: @Composable () -> Unit) {
+++    val hapticFeedback = LocalHapticFeedback.current
+++    val engine = remember(hapticFeedback) { AndroidLedgerHapticEngine(hapticFeedback) }
+++
+++    CompositionLocalProvider(
+++        LocalLedgerHaptics provides engine,
+++        content = content,
+++    )
+++}
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerAnimations.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerAnimations.kt
++index cc98cd1..5c1d5a7 100644
++--- a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerAnimations.kt
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerAnimations.kt
++@@ -7,9 +7,7 @@ import androidx.compose.animation.core.spring
++ import androidx.compose.animation.core.tween
++ import androidx.compose.animation.fadeIn
++ import androidx.compose.animation.fadeOut
++-import androidx.compose.animation.slideInHorizontally
++ import androidx.compose.animation.slideInVertically
++-import androidx.compose.animation.slideOutHorizontally
++ 
++ /**
++  * Canonical animation vocabulary for Ledger.
++@@ -53,19 +51,11 @@ object LedgerAnimations {
++ 
++     // ── Navigation transitions ──
++ 
++-    val screenEnter: EnterTransition =
++-        slideInHorizontally(tween(LedgerMotion.StandardTweenMs)) { it / 5 } +
++-            fadeIn(tween(LedgerMotion.StandardTweenMs))
+++    val screenEnter: EnterTransition = LedgerNavigationMotion.StandardEnter
++ 
++-    val screenExit: ExitTransition =
++-        slideOutHorizontally(tween(LedgerMotion.StandardTweenMs)) { -it / 5 } +
++-            fadeOut(tween(LedgerMotion.FastTweenMs))
+++    val screenExit: ExitTransition = LedgerNavigationMotion.StandardExit
++ 
++-    val screenPopEnter: EnterTransition =
++-        slideInHorizontally(tween(LedgerMotion.StandardTweenMs)) { -it / 5 } +
++-            fadeIn(tween(LedgerMotion.StandardTweenMs))
+++    val screenPopEnter: EnterTransition = LedgerNavigationMotion.StandardPopEnter
++ 
++-    val screenPopExit: ExitTransition =
++-        slideOutHorizontally(tween(LedgerMotion.StandardTweenMs)) { it / 5 } +
++-            fadeOut(tween(LedgerMotion.FastTweenMs))
+++    val screenPopExit: ExitTransition = LedgerNavigationMotion.StandardPopExit
++ }
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerNavigationMotion.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerNavigationMotion.kt
++new file mode 100644
++index 0000000..5833fdd
++--- /dev/null
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerNavigationMotion.kt
++@@ -0,0 +1,34 @@
+++package com.sherif.ledger.core.designsystem.theme
+++
+++import androidx.compose.animation.EnterTransition
+++import androidx.compose.animation.ExitTransition
+++import androidx.compose.animation.core.tween
+++import androidx.compose.animation.fadeIn
+++import androidx.compose.animation.fadeOut
+++import androidx.compose.animation.slideInHorizontally
+++import androidx.compose.animation.slideOutHorizontally
+++
+++/**
+++ * LDL navigation motion vocabulary.
+++ *
+++ * Centralizes all screen-level transitions to ensure spatial
+++ * consistency across the application.
+++ */
+++object LedgerNavigationMotion {
+++
+++    val StandardEnter: EnterTransition =
+++        slideInHorizontally(tween(LedgerMotion.StandardTweenMs)) { it / 5 } +
+++            fadeIn(tween(LedgerMotion.StandardTweenMs))
+++
+++    val StandardExit: ExitTransition =
+++        slideOutHorizontally(tween(LedgerMotion.StandardTweenMs)) { -it / 5 } +
+++            fadeOut(tween(LedgerMotion.FastTweenMs))
+++
+++    val StandardPopEnter: EnterTransition =
+++        slideInHorizontally(tween(LedgerMotion.StandardTweenMs)) { -it / 5 } +
+++            fadeIn(tween(LedgerMotion.StandardTweenMs))
+++
+++    val StandardPopExit: ExitTransition =
+++        slideOutHorizontally(tween(LedgerMotion.StandardTweenMs)) { it / 5 } +
+++            fadeOut(tween(LedgerMotion.FastTweenMs))
+++}
++diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt
++index ab40ff2..b8787d9 100644
++--- a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt
+++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTheme.kt
++@@ -9,6 +9,10 @@ import androidx.compose.runtime.Composable
++ import androidx.compose.runtime.CompositionLocalProvider
++ import androidx.compose.runtime.ReadOnlyComposable
++ import androidx.compose.ui.platform.LocalContext
+++import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphere
+++import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereProvider
+++import com.sherif.ledger.core.designsystem.haptics.LedgerHaptics
+++import com.sherif.ledger.core.designsystem.haptics.LedgerHapticProvider
++ import com.sherif.ledger.core.designsystem.tokens.LedgerBorder
++ import com.sherif.ledger.core.designsystem.tokens.LedgerIconSize
++ import com.sherif.ledger.core.designsystem.tokens.LedgerOpacity
++@@ -37,12 +41,16 @@ fun LedgerTheme(
++     val ledgerColors = if (darkTheme) LedgerDarkColors else LedgerLightColors
++ 
++     CompositionLocalProvider(LocalLedgerColors provides ledgerColors) {
++-        MaterialTheme(
++-            colorScheme = colorScheme,
++-            typography = LedgerTypography,
++-            shapes = LedgerShapes,
++-            content = content,
++-        )
+++        LedgerAtmosphereProvider {
+++            LedgerHapticProvider {
+++                MaterialTheme(
+++                    colorScheme = colorScheme,
+++                    typography = LedgerTypography,
+++                    shapes = LedgerShapes,
+++                    content = content,
+++                )
+++            }
+++        }
++     }
++ }
++ 
++@@ -55,6 +63,9 @@ fun LedgerTheme(
++ object LedgerTheme {
++     val colors: LedgerColors
++         @Composable @ReadOnlyComposable get() = LocalLedgerColors.current
+++    val atmosphere @Composable @ReadOnlyComposable get() = LedgerAtmosphere.current
+++    val haptics @Composable @ReadOnlyComposable get() = LedgerHaptics.current
+++    val typography get() = LedgerTypography
++     val radius get() = LedgerRadius
++     val border get() = LedgerBorder
++     val opacity get() = LedgerOpacity
++diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
++index 562f334..7ace77d 100644
++--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
++@@ -1,7 +1,6 @@
++ package com.sherif.ledger.presentation.dashboard
++ 
++ import androidx.compose.animation.core.spring
++-import androidx.compose.foundation.Canvas
++ import androidx.compose.foundation.background
++ import androidx.compose.foundation.layout.Arrangement
++ import androidx.compose.foundation.layout.Box
++@@ -32,20 +31,16 @@ import androidx.compose.runtime.remember
++ import androidx.compose.ui.Alignment
++ import androidx.compose.ui.Modifier
++ import androidx.compose.ui.draw.clip
++-import androidx.compose.ui.geometry.Offset
++-import androidx.compose.ui.geometry.Size
++-import androidx.compose.ui.graphics.Brush
++ import androidx.compose.ui.graphics.Color
++ import androidx.compose.ui.graphics.SolidColor
++ import androidx.compose.ui.graphics.graphicsLayer
++-import androidx.compose.ui.graphics.drawscope.rotate
++-import androidx.compose.ui.graphics.drawscope.scale
++ import androidx.compose.ui.platform.LocalDensity
++ import androidx.compose.ui.text.TextStyle
++ import androidx.compose.ui.text.font.FontWeight
++ import androidx.compose.ui.text.style.TextAlign
++ import androidx.compose.ui.unit.dp
++ import androidx.compose.ui.unit.sp
+++import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
++ import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
++ import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
++ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++@@ -73,7 +68,7 @@ private object HeroSnap {
++ }
++ 
++ @Composable
++-fun DashboardScreen(
+++fun DashboardScreen(
++     onNavigateToTransactions: () -> Unit = {},
++     state: DashboardUiState = DashboardPreviewData.state,
++ ) {
++@@ -113,129 +108,7 @@ fun DashboardScreen(
++ 
++     Box(Modifier.fillMaxSize().background(c.surfaceLevel0)) {
++ 
++-        // The light enters from the upper-left, outside the frame.
++-        // It travels diagonally across the hero, illuminating the
++-        // balance from above-left, then dissipates past the hero
++-        // boundary into the first content section so the page reads
++-        // as one continuous scene.
++-        //
++-        // No layer should be individually perceivable. The right side
++-        // of the hero sits in relative shadow. The left carries the
++-        // light. The balance is in the lit zone but is not the source.
++-
++-        Canvas(Modifier.fillMaxSize()) {
++-            val w = size.width
++-            val h = size.height
++-
++-            // 1. Entry wash: light entering the frame from upper-left.
++-            //    A diagonal linear gradient that establishes direction.
++-            drawRect(
++-                brush = Brush.linearGradient(
++-                    colors = listOf(
++-                        c.heroGlowPrimary.copy(alpha = 0.22f),
++-                        c.heroGlowPrimary.copy(alpha = 0.06f),
++-                        Color.Transparent,
++-                    ),
++-                    start = Offset(0f, 0f),
++-                    end = Offset(w * 0.85f, h * 0.32f),
++-                ),
++-                size = Size(w, h * 0.38f),
++-            )
++-
++-            // 2. Light core: the brightest concentration, upper-left,
++-            //    where the beam enters. Stretched into a diagonal band.
++-            rotate(-22f, Offset(w * 0.22f, h * 0.08f)) {
++-                scale(3.0f, 0.5f, Offset(w * 0.22f, h * 0.08f)) {
++-                    drawCircle(
++-                        Brush.radialGradient(
++-                            listOf(c.heroGlowSecondary.copy(alpha = 0.18f), Color.Transparent),
++-                            Offset(w * 0.22f, h * 0.08f), h * 0.09f,
++-                        ),
++-                    )
++-                }
++-            }
++-
++-            // 3. Cool temperature: blue-grey wisp above the main beam,
++-            //    offset right, adding temperature variation.
++-            rotate(-28f, Offset(w * 0.48f, h * 0.04f)) {
++-                scale(3.2f, 0.35f, Offset(w * 0.48f, h * 0.04f)) {
++-                    drawCircle(
++-                        Brush.radialGradient(
++-                            listOf(c.heroGlowCool.copy(alpha = 0.10f), Color.Transparent),
++-                            Offset(w * 0.48f, h * 0.04f), h * 0.07f,
++-                        ),
++-                    )
++-                }
++-            }
++-
++-            // 4. Mid-path: the light traveling through the scene, now
++-            //    weaker, approaching center. Illuminates the balance zone.
++-            rotate(-15f, Offset(w * 0.45f, h * 0.12f)) {
++-                scale(2.6f, 0.45f, Offset(w * 0.45f, h * 0.12f)) {
++-                    drawCircle(
++-                        Brush.radialGradient(
++-                            listOf(c.heroGlowPrimary.copy(alpha = 0.10f), Color.Transparent),
++-                            Offset(w * 0.45f, h * 0.12f), h * 0.08f,
++-                        ),
++-                    )
++-                }
++-            }
++-
++-            // 5. Light spill: faint continuation past center toward
++-            //    right, the beam losing energy.
++-            rotate(-10f, Offset(w * 0.7f, h * 0.16f)) {
++-                scale(2.2f, 0.35f, Offset(w * 0.7f, h * 0.16f)) {
++-                    drawCircle(
++-                        Brush.radialGradient(
++-                            listOf(c.heroGlowPrimary.copy(alpha = 0.05f), Color.Transparent),
++-                            Offset(w * 0.7f, h * 0.16f), h * 0.06f,
++-                        ),
++-                    )
++-                }
++-            }
++-
++-            // 6. Warm shadow: faint warm tone at the lower boundary
++-            //    where the light fades. Opposite temperature from cool.
++-            rotate(8f, Offset(w * 0.55f, h * 0.24f)) {
++-                scale(3.5f, 0.3f, Offset(w * 0.55f, h * 0.24f)) {
++-                    drawCircle(
++-                        Brush.radialGradient(
++-                            listOf(c.heroGlowWarm.copy(alpha = 0.05f), Color.Transparent),
++-                            Offset(w * 0.55f, h * 0.24f), h * 0.06f,
++-                        ),
++-                    )
++-                }
++-            }
++-
++-            // 7. Surface continuity: the atmosphere dissolves into the
++-            //    content zone so the hero never feels like it "ends."
++-            drawRect(
++-                brush = Brush.linearGradient(
++-                    colors = listOf(
++-                        c.heroGlowPrimary.copy(alpha = 0.04f),
++-                        c.heroGlowCool.copy(alpha = 0.02f),
++-                        Color.Transparent,
++-                    ),
++-                    start = Offset(w * 0.1f, h * 0.20f),
++-                    end = Offset(w * 0.8f, h * 0.42f),
++-                ),
++-                topLeft = Offset(0f, h * 0.18f),
++-                size = Size(w, h * 0.25f),
++-            )
++-
++-            // 8. Secondary cool wisp: thin streak at a steeper angle,
++-            //    adding layered depth near the top edge.
++-            rotate(-35f, Offset(w * 0.6f, h * 0.02f)) {
++-                scale(2.5f, 0.25f, Offset(w * 0.6f, h * 0.02f)) {
++-                    drawCircle(
++-                        Brush.radialGradient(
++-                            listOf(c.heroGlowCool.copy(alpha = 0.06f), Color.Transparent),
++-                            Offset(w * 0.6f, h * 0.02f), h * 0.05f,
++-                        ),
++-                    )
++-                }
++-            }
++-        }
+++        LedgerAtmosphereGlow(Modifier.fillMaxSize())
++ 
++         LazyColumn(
++             state = listState,
++-- 
++2.51.0
++
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt
+index a5ebcfc..02bcef4 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerButton.kt
+@@ -1,7 +1,5 @@
+ package com.sherif.ledger.core.designsystem.component
+ 
+-import androidx.compose.foundation.background
+-import androidx.compose.foundation.border
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.padding
+@@ -9,7 +7,6 @@ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.unit.dp
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+@@ -59,14 +56,14 @@ fun LedgerButton(
+ 
+     Box(
+         modifier = modifier
+-            .clip(shape)
+-            .then(
+-                if (borderColor != Color.Transparent) {
+-                    Modifier.border(0.5.dp, borderColor, shape)
+-                } else Modifier,
++            .ledgerSurface(
++                shape = shape,
++                backgroundColor = backgroundColor,
++                borderColor = borderColor,
++                borderWidth = if (borderColor == Color.Transparent) 0.dp else 0.5.dp,
++                onClick = onClick,
++                enabled = enabled,
+             )
+-            .background(backgroundColor)
+-            .ledgerClickable(enabled = enabled, onClick = onClick)
+             .padding(contentPadding),
+         contentAlignment = Alignment.Center,
+     ) {
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerInteraction.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerInteraction.kt
+index c5fdd6e..35b044d 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerInteraction.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerInteraction.kt
+@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.composed
+ import androidx.compose.ui.graphics.graphicsLayer
+ import com.sherif.ledger.core.designsystem.theme.LedgerMotion
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ 
+ /**
+  * LDL click modifier: no ripple, subtle press compression.
+@@ -22,7 +23,7 @@ fun Modifier.ledgerClickable(
+     enabled: Boolean = true,
+     onClick: () -> Unit,
+ ): Modifier = composed {
+-
++    val haptics = LedgerTheme.haptics
+     val interactionSource = remember { MutableInteractionSource() }
+     val isPressed by interactionSource.collectIsPressedAsState()
+ 
+@@ -39,6 +40,9 @@ fun Modifier.ledgerClickable(
+         interactionSource = interactionSource,
+         indication = null,
+         enabled = enabled,
+-        onClick = onClick,
++        onClick = {
++            haptics.selection()
++            onClick()
++        },
+     )
+-}
+\ No newline at end of file
++}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt
+index 2f63393..4261fd0 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerSurface.kt
+@@ -4,19 +4,54 @@ import androidx.compose.foundation.background
+ import androidx.compose.foundation.border
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.ColumnScope
+-import com.sherif.ledger.core.designsystem.theme.LedgerMotion
+ import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.composed
+ import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.Shape
++import androidx.compose.ui.unit.Dp
+ import androidx.compose.ui.unit.dp
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+ 
++/**
++ * LDL foundation for surfaces.
++ *
++ * Applies the canonical "Carved" aesthetic: clip, tonal background,
++ * hairline border, and optional micro-spring interaction.
++ */
++fun Modifier.ledgerSurface(
++    level: LedgerSurfaceLevel = LedgerSurfaceLevel.Level1,
++    shape: Shape = LedgerRadius.Small,
++    backgroundColor: Color? = null,
++    borderColor: Color? = null,
++    borderWidth: Dp = 0.5.dp,
++    onClick: (() -> Unit)? = null,
++    enabled: Boolean = true,
++): Modifier = composed {
++    val colors = LedgerTheme.colors
++    val resolvedBackground = backgroundColor ?: colors.surface(level)
++    val resolvedBorderColor = borderColor ?: colors.separator.copy(
++        alpha = LedgerTheme.motion.SurfaceBorderAlpha,
++    )
++
++    this
++        .clip(shape)
++        .background(resolvedBackground)
++        .border(width = borderWidth, color = resolvedBorderColor, shape = shape)
++        .then(
++            if (onClick != null) {
++                Modifier.ledgerClickable(enabled = enabled, onClick = onClick)
++            } else Modifier,
++        )
++}
++
+ /**
+  * LDL grouped content surface.
+  *
+@@ -37,17 +72,10 @@ fun LedgerSurface(
+     onClick: (() -> Unit)? = null,
+     content: @Composable ColumnScope.() -> Unit,
+ ) {
+-    val shape = LedgerRadius.Small
+-val borderColor = LedgerTheme.colors.separator.copy(
+-    alpha = LedgerMotion.SurfaceBorderAlpha,
+-)
+     Column(
+         modifier = modifier
+             .fillMaxWidth()
+-            .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
+-            .clip(shape)
+-            .background(LedgerTheme.colors.surface(level))
+-            .border(width = 0.5.dp, color = borderColor, shape = shape)
++            .ledgerSurface(level = level, onClick = onClick)
+             .padding(contentPadding),
+         content = content,
+     )
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt
+index 1945da0..e1ee0f8 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTag.kt
+@@ -1,13 +1,12 @@
+ package com.sherif.ledger.core.designsystem.component
+ 
+-import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.unit.dp
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+@@ -29,8 +28,12 @@ fun LedgerTag(
+     val shape = LedgerRadius.Small
+     Box(
+         modifier = modifier
+-            .clip(shape)
+-            .background(containerColor)
++            .ledgerSurface(
++                shape = shape,
++                backgroundColor = containerColor,
++                borderColor = Color.Transparent,
++                borderWidth = 0.dp,
++            )
+             .padding(
+                 horizontal = LedgerSpacing.Small,
+                 vertical = LedgerSpacing.XxSmall,
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt
+index 08904ac..7062caa 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTopBar.kt
+@@ -1,6 +1,5 @@
+ package com.sherif.ledger.core.designsystem.component
+ 
+-import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Row
+@@ -14,6 +13,7 @@ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.unit.dp
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ 
+@@ -36,7 +36,11 @@ fun LedgerTopBar(
+         modifier = modifier
+             .fillMaxWidth()
+             .height(56.dp)
+-            .background(colors.surfaceLevel0)
++            .ledgerSurface(
++                level = LedgerSurfaceLevel.Level0,
++                shape = androidx.compose.ui.graphics.RectangleShape,
++                borderWidth = 0.dp,
++            )
+             .padding(horizontal = LedgerSpacing.Medium),
+     ) {
+         Box(
+-- 
+2.51.0
+

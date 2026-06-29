@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -14,6 +15,7 @@ enum class LedgerAmountStyle {
     Small,
     Regular,
     Large,
+    Display,
 }
 
 /**
@@ -38,6 +40,10 @@ fun LedgerAmount(
 
         LedgerAmountStyle.Regular -> LedgerTextStyles.Mono
         LedgerAmountStyle.Large -> LedgerTextStyles.Title.copy(fontFamily = FontFamily.Monospace)
+        LedgerAmountStyle.Display -> LedgerTextStyles.Display.copy(
+            fontFamily = FontFamily.Monospace,
+            textAlign = TextAlign.Center,
+        )
     }
 
     Text(

@@ -79,7 +79,7 @@ fun LedgerSearchBar(
                     imageVector = Icons.Filled.Search,
                     contentDescription = null,
                     tint = LedgerTheme.colors.tertiaryLabel,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(LedgerTheme.iconSize.Medium),
                 )
 
                 Box(
@@ -105,16 +105,10 @@ fun LedgerSearchBar(
                         contentDescription = "Clear",
                         tint = LedgerTheme.colors.tertiaryLabel,
                         modifier = Modifier
-                            .size(20.dp)
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember {
-                                    MutableInteractionSource()
-                                },
-                                onClick = {
-                                    onQueryChange("")
-                                },
-                            ),
+                            .size(LedgerTheme.iconSize.Medium)
+                            .ledgerClickable {
+                                onQueryChange("")
+                            },
                     )
                 }
             }
