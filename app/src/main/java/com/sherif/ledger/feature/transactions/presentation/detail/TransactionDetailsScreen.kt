@@ -25,7 +25,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.preview.PreviewTransactions
 import com.sherif.ledger.feature.transactions.presentation.detail.components.AmountHero
 import com.sherif.ledger.feature.transactions.presentation.detail.components.InformationSection
-import com.sherif.ledger.feature.transactions.presentation.detail.components.MerchantHeader
+import com.sherif.ledger.core.designsystem.component.MerchantHeader
 
 private val previewState = run {
     val t = PreviewTransactions.amazonToday

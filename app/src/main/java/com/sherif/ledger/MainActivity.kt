@@ -6,12 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
+import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
 import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
 import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsScreen
 import com.sherif.ledger.presentation.navigation.LedgerNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
-enum class DevScreen { Dashboard, Accounts, Transactions, TransactionDetails }
+enum class DevScreen { Dashboard, Accounts, Transactions, TransactionDetails, ReviewInbox }
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
                     DevScreen.Accounts -> AccountsScreen()
                     DevScreen.Transactions -> TransactionsScreen()
                     DevScreen.TransactionDetails -> TransactionDetailsScreen()
+                    DevScreen.ReviewInbox -> ReviewInboxScreen()
                 }
             }
         }
