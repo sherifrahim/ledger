@@ -1,7 +1,6 @@
 package com.sherif.ledger.presentation.dashboard
 
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,20 +31,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
 import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -113,129 +108,7 @@ fun DashboardScreen(
 
     Box(Modifier.fillMaxSize().background(c.surfaceLevel0)) {
 
-        // The light enters from the upper-left, outside the frame.
-        // It travels diagonally across the hero, illuminating the
-        // balance from above-left, then dissipates past the hero
-        // boundary into the first content section so the page reads
-        // as one continuous scene.
-        //
-        // No layer should be individually perceivable. The right side
-        // of the hero sits in relative shadow. The left carries the
-        // light. The balance is in the lit zone but is not the source.
-
-        Canvas(Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-
-            // 1. Entry wash: light entering the frame from upper-left.
-            //    A diagonal linear gradient that establishes direction.
-            drawRect(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        c.heroGlowPrimary.copy(alpha = 0.22f),
-                        c.heroGlowPrimary.copy(alpha = 0.06f),
-                        Color.Transparent,
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(w * 0.85f, h * 0.32f),
-                ),
-                size = Size(w, h * 0.38f),
-            )
-
-            // 2. Light core: the brightest concentration, upper-left,
-            //    where the beam enters. Stretched into a diagonal band.
-            rotate(-22f, Offset(w * 0.22f, h * 0.08f)) {
-                scale(3.0f, 0.5f, Offset(w * 0.22f, h * 0.08f)) {
-                    drawCircle(
-                        Brush.radialGradient(
-                            listOf(c.heroGlowSecondary.copy(alpha = 0.18f), Color.Transparent),
-                            Offset(w * 0.22f, h * 0.08f), h * 0.09f,
-                        ),
-                    )
-                }
-            }
-
-            // 3. Cool temperature: blue-grey wisp above the main beam,
-            //    offset right, adding temperature variation.
-            rotate(-28f, Offset(w * 0.48f, h * 0.04f)) {
-                scale(3.2f, 0.35f, Offset(w * 0.48f, h * 0.04f)) {
-                    drawCircle(
-                        Brush.radialGradient(
-                            listOf(c.heroGlowCool.copy(alpha = 0.10f), Color.Transparent),
-                            Offset(w * 0.48f, h * 0.04f), h * 0.07f,
-                        ),
-                    )
-                }
-            }
-
-            // 4. Mid-path: the light traveling through the scene, now
-            //    weaker, approaching center. Illuminates the balance zone.
-            rotate(-15f, Offset(w * 0.45f, h * 0.12f)) {
-                scale(2.6f, 0.45f, Offset(w * 0.45f, h * 0.12f)) {
-                    drawCircle(
-                        Brush.radialGradient(
-                            listOf(c.heroGlowPrimary.copy(alpha = 0.10f), Color.Transparent),
-                            Offset(w * 0.45f, h * 0.12f), h * 0.08f,
-                        ),
-                    )
-                }
-            }
-
-            // 5. Light spill: faint continuation past center toward
-            //    right, the beam losing energy.
-            rotate(-10f, Offset(w * 0.7f, h * 0.16f)) {
-                scale(2.2f, 0.35f, Offset(w * 0.7f, h * 0.16f)) {
-                    drawCircle(
-                        Brush.radialGradient(
-                            listOf(c.heroGlowPrimary.copy(alpha = 0.05f), Color.Transparent),
-                            Offset(w * 0.7f, h * 0.16f), h * 0.06f,
-                        ),
-                    )
-                }
-            }
-
-            // 6. Warm shadow: faint warm tone at the lower boundary
-            //    where the light fades. Opposite temperature from cool.
-            rotate(8f, Offset(w * 0.55f, h * 0.24f)) {
-                scale(3.5f, 0.3f, Offset(w * 0.55f, h * 0.24f)) {
-                    drawCircle(
-                        Brush.radialGradient(
-                            listOf(c.heroGlowWarm.copy(alpha = 0.05f), Color.Transparent),
-                            Offset(w * 0.55f, h * 0.24f), h * 0.06f,
-                        ),
-                    )
-                }
-            }
-
-            // 7. Surface continuity: the atmosphere dissolves into the
-            //    content zone so the hero never feels like it "ends."
-            drawRect(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        c.heroGlowPrimary.copy(alpha = 0.04f),
-                        c.heroGlowCool.copy(alpha = 0.02f),
-                        Color.Transparent,
-                    ),
-                    start = Offset(w * 0.1f, h * 0.20f),
-                    end = Offset(w * 0.8f, h * 0.42f),
-                ),
-                topLeft = Offset(0f, h * 0.18f),
-                size = Size(w, h * 0.25f),
-            )
-
-            // 8. Secondary cool wisp: thin streak at a steeper angle,
-            //    adding layered depth near the top edge.
-            rotate(-35f, Offset(w * 0.6f, h * 0.02f)) {
-                scale(2.5f, 0.25f, Offset(w * 0.6f, h * 0.02f)) {
-                    drawCircle(
-                        Brush.radialGradient(
-                            listOf(c.heroGlowCool.copy(alpha = 0.06f), Color.Transparent),
-                            Offset(w * 0.6f, h * 0.02f), h * 0.05f,
-                        ),
-                    )
-                }
-            }
-        }
+        LedgerAtmosphereGlow(Modifier.fillMaxSize())
 
         LazyColumn(
             state = listState,

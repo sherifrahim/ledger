@@ -7,9 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
 
 /**
  * Canonical animation vocabulary for Ledger.
@@ -53,19 +51,11 @@ object LedgerAnimations {
 
     // ── Navigation transitions ──
 
-    val screenEnter: EnterTransition =
-        slideInHorizontally(tween(LedgerMotion.StandardTweenMs)) { it / 5 } +
-            fadeIn(tween(LedgerMotion.StandardTweenMs))
+    val screenEnter: EnterTransition = LedgerNavigationMotion.StandardEnter
 
-    val screenExit: ExitTransition =
-        slideOutHorizontally(tween(LedgerMotion.StandardTweenMs)) { -it / 5 } +
-            fadeOut(tween(LedgerMotion.FastTweenMs))
+    val screenExit: ExitTransition = LedgerNavigationMotion.StandardExit
 
-    val screenPopEnter: EnterTransition =
-        slideInHorizontally(tween(LedgerMotion.StandardTweenMs)) { -it / 5 } +
-            fadeIn(tween(LedgerMotion.StandardTweenMs))
+    val screenPopEnter: EnterTransition = LedgerNavigationMotion.StandardPopEnter
 
-    val screenPopExit: ExitTransition =
-        slideOutHorizontally(tween(LedgerMotion.StandardTweenMs)) { it / 5 } +
-            fadeOut(tween(LedgerMotion.FastTweenMs))
+    val screenPopExit: ExitTransition = LedgerNavigationMotion.StandardPopExit
 }
