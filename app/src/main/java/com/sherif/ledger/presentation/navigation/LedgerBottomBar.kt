@@ -1,13 +1,14 @@
 package com.sherif.ledger.presentation.navigation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CheckCircle
@@ -19,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -27,10 +27,13 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
+import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 private enum class BottomTab(
     val route: String,
@@ -44,38 +47,50 @@ private enum class BottomTab(
 }
 
 /**
- * LDL bottom navigation. No Material NavigationBar, NavigationBarItem,
- * or indicator. Pure Compose Row with spring-animated tab items and
- * no ripple. The only Material import remaining is Icon and Text.
+ * LDL bottom navigation.
+ *
+ * Designed as a floating "Dock" instead of a standard Android bottom bar.
+ * This moves Ledger's DNA away from the OS defaults and towards a high-end
+ * productivity tool aesthetic (Arc, Craft, Things 3).
  */
 @Composable
 fun LedgerBottomBar(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(LedgerTheme.colors.surfaceLevel1)
             .navigationBarsPadding()
-            .padding(top = LedgerSpacing.Content, bottom = LedgerSpacing.Content),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(start = LedgerSpacing.Large, end = LedgerSpacing.Large, bottom = LedgerSpacing.Medium),
+        contentAlignment = Alignment.Center,
     ) {
-        BottomTab.entries.forEach { tab ->
-            val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
-            LedgerTabItem(
-                icon = tab.icon,
-                label = tab.label,
-                selected = selected,
-                onClick = {
-                    navController.navigate(tab.route) {
-                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-            )
+        Row(
+            modifier = Modifier
+                .wrapContentWidth()
+                .ledgerSurface(
+                    level = LedgerSurfaceLevel.Level1,
+                    shape = LedgerRadius.Full,
+                )
+                .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small),
+            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BottomTab.entries.forEach { tab ->
+                val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
+                LedgerTabItem(
+                    icon = tab.icon,
+                    label = tab.label,
+                    selected = selected,
+                    onClick = {
+                        navController.navigate(tab.route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
+            }
         }
     }
 }

@@ -1,13 +1,11 @@
 package com.sherif.ledger.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,9 +19,9 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 /**
  * Standard LDL row for transaction-like summaries.
  *
- * Presentational only. Accepts display strings and does not depend on entities,
- * repositories, parsers, or ViewModels. Money direction is communicated through
- * [amountColor] from LDL financial semantics, never through decoration.
+ * Designed with a "Typography-First" architecture. Removed the standard
+ * "initial-in-box" Android convention to prioritize information density
+ * and clean rhythm.
  */
 @Composable
 fun LedgerTransactionRow(
@@ -39,25 +37,10 @@ fun LedgerTransactionRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = LedgerSpacing.Small),
+            .ledgerClickable { /* TODO */ }
+            .padding(vertical = LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(LedgerTheme.iconSize.Large)
-                .ledgerSurface(
-                    backgroundColor = accentColor.copy(alpha = LedgerTheme.opacity.Fill),
-                    borderColor = Color.Transparent,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = title.firstOrNull()?.uppercaseChar()?.toString().orEmpty(),
-                style = LedgerTextStyles.Label,
-                color = accentColor,
-            )
-        }
-        Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
@@ -75,11 +58,20 @@ fun LedgerTransactionRow(
                     color = LedgerTheme.colors.secondaryLabel,
                 )
             }
+        }
+        
+        Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
+        
+        Column(horizontalAlignment = Alignment.End) {
+            LedgerAmount(
+                amount = amount,
+                color = amountColor,
+                style = LedgerAmountStyle.Regular,
+            )
             if (tag != null) {
+                Spacer(Modifier.padding(top = LedgerSpacing.XxSmall))
                 LedgerTag(text = tag)
             }
         }
-        Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
-        LedgerAmount(amount = amount, color = amountColor)
     }
 }

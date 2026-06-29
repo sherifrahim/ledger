@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -15,7 +16,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 /**
  * LDL atomic stat metric.
  *
- * Used in Dashboard QuickStats and other summary sections.
+ * Designed with a "Monospace-First" approach for financial data.
  */
 @Composable
 fun LedgerStatMetric(
@@ -36,7 +37,7 @@ fun LedgerStatMetric(
         Spacer(Modifier.height(LedgerSpacing.XxSmall))
         Text(
             text = value,
-            style = LedgerTextStyles.Section,
+            style = LedgerTextStyles.Section.copy(fontFamily = FontFamily.Monospace),
             color = valueColor,
         )
     }

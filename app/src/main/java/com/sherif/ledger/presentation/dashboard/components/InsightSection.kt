@@ -3,7 +3,6 @@ package com.sherif.ledger.presentation.dashboard.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,14 +23,18 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
-import com.sherif.ledger.core.designsystem.component.LedgerSurface
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
-import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.presentation.dashboard.DashboardUiState
 
+/**
+ * Insight section.
+ *
+ * Designed with a "Boundary-less" architecture. Individual insights are
+ * separated by rhythm and hairlines rather than boxed cards.
+ */
 @Composable
 fun InsightSection(
     state: DashboardUiState,
@@ -42,16 +45,13 @@ fun InsightSection(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
         LedgerSectionHeader(title = "Insights")
 
-        LedgerSurface(
-            level = LedgerSurfaceLevel.Level1,
-            contentPadding = PaddingValues(0.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             state.insights.forEachIndexed { index, insight ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .ledgerClickable { /* TODO */ }
-                        .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Group),
+                        .padding(vertical = LedgerSpacing.Group),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
@@ -73,7 +73,7 @@ fun InsightSection(
                     }
                 }
                 if (index != state.insights.lastIndex) {
-                    LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.Medium))
+                    LedgerHairline()
                 }
             }
         }

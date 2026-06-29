@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
@@ -143,32 +144,26 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = LedgerSpacing.Group)
-            .padding(top = LedgerSpacing.Small, bottom = LedgerSpacing.XxLarge)
+            .padding(top = LedgerSpacing.Medium, bottom = LedgerSpacing.XxLarge)
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    alpha = (1f - progress / HeroTransitions.TopBarExit).coerceIn(0f, 1f)
-                    translationY = -(progress * HeroTransitions.TopBarTranslationPx)
-                },
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = state.greeting,
                     style = LedgerTextStyles.Caption,
-                    color = Color.White.copy(alpha = 0.25f),
+                    color = Color.White.copy(alpha = 0.35f),
                 )
                 Text(
                     text = state.userName,
-                    style = LedgerTextStyles.Label,
-                    color = Color.White.copy(alpha = 0.50f),
+                    style = LedgerTextStyles.Title,
+                    color = Color.White.copy(alpha = 0.60f),
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -200,52 +195,41 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
 
         Spacer(Modifier.weight(1f))
 
-        Text(
-            "Available balance",
-            style = LedgerTextStyles.Caption,
-            color = Color.White.copy(alpha = 0.30f),
-            modifier = Modifier.graphicsLayer {
-                alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
-            },
-        )
-        Spacer(Modifier.height(LedgerSpacing.XSmall))
-        LedgerAmount(
-            amount = state.balanceAmount,
-            style = LedgerAmountStyle.Display,
-            color = Color.White,
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
-                    scaleX = 1f - (progress * 0.05f)
-                    scaleY = 1f - (progress * 0.05f)
-                },
-        )
-        Spacer(Modifier.height(LedgerSpacing.XxSmall))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .graphicsLayer {
-                    alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
-                }
-                .ledgerClickable { /* TODO: Currency Picker */ }
-                .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.XxSmall),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                state.balanceCurrency,
-                style = LedgerTextStyles.Label,
+                text = "Account total",
+                style = LedgerTextStyles.Caption,
                 color = Color.White.copy(alpha = 0.40f),
+                modifier = Modifier.graphicsLayer {
+                    alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
+                },
             )
-            Spacer(Modifier.width(LedgerSpacing.XxSmall))
-            Icon(
-                Icons.Filled.KeyboardArrowDown,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.30f),
-                modifier = Modifier.size(LedgerTheme.iconSize.Small),
+            Spacer(Modifier.height(LedgerSpacing.XSmall))
+            LedgerAmount(
+                amount = "${state.balanceCurrency} ${state.balanceAmount}",
+                style = LedgerAmountStyle.Display,
+                color = Color.White,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
+                        scaleX = 1f - (progress * 0.08f)
+                        scaleY = 1f - (progress * 0.08f)
+                        translationX = -(progress * 20f)
+                    },
+            )
+            Spacer(Modifier.height(LedgerSpacing.XxSmall))
+            Text(
+                text = state.currentMonth,
+                style = LedgerTextStyles.Mono.copy(fontSize = 12.sp),
+                color = Color.White.copy(alpha = 0.35f),
+                modifier = Modifier.graphicsLayer {
+                    alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
+                },
             )
         }
 
-        Spacer(Modifier.weight(0.6f))
+        Spacer(Modifier.weight(0.4f))
     }
 }
 
@@ -261,12 +245,12 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
                     (1f - HeroTransitions.CompactEnter)).coerceIn(0f, 1f)
             },
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = "Balance",
+            text = "June Balance",
             style = LedgerTextStyles.Label,
             color = LedgerTheme.colors.secondaryLabel,
-            modifier = Modifier.weight(1f),
         )
         LedgerAmount(
             amount = "${state.balanceCurrency} ${state.balanceAmount}",

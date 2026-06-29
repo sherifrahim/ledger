@@ -2,7 +2,6 @@ package com.sherif.ledger.presentation.dashboard.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -10,13 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
-import com.sherif.ledger.core.designsystem.component.LedgerSurface
 import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
-import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.presentation.dashboard.DashboardUiState
 
+/**
+ * Recent activity list.
+ *
+ * Removes the surrounding card surface. The hierarchy is established
+ * through vertical rhythm and refined hairline separators.
+ */
 @Composable
 fun RecentTransactionsSection(
     state: DashboardUiState,
@@ -30,10 +33,7 @@ fun RecentTransactionsSection(
             onTrailingClick = onSeeAllClick,
         )
 
-        LedgerSurface(
-            level = LedgerSurfaceLevel.Level1,
-            contentPadding = PaddingValues(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.XxSmall),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             state.recentTransactions.forEachIndexed { index, txn ->
                 val sign = if (txn.isExpense) "-" else "+"
                 LedgerTransactionRow(
