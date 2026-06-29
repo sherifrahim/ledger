@@ -1,21 +1,37 @@
 package com.sherif.ledger.core.designsystem.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import com.sherif.ledger.core.designsystem.theme.LedgerShapes
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
+/**
+ * LDL search field. No Material OutlinedTextField, no Material border
+ * animation, no Material label. Uses BasicTextField with a custom
+ * decoration box for full visual control.
+ */
 @Composable
 fun LedgerSearchBar(
     query: String,
@@ -23,25 +39,71 @@ fun LedgerSearchBar(
     modifier: Modifier = Modifier,
     placeholder: String = "Search",
     enabled: Boolean = true,
-    searchIcon: ImageVector = Icons.Filled.Search,
-    clearIcon: ImageVector = Icons.Filled.Close,
 ) {
-    val colors = LedgerTheme.colors
-    OutlinedTextField(
-        value = query, onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth(), enabled = enabled, singleLine = true,
-        textStyle = LedgerTextStyles.Body,
-        placeholder = { Text(placeholder, style = LedgerTextStyles.Body) },
-        leadingIcon = { Icon(searchIcon, contentDescription = null) },
-        trailingIcon = {
-            if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(clearIcon, "Clear search") }
+    val focusManager = LocalFocusManager.current
+
+    BasicTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier.fillMaxWidth(),
+        enabled = enabled,
+        singleLine = true,
+        textStyle = LedgerTextStyles.Body.copy(color = LedgerTheme.colors.label),
+        cursorBrush = SolidColor(LedgerTheme.colors.tint),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(LedgerRadius.Medium)
+                    .background(LedgerTheme.colors.surfaceLevel1)
+                    .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = LedgerTheme.colors.tertiaryLabel,
+                    modifier = Modifier.size(20.dp),
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = LedgerSpacing.Content),
+                ) {
+                    if (query.isEmpty()) {
+                        Text(
+                            placeholder,
+                            style = LedgerTextStyles.Body,
+                            color = LedgerTheme.colors.tertiaryLabel,
+                        )
+                    }
+                    innerTextField()
+                }
+                if (query.isNotEmpty()) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Clear",
+                        tint = LedgerTheme.colors.tertiaryLabel,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .noRippleClickable { onQueryChange("") },
+                    )
+                }
+            }
         },
-        shape = LedgerShapes.medium,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = colors.tint,
-            unfocusedBorderColor = colors.separator,
-            focusedContainerColor = colors.surfaceLevel1,
-            unfocusedContainerColor = colors.surfaceLevel1,
-        ),
     )
 }
+
+/** Clickable without Material ripple indication. */
+private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
+    this.then(
+        Modifier.clickable(
+            indication = null,
+            interactionSource = androidx.compose.runtime.remember {
+                androidx.compose.foundation.interaction.MutableInteractionSource()
+            },
+            onClick = onClick,
+        )
+    )

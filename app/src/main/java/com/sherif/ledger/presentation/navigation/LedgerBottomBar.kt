@@ -1,6 +1,15 @@
 package com.sherif.ledger.presentation.navigation
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -8,15 +17,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -25,6 +32,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
@@ -39,30 +47,30 @@ private enum class BottomTab(
     Review(LedgerRoute.ReviewInbox.route, "Review", Icons.Filled.CheckCircle),
 }
 
+/**
+ * LDL bottom navigation. No Material NavigationBar, NavigationBarItem,
+ * or indicator. Pure Compose Row with spring-animated tab items and
+ * no ripple. The only Material import remaining is Icon and Text.
+ */
 @Composable
 fun LedgerBottomBar(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    NavigationBar(
-        containerColor = LedgerTheme.colors.surfaceLevel1,
-        contentColor = LedgerTheme.colors.label,
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(LedgerTheme.colors.surfaceLevel1)
+            .navigationBarsPadding()
+            .padding(top = LedgerSpacing.Content, bottom = LedgerSpacing.Content),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         BottomTab.entries.forEach { tab ->
             val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
-
-            val iconScale by animateFloatAsState(
-                targetValue = if (selected) 1.12f else 1.0f,
-                animationSpec = LedgerAnimations.microSpring(),
-                label = "${tab.label}_scale",
-            )
-            val labelAlpha by animateFloatAsState(
-                targetValue = if (selected) 1.0f else 0.0f,
-                animationSpec = LedgerAnimations.microSpring(),
-                label = "${tab.label}_label",
-            )
-
-            NavigationBarItem(
+            LedgerTabItem(
+                icon = tab.icon,
+                label = tab.label,
                 selected = selected,
                 onClick = {
                     navController.navigate(tab.route) {
@@ -71,28 +79,63 @@ fun LedgerBottomBar(navController: NavHostController) {
                         restoreState = true
                     }
                 },
-                icon = {
-                    Icon(
-                        tab.icon,
-                        contentDescription = tab.label,
-                        modifier = Modifier.size(24.dp).scale(iconScale),
-                    )
-                },
-                label = {
-                    Text(
-                        tab.label,
-                        style = LedgerTextStyles.Caption,
-                        modifier = Modifier.graphicsLayer { alpha = labelAlpha },
-                    )
-                },
-                alwaysShowLabel = true,
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = LedgerTheme.colors.tint,
-                    selectedTextColor = LedgerTheme.colors.tint,
-                    unselectedIconColor = LedgerTheme.colors.tertiaryLabel,
-                    unselectedTextColor = LedgerTheme.colors.tertiaryLabel,
-                    indicatorColor = Color.Transparent,
-                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LedgerTabItem(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected) 1.12f else 1.0f,
+        animationSpec = LedgerAnimations.microSpring(),
+        label = "${label}_scale",
+    )
+    val iconAlpha by animateFloatAsState(
+        targetValue = if (selected) 1.0f else 0.45f,
+        animationSpec = LedgerAnimations.microSpring(),
+        label = "${label}_iconAlpha",
+    )
+    val labelAlpha by animateFloatAsState(
+        targetValue = if (selected) 1.0f else 0.0f,
+        animationSpec = LedgerAnimations.microSpring(),
+        label = "${label}_labelAlpha",
+    )
+
+    val color = if (selected) LedgerTheme.colors.tint else LedgerTheme.colors.tertiaryLabel
+
+    Column(
+        modifier = Modifier
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            )
+            .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Inline),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            icon,
+            contentDescription = label,
+            tint = color,
+            modifier = Modifier
+                .size(24.dp)
+                .scale(iconScale)
+                .graphicsLayer { alpha = iconAlpha },
+        )
+        if (labelAlpha > 0.01f) {
+            Text(
+                label,
+                style = LedgerTextStyles.Caption,
+                color = color,
+                modifier = Modifier
+                    .padding(top = LedgerSpacing.XxSmall)
+                    .graphicsLayer { alpha = labelAlpha },
             )
         }
     }
