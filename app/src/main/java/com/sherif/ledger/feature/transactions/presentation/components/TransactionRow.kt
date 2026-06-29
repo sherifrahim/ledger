@@ -1,6 +1,5 @@
 package com.sherif.ledger.feature.transactions.presentation.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerAvatar
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -26,23 +26,7 @@ import com.sherif.ledger.feature.transactions.presentation.TransactionState
 import com.sherif.ledger.feature.transactions.presentation.TransactionUi
 
 /**
- * Stateless transaction row for the financial timeline.
- *
- * Responsibilities:
- * - Render one transaction with visual hierarchy: amount > merchant > metadata.
- * - Communicate direction, pending state, and recurrence through text and color.
- * - Meet the 56dp accessibility touch target.
- *
- * Non-responsibilities:
- * - No business logic, formatting, or data transformation.
- * - No expansion, selection, or gesture handling beyond tap.
- * - No currency formatting (deferred until currency domain exists).
- *
- * Future consumers:
- * - TransactionsScreen (Sprint 2C, immediate)
- * - Transaction detail sheet (future)
- * - Dashboard recent activity (potential replacement for LedgerTransactionRow)
- * - Review Inbox (pending transaction confirmation)
+ * Stateless transaction row with LDL press compression.
  */
 @Composable
 fun TransactionRow(
@@ -51,9 +35,7 @@ fun TransactionRow(
     onClick: (() -> Unit)? = null,
 ) {
     val catColor = transaction.category.toColor()
-    // TODO: Transaction direction is currently inferred from MerchantCategory.Salary.
-    // This is temporary. Direction will become a dedicated domain concept once
-    // multiple income sources exist (salary, refunds, cashback, interest, dividends).
+    // TODO: Direction will become a dedicated domain concept.
     val isIncome = transaction.category == MerchantCategory.Salary
     val amountColor = if (isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
     val sign = if (isIncome) "+" else "-"
@@ -62,34 +44,23 @@ fun TransactionRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
             .defaultMinSize(minHeight = 56.dp)
             .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LedgerAvatar(
-            name = transaction.merchant,
-            color = catColor,
-            modifier = Modifier.size(40.dp),
-        )
+        LedgerAvatar(name = transaction.merchant, color = catColor, modifier = Modifier.size(40.dp))
         Spacer(Modifier.width(LedgerSpacing.Small))
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
-        ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
             Text(
-                transaction.merchant,
-                style = LedgerTextStyles.Label,
+                transaction.merchant, style = LedgerTextStyles.Label,
                 color = LedgerTheme.colors.label.let { if (dimmed) it.copy(alpha = LedgerTheme.opacity.Secondary) else it },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
             Text(
                 "${transaction.subtitle} \u00B7 ${transaction.category.displayName()}",
-                style = LedgerTextStyles.Caption,
-                color = LedgerTheme.colors.tertiaryLabel,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
         Spacer(Modifier.width(LedgerSpacing.Content))
@@ -100,25 +71,16 @@ fun TransactionRow(
                 color = amountColor.let { if (dimmed) it.copy(alpha = LedgerTheme.opacity.Secondary) else it },
             )
             when (transaction.state) {
-                TransactionState.Pending -> Text(
-                    "\u25CF Pending",
-                    style = LedgerTextStyles.Caption,
-                    color = LedgerTheme.colors.pending,
-                )
-                TransactionState.Recurring -> Text(
-                    "\u21BA Monthly",
-                    style = LedgerTextStyles.Caption,
-                    color = LedgerTheme.colors.tertiaryLabel,
-                )
+                TransactionState.Pending -> Text("\u25CF Pending", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.pending)
+                TransactionState.Recurring -> Text("\u21BA Monthly", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
                 TransactionState.Posted -> {}
             }
         }
     }
 }
 
-// TODO: Category colors are local to the transactions feature. These will
-// migrate into semantic LDL merchant palette tokens once multiple screens
-// consume them.
+// TODO: Category colors will migrate into semantic LDL merchant palette tokens
+// once multiple screens consume them.
 private fun MerchantCategory.toColor(): Color = when (this) {
     MerchantCategory.Grocery -> Color(0xFF22C55E)
     MerchantCategory.Shopping -> Color(0xFFA855F7)

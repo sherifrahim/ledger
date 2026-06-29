@@ -6,26 +6,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 /**
- * LedgerHairline is the LDL separator, replacing Material's Divider.
+ * LDL hairline separator.
  *
- * LDL groups content with thin hairlines instead of elevation or heavy rules, so
- * this is intentionally the thinnest visible line. Insets are the caller's
- * responsibility, matching inset grouped lists where separators indent to align
- * with content rather than running to the screen edge.
+ * A 0.5dp line at separator color. Used inside grouped surfaces to
+ * divide rows without creating visual weight. Thinner than Material
+ * Divider (1dp) for a more refined appearance.
  */
 @Composable
-fun LedgerHairline(
-    modifier: Modifier = Modifier,
-    color: Color = LedgerTheme.colors.separator,
-) {
+fun LedgerHairline(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
+        modifier
             .fillMaxWidth()
-            .height(LedgerTheme.border.Hairline)
-            .background(color),
+            .height(0.5.dp)
+            .background(LedgerTheme.colors.separator),
     )
 }
