@@ -9,10 +9,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
+import com.sherif.ledger.feature.analytics.presentation.InsightsScreen
 import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
 import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
 import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsScreen
 import com.sherif.ledger.presentation.dashboard.DashboardScreen
+import com.sherif.ledger.presentation.dashboard.SearchFilterScreen
 
 @Composable
 fun LedgerNavHost(
@@ -38,6 +40,15 @@ fun LedgerNavHost(
 
         composable(LedgerRoute.Accounts.route) {
             AccountsScreen()
+        }
+
+        composable(LedgerRoute.Insights.route) {
+            InsightsScreen()
+        }
+
+        composable(LedgerRoute.Profile.route) {
+            // Profile / Settings screen placeholder
+            SearchFilterScreen()
         }
 
         composable(LedgerRoute.Transactions.route) {

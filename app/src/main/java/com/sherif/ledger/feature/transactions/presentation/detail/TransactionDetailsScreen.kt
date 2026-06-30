@@ -11,20 +11,35 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
+import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.component.layout.LedgerMetadataRow
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.core.preview.PreviewTransactions
 import com.sherif.ledger.core.designsystem.component.MerchantHeader
 
@@ -61,10 +76,32 @@ fun TransactionDetailsScreen(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
         contentPadding = PaddingValues(
             start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
-            top = LedgerSpacing.XxLarge, bottom = LedgerSpacing.ScreenBottom,
+            top = LedgerSpacing.Large, bottom = LedgerSpacing.ScreenBottom,
         ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
+        item("nav") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    null,
+                    tint = LedgerTheme.colors.label,
+                    modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { /* TODO */ },
+                )
+                Text("Transaction", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
+                Icon(
+                    Icons.Filled.MoreVert,
+                    null,
+                    tint = LedgerTheme.colors.label,
+                    modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { /* TODO */ },
+                )
+            }
+        }
+
         item("header") {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -78,62 +115,82 @@ fun TransactionDetailsScreen(
                     avatarSize = LedgerTheme.iconSize.Huge,
                 )
                 
-                LedgerAmount(
-                    amount = "${state.sign}AED ${state.amount}",
-                    style = LedgerAmountStyle.Display,
-                    color = if (state.isIncome) LedgerTheme.colors.income else LedgerTheme.colors.label,
-                )
-            }
-        }
-
-        item("details") {
-            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group)) {
-                LedgerSectionHeader(title = "Transaction facts")
-                Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-                    LedgerMetadataRow(label = "Date", value = state.date)
-                    LedgerMetadataRow(label = "Time", value = state.time)
-                    LedgerMetadataRow(label = "Status", value = state.status)
-                    LedgerMetadataRow(label = "Payment", value = state.paymentMethod)
-                    LedgerMetadataRow(label = "Account", value = state.accountName)
-                    LedgerMetadataRow(label = "Reference", value = state.reference)
-                }
-            }
-        }
-
-        if (state.notes != null) {
-            item("notes") {
-                Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-                    LedgerSectionHeader(title = "Notes")
-                    Text(
-                        text = state.notes,
-                        style = LedgerTextStyles.Body,
-                        color = LedgerTheme.colors.secondaryLabel,
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    LedgerAmount(
+                        amount = "${state.sign}AED ${state.amount}",
+                        style = LedgerAmountStyle.Display,
+                        color = if (state.isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense,
                     )
-                }
-            }
-        }
-
-        if (state.history.isNotEmpty()) {
-            item("history") {
-                Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
-                    LedgerSectionHeader(
-                        title = "History at ${state.merchant}",
-                        trailing = "See all",
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
-                        state.history.forEachIndexed { index, item ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(item.date, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
-                                LedgerAmount(amount = item.amount, style = LedgerAmountStyle.Small)
-                            }
-                            if (index != state.history.lastIndex) LedgerHairline()
-                        }
+                    Spacer(Modifier.height(LedgerSpacing.Small))
+                    // Payment Method Pill
+                    Box(
+                        modifier = Modifier
+                            .ledgerSurface(
+                                backgroundColor = LedgerTheme.colors.surfaceLevel1,
+                                borderColor = Color.Transparent,
+                                shape = LedgerRadius.Full,
+                            )
+                            .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.XxSmall),
+                    ) {
+                        Text(
+                            state.paymentMethod,
+                            style = LedgerTextStyles.Caption,
+                            color = LedgerTheme.colors.secondaryLabel,
+                        )
                     }
                 }
             }
         }
+
+        item("details") {
+            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
+                LedgerMetadataRow(label = "Date", value = state.date)
+                LedgerMetadataRow(label = "Time", value = state.time)
+                LedgerMetadataRow(label = "Category", value = state.merchantCategory)
+                LedgerMetadataRow(label = "Status", value = state.status)
+                LedgerMetadataRow(label = "Payment method", value = state.paymentMethod)
+                LedgerMetadataRow(label = "Reference ID", value = state.reference)
+            }
+        }
+
+        item("actions") {
+            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
+                ActionRow(icon = Icons.AutoMirrored.Filled.Notes, label = "Add note")
+                ActionRow(icon = Icons.Filled.GridView, label = "Split expense")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(
+    icon: ImageVector,
+    label: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .ledgerSurface(level = LedgerSurfaceLevel.Level1)
+            .ledgerClickable { /* TODO */ }
+            .padding(LedgerSpacing.Medium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = LedgerTheme.colors.secondaryLabel,
+                modifier = Modifier.size(LedgerTheme.iconSize.Small)
+            )
+            Spacer(Modifier.width(LedgerSpacing.Small))
+            Text(label, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
+        }
+        androidx.compose.material3.Icon(
+            imageVector = Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = LedgerTheme.colors.tertiaryLabel,
+            modifier = Modifier.size(LedgerTheme.iconSize.Small)
+        )
     }
 }

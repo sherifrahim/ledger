@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,9 +43,10 @@ private enum class BottomTab(
     val icon: ImageVector,
 ) {
     Home(LedgerRoute.Home.route, "Home", Icons.Filled.Home),
-    Accounts(LedgerRoute.Accounts.route, "Accounts", Icons.Filled.AccountCircle),
-    Activity(LedgerRoute.Transactions.route, "Activity", Icons.Filled.List),
-    Review(LedgerRoute.ReviewInbox.route, "Review", Icons.Filled.CheckCircle),
+    Accounts(LedgerRoute.Accounts.route, "Accounts", Icons.Filled.AccountBalanceWallet),
+    Activity(LedgerRoute.Transactions.route, "Activity", Icons.AutoMirrored.Filled.List),
+    Insights(LedgerRoute.Insights.route, "Insights", Icons.Filled.BarChart),
+    Profile(LedgerRoute.Profile.route, "Profile", Icons.Filled.Person),
 }
 
 /**

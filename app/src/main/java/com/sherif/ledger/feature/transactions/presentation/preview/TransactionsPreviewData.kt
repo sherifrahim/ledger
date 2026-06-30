@@ -18,98 +18,30 @@ object TransactionsPreviewData {
                     MerchantCategory.Grocery
                 ),
                 listOf(
-                    TransactionUi(
-                        "amazon",
-                        "Amazon",
-                        MerchantCategory.Shopping,
-                        BigDecimal("52"),
-                        "2:14 PM"
-                    ),
-                    TransactionUi(
-                        "carrefour",
-                        "Carrefour",
-                        MerchantCategory.Grocery,
-                        BigDecimal("126"),
-                        "11:02 AM"
-                    ),
-                    TransactionUi(
-                        "costa",
-                        "Costa Coffee",
-                        MerchantCategory.Coffee,
-                        BigDecimal("19"),
-                        "9:30 AM"
-                    ),
+                    TransactionUi("amazon", "Amazon", MerchantCategory.Shopping, BigDecimal("52"), "10:45 AM"),
+                    TransactionUi("careem", "Careem", MerchantCategory.Transport, BigDecimal("25"), "9:15 AM"),
+                    TransactionUi("salary", "Salary", MerchantCategory.Salary, BigDecimal("5200"), "9:00 AM"),
                 ),
             ),
 
             TransactionGroupUi(
                 "yesterday",
                 "Yesterday",
-                DaySummaryUi(
-                    BigDecimal("397"),
-                    BigDecimal.ZERO,
-                    3,
-                    MerchantCategory.Fuel
-                ),
+                DaySummaryUi(BigDecimal("210"), BigDecimal.ZERO, 3, MerchantCategory.Grocery),
                 listOf(
-                    TransactionUi(
-                        "adnoc",
-                        "ADNOC",
-                        MerchantCategory.Fuel,
-                        BigDecimal("120"),
-                        "3:15 PM"
-                    ),
-                    TransactionUi(
-                        "noon",
-                        "Noon",
-                        MerchantCategory.Shopping,
-                        BigDecimal("245"),
-                        "1:20 PM",
-                        TransactionState.Pending
-                    ),
-                    TransactionUi(
-                        "uber",
-                        "Uber",
-                        MerchantCategory.Transport,
-                        BigDecimal("32"),
-                        "8:45 AM"
-                    ),
+                    TransactionUi("carrefour", "Carrefour", MerchantCategory.Grocery, BigDecimal("126"), "9:32 AM"),
+                    TransactionUi("costa", "Costa Coffee", MerchantCategory.Coffee, BigDecimal("19"), "6:21 PM"),
+                    TransactionUi("enoc", "Enoc", MerchantCategory.Fuel, BigDecimal("65"), "12:11 PM"),
                 ),
             ),
 
             TransactionGroupUi(
-                "2026-06-23",
-                "23 Jun",
-                DaySummaryUi(
-                    BigDecimal("454"),
-                    BigDecimal("9500"),
-                    3,
-                    MerchantCategory.Salary
-                ),
+                "2026-06-24",
+                "Jun 24, Tue",
+                DaySummaryUi(BigDecimal("42"), BigDecimal("850"), 2, MerchantCategory.Salary),
                 listOf(
-                    TransactionUi(
-                        "salary",
-                        "Salary",
-                        MerchantCategory.Salary,
-                        BigDecimal("9500"),
-                        "Bank transfer"
-                    ),
-                    TransactionUi(
-                        "netflix",
-                        "Netflix",
-                        MerchantCategory.Entertainment,
-                        BigDecimal("55"),
-                        "Monthly",
-                        TransactionState.Recurring
-                    ),
-                    TransactionUi(
-                        "du",
-                        "du",
-                        MerchantCategory.Bills,
-                        BigDecimal("399"),
-                        "Monthly",
-                        TransactionState.Recurring
-                    ),
+                    TransactionUi("netflix", "Netflix", MerchantCategory.Entertainment, BigDecimal("42"), "9:45 PM"),
+                    TransactionUi("freelance", "Freelance Work", MerchantCategory.Salary, BigDecimal("850"), "2:30 PM"),
                 ),
             ),
         ),

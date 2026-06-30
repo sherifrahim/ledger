@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -149,6 +150,7 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
             .padding(top = LedgerSpacing.Medium, bottom = LedgerSpacing.XxLarge)
             .graphicsLayer {
@@ -188,29 +190,23 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp,
                 ),
-                color = Color.White.copy(alpha = 0.35f),
+                color = Color.White.copy(alpha = 0.40f),
                 modifier = Modifier.graphicsLayer {
                     alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
+                    translationY = -(progress * 20f)
                 },
             )
             Spacer(Modifier.height(LedgerSpacing.XxSmall))
-            Text(
-                text = state.balanceCurrency,
-                style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold),
-                color = Color.White.copy(alpha = 0.50f),
-                modifier = Modifier.graphicsLayer {
-                    alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
-                },
-            )
             LedgerAmount(
                 amount = state.balanceAmount,
                 style = LedgerAmountStyle.Display,
                 color = Color.White,
                 modifier = Modifier.graphicsLayer {
                     alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
-                    val scale = 1f - (progress * 0.08f)
+                    val scale = 1f - (progress * 0.12f)
                     scaleX = scale
                     scaleY = scale
+                    translationY = -(progress * 40f)
                 },
             )
             Spacer(Modifier.height(LedgerSpacing.Small))
@@ -218,28 +214,29 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             Box(
                 modifier = Modifier
                     .graphicsLayer {
-                        alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
+                        alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
+                        translationY = -(progress * 30f)
                     }
                     .ledgerSurface(
-                        backgroundColor = Color.White.copy(alpha = 0.05f),
+                        backgroundColor = Color.White.copy(alpha = 0.08f),
                         borderColor = Color.White.copy(alpha = 0.15f),
                         shape = LedgerRadius.Full,
                     )
-                    .ledgerClickable { /* TODO */ }
+                    .ledgerClickable { /* TODO: Currency Picker */ }
                     .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.XxSmall),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = state.balanceCurrency,
                         style = LedgerTextStyles.Caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = Color.White.copy(alpha = 0.8f),
                     )
                     Spacer(Modifier.width(LedgerSpacing.XxSmall))
                     Icon(
                         Icons.Filled.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.5f),
-                        modifier = Modifier.size(10.dp),
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(12.dp),
                     )
                 }
             }
@@ -326,6 +323,7 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
         modifier = Modifier
             .fillMaxSize()
             .background(LedgerTheme.colors.surfaceLevel0)
+            .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
             .graphicsLayer {
                 alpha = ((progress - HeroTransitions.CompactEnter) /
