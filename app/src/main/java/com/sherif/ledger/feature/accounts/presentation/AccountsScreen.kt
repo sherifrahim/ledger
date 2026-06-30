@@ -38,23 +38,29 @@ import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
-import com.sherif.ledger.core.designsystem.component.LedgerSurface
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
+import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.accounts.presentation.components.AccountRow
 import com.sherif.ledger.feature.accounts.presentation.preview.AccountsPreviewData
+
+private object HeroTransitions {
+    const val ExpandedExit = 0.55f
+    const val CompactEnter = 0.60f
+}
 
 @Composable
 fun AccountsScreen(
     state: AccountsUiState = AccountsPreviewData.state,
 ) {
-    val expandedHeight = 220.dp
-    val collapsedHeight = 56.dp
+    val expandedHeight = 240.dp
+    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
     val maxOffsetPx = with(LocalDensity.current) { (expandedHeight - collapsedHeight).toPx() }
     val listState = rememberLazyListState()
     val collapseProgress by remember {
@@ -65,15 +71,14 @@ fun AccountsScreen(
     }
 
     Box(Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0)) {
-        LedgerAtmosphereGlow(Modifier.fillMaxSize())
-
+        
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = LedgerSpacing.Screen,
                 end = LedgerSpacing.Screen,
-                bottom = LedgerSpacing.ScreenBottom + 80.dp
+                bottom = LedgerSpacing.ScreenBottom + 100.dp
             ),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
         ) {
@@ -87,7 +92,7 @@ fun AccountsScreen(
                             section.accounts.forEachIndexed { index, account ->
                                 AccountRow(
                                     account = account,
-                                    onClick = { /* TODO */ }
+                                    onClick = { /* TODO: Account Detail */ }
                                 )
                                 if (index != section.accounts.lastIndex) {
                                     LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
@@ -97,7 +102,7 @@ fun AccountsScreen(
                     }
                 }
             }
-
+            
             item(key = "add_account") {
                 Row(
                     modifier = Modifier
@@ -128,26 +133,64 @@ fun AccountsScreen(
             expandedHeight = expandedHeight,
             collapsedHeight = collapsedHeight,
             background = SolidColor(Color.Transparent),
+            contentBackground = {
+                LedgerAtmosphereGlow(Modifier.fillMaxSize())
+            },
             expandedContent = { progress ->
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
-                        .graphicsLayer { alpha = (1f - progress * 2f).coerceIn(0f, 1f) },
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = LedgerSpacing.Screen)
+                        .graphicsLayer {
+                            alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
+                        }
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "TOTAL BALANCE",
-                            style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
-                            color = Color.White.copy(alpha = 0.35f)
-                        )
-                        Spacer(Modifier.height(LedgerSpacing.XxSmall))
-                        LedgerAmount(
-                            amount = "AED 2,840.25",
-                            style = LedgerAmountStyle.Display,
-                            color = Color.White,
-                        )
+                    Text(
+                        text = "Accounts",
+                        style = LedgerTextStyles.Headline,
+                        color = LedgerTheme.colors.label,
+                    )
+                    
+                    Spacer(Modifier.height(LedgerSpacing.Large))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(132.dp)
+                            .ledgerSurface(
+                                level = LedgerSurfaceLevel.Level1,
+                                shape = LedgerRadius.Large,
+                            ),
+                    ) {
+                        LedgerAtmosphereGlow(Modifier.fillMaxSize())
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(LedgerSpacing.Medium),
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text(
+                                text = "Total balance",
+                                style = LedgerTextStyles.Label,
+                                color = LedgerTheme.colors.tertiaryLabel,
+                            )
+                            Spacer(Modifier.height(LedgerSpacing.XxSmall))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "AED",
+                                    style = LedgerTextStyles.Section.copy(fontWeight = FontWeight.Bold),
+                                    color = LedgerTheme.colors.success,
+                                )
+                                Spacer(Modifier.width(LedgerSpacing.Small))
+                                LedgerAmount(
+                                    amount = "2,840.25",
+                                    style = LedgerAmountStyle.Large,
+                                    color = Color.White,
+                                )
+                            }
+                        }
                     }
                 }
             },
@@ -156,7 +199,9 @@ fun AccountsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
-                        .graphicsLayer { alpha = ((progress - 0.6f) * 2.5f).coerceIn(0f, 1f) },
+                        .graphicsLayer { 
+                            alpha = ((progress - HeroTransitions.CompactEnter) * 4f).coerceIn(0f, 1f) 
+                        },
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Text(

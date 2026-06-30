@@ -119,8 +119,6 @@ fun DashboardScreen(
 
     Box(Modifier.fillMaxSize().background(c.surfaceLevel0)) {
 
-        LedgerAtmosphereGlow(Modifier.fillMaxSize())
-
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(
@@ -139,6 +137,9 @@ fun DashboardScreen(
         LedgerCollapsingHero(
             collapseProgress = collapseProgress,
             background = SolidColor(Color.Transparent),
+            contentBackground = {
+                LedgerAtmosphereGlow(Modifier.fillMaxSize())
+            },
             expandedContent = { progress -> ExpandedHero(progress, state) },
             compactContent = { progress -> CompactHero(progress, state) },
         )
@@ -152,76 +153,97 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             .fillMaxSize()
             .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
-            .padding(top = LedgerSpacing.Large, bottom = LedgerSpacing.XxLarge)
+            .padding(bottom = LedgerSpacing.XxLarge)
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.weight(1.3f)) // Calibrated optical centering for Screen 1
 
-        // Total Balance (Centered per Mockup)
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // The Financial Instrument Composition
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
+        ) {
             Text(
-                text = "TOTAL BALANCE",
+                text = "MONTHLY SPENDING",
                 style = LedgerTextStyles.Caption.copy(
-                    fontSize = 9.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp,
+                    letterSpacing = 2.sp, // Stronger identity presence
                 ),
-                color = Color.White.copy(alpha = 0.40f),
+                color = Color.White.copy(alpha = 0.35f),
                 modifier = Modifier.graphicsLayer {
-                    alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
-                    translationY = -(progress * 20f)
+                    translationY = -(progress * 15f)
                 },
             )
-            Spacer(Modifier.height(LedgerSpacing.XxSmall))
+            
+            // Subordinate Currency (Occupying its own hierarchy level per Mockup)
+            Text(
+                text = state.balanceCurrency,
+                style = LedgerTextStyles.Caption.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                ),
+                color = Color.White.copy(alpha = 0.45f),
+                modifier = Modifier.graphicsLayer {
+                    alpha = (1f - progress * 1.5f).coerceIn(0f, 1f)
+                    translationY = -(progress * 20f)
+                }
+            )
+
             LedgerAmount(
-                amount = state.balanceAmount,
+                amount = state.totalSpent.replace(state.balanceCurrency, "").trim(),
                 style = LedgerAmountStyle.Display,
                 color = Color.White,
                 modifier = Modifier.graphicsLayer {
-                    alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
-                    val scale = 1f - (progress * 0.12f)
+                    val scale = 1f - (progress * 0.10f)
                     scaleX = scale
                     scaleY = scale
-                    translationY = -(progress * 40f)
+                    translationY = -(progress * 30f)
                 },
             )
+            
             Spacer(Modifier.height(LedgerSpacing.Small))
-            // Currency Pill (Restored per Mockup)
+            
+            // Interaction Pill (Restrained and Intentional)
             Box(
                 modifier = Modifier
                     .graphicsLayer {
-                        alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
-                        translationY = -(progress * 30f)
+                        alpha = (1f - progress * 2.2f).coerceIn(0f, 1f)
+                        translationY = -(progress * 25f)
                     }
                     .ledgerSurface(
-                        backgroundColor = Color.White.copy(alpha = 0.08f),
-                        borderColor = Color.White.copy(alpha = 0.15f),
+                        backgroundColor = Color.White.copy(alpha = 0.05f),
+                        borderColor = Color.White.copy(alpha = 0.10f),
                         shape = LedgerRadius.Full,
                     )
-                    .ledgerClickable { /* TODO: Currency Picker */ }
-                    .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.XxSmall),
+                    .ledgerClickable { /* TODO: Period Picker */ }
+                    .padding(horizontal = LedgerSpacing.Medium, vertical = 6.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = state.balanceCurrency,
-                        style = LedgerTextStyles.Caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                        color = Color.White.copy(alpha = 0.8f),
+                        text = state.currentMonth.uppercase(),
+                        style = LedgerTextStyles.Caption.copy(
+                            fontSize = 10.sp, 
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = Color.White.copy(alpha = 0.65f),
                     )
                     Spacer(Modifier.width(LedgerSpacing.XxSmall))
                     Icon(
-                        Icons.Filled.KeyboardArrowDown,
+                        imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(12.dp),
+                        tint = Color.White.copy(alpha = 0.45f),
+                        modifier = Modifier.size(10.dp),
                     )
                 }
             }
         }
 
-        Spacer(Modifier.height(LedgerSpacing.Large))
+        Spacer(Modifier.weight(1f))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -231,21 +253,21 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 label = "INCOME",
                 value = state.income,
                 change = state.incomeChange,
-                icon = Icons.AutoMirrored.Filled.ArrowForward, // Placeholder for Upward
+                icon = Icons.AutoMirrored.Filled.ArrowForward,
                 color = LedgerTheme.colors.income,
             )
             MetricItem(
                 label = "EXPENSES",
                 value = state.expense,
                 change = state.expenseChange,
-                icon = Icons.Filled.KeyboardArrowDown, // Placeholder for Downward
+                icon = Icons.Filled.KeyboardArrowDown,
                 color = LedgerTheme.colors.expense,
             )
             MetricItem(
                 label = "SAVINGS",
                 value = state.savings,
                 change = state.savingsChange,
-                icon = Icons.Filled.Star, // Placeholder for Safe
+                icon = Icons.Filled.Star,
                 color = Color.White.copy(alpha = 0.70f),
             )
         }
@@ -285,18 +307,18 @@ private fun MetricItem(
             style = LedgerTextStyles.Caption.copy(
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
+                letterSpacing = 1.2.sp,
                 lineHeight = 12.sp,
             ),
-            color = Color.White.copy(alpha = 0.35f),
+            color = Color.White.copy(alpha = 0.60f), // Increased visibility for Level 2
         )
         Text(
             text = value,
             style = LedgerTextStyles.Label.copy(
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
+                fontSize = 14.sp, // Slightly increased for Level 3 Dominance
+                lineHeight = 18.sp,
             ),
             color = color,
             maxLines = 1,
@@ -304,16 +326,16 @@ private fun MetricItem(
         Text(
             text = change,
             style = LedgerTextStyles.Caption.copy(
-                fontSize = 9.sp,
+                fontSize = 10.sp, // Slightly increased for Level 4 Clarity
                 fontWeight = FontWeight.Bold,
-                lineHeight = 12.sp,
+                lineHeight = 14.sp,
             ),
-            color = color.copy(alpha = 0.8f),
+            color = color.copy(alpha = 0.90f),
         )
         Text(
             text = "vs last month",
             style = LedgerTextStyles.Caption.copy(fontSize = 8.sp, lineHeight = 10.sp),
-            color = Color.White.copy(alpha = 0.2f),
+            color = Color.White.copy(alpha = 0.30f),
         )
     }
 }

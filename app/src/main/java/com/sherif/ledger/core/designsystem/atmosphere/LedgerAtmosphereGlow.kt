@@ -13,11 +13,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 
 /**
- * Renders the volumetric atmospheric glow.
+ * Renders the Material Surface Illumination.
  *
- * This component pulls from the current [Atmosphere] to create the
- * signature Ledger lighting effect. It should be placed at the
- * bottom of the Z-stack.
+ * This component moves away from "glow" and toward "material lighting."
+ * It recreates the effect of light grazing a curved premium surface.
  */
 @Composable
 fun LedgerAtmosphereGlow(
@@ -26,51 +25,50 @@ fun LedgerAtmosphereGlow(
 ) {
     val primary = atmosphere.primaryGlow
     val secondary = atmosphere.secondaryGlow
-    val cool = atmosphere.coolGlow
-    val warm = atmosphere.warmGlow
-
+    
     Canvas(modifier) {
         val w = size.width
         val h = size.height
 
-        // 1. The Horizon Arc (Signature Ledger Element)
-        // Faithfully recreates the elegant emerald curve seen in Screen 1.
-        val arcPath = Path().apply {
-            moveTo(0f, h * 0.35f)
-            quadraticTo(
-                w / 2f, h * 0.30f,
-                w, h * 0.35f
-            )
-        }
-
-        // Draw the glowing atmospheric wash above the arc
-        drawPath(
-            path = arcPath,
+        // 1. Directional Surface Wash (Environmental Depth)
+        // This is a large, low-contrast wash that gives the material its emerald base.
+        // It is NOT a circular glow; it follows a wide vertical gradient.
+        drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
+                    primary.copy(alpha = 0.04f),
                     primary.copy(alpha = 0.08f),
                     Color.Transparent
                 ),
-                startY = h * 0.15f,
-                endY = h * 0.35f
-            ),
-        )
-
-        // 2. Primary concentrated light core (below balance area)
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(secondary.copy(alpha = 0.12f), Color.Transparent),
-                center = Offset(w / 2f, h * 0.28f),
-                radius = h * 0.15f
+                startY = 0f,
+                endY = h * 0.45f
             )
         )
 
-        // 3. Ambient atmospheric temperature (Cool and Warm wisps)
-        drawRect(
-            brush = Brush.linearGradient(
-                colors = listOf(cool.copy(alpha = 0.04f), warm.copy(alpha = 0.02f), Color.Transparent),
-                start = Offset(0f, 0f),
-                end = Offset(w, h * 0.40f)
+        // 2. The Restrained Grazing Arc (Edge Illumination)
+        // Simulates light catching a curved "carved" edge.
+        val arcPath = Path().apply {
+            moveTo(0f, h * 0.42f)
+            quadraticTo(
+                w / 2f, h * 0.38f,
+                w, h * 0.42f
+            )
+        }
+
+        // Grazing light - subtle stroke representing physical surface edge
+        drawPath(
+            path = arcPath,
+            color = primary.copy(alpha = 0.12f),
+            style = Stroke(width = 0.5.dp.toPx(), cap = StrokeCap.Round)
+        )
+
+        // 3. Primary Directional Light (Restrained Surface presence)
+        // This is the core light hitting the material, shifted off-center for depth.
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(secondary.copy(alpha = 0.05f), Color.Transparent),
+                center = Offset(w / 2f, h * 0.35f),
+                radius = h * 0.25f
             )
         )
     }

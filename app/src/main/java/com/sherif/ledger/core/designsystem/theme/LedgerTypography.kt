@@ -20,8 +20,8 @@ object LedgerTextStyles {
     val Display = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Bold,
-        fontSize = 54.sp,
-        lineHeight = 58.sp,
+        fontSize = 50.sp, // Reduced by ~8% for RC-003 parity
+        lineHeight = 54.sp,
         letterSpacing = (-1.5).sp,
     )
 

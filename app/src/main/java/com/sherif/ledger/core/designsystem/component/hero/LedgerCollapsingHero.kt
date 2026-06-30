@@ -25,7 +25,7 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerGradients
 object LedgerHeroDefaults {
 
     /** Hero height when fully expanded (scroll offset zero). */
-    val ExpandedHeight: Dp = 280.dp
+    val ExpandedHeight: Dp = 320.dp // Increased for RC-003 to provide headroom for metrics
 
     /** Hero height when fully collapsed (pinned compact header). */
     val CollapsedHeight: Dp = 56.dp
@@ -68,6 +68,7 @@ fun LedgerCollapsingHero(
     collapsedHeight: Dp = LedgerHeroDefaults.CollapsedHeight,
     cornerRadius: Dp = LedgerHeroDefaults.CornerRadius,
     background: Brush = LedgerHeroDefaults.Background,
+    contentBackground: @Composable () -> Unit = {},
     expandedContent: @Composable (collapseProgress: Float) -> Unit,
     compactContent: @Composable (collapseProgress: Float) -> Unit,
 ) {
@@ -86,6 +87,7 @@ fun LedgerCollapsingHero(
             )
             .background(background),
     ) {
+        contentBackground()
         Box(Modifier.fillMaxSize()) {
             expandedContent(collapseProgress)
         }

@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -65,18 +66,18 @@ fun LedgerBottomBar(navController: NavHostController) {
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(start = LedgerSpacing.Large, end = LedgerSpacing.Large, bottom = LedgerSpacing.Medium),
+            .padding(start = LedgerSpacing.Medium, end = LedgerSpacing.Medium, bottom = LedgerSpacing.Small),
         contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier = Modifier
-                .wrapContentWidth()
+                .fillMaxWidth()
                 .ledgerSurface(
                     level = LedgerSurfaceLevel.Level1,
                     shape = LedgerRadius.Full,
                 )
-                .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small),
-            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
+                .padding(horizontal = LedgerSpacing.Small, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             BottomTab.entries.forEach { tab ->
@@ -111,7 +112,7 @@ private fun LedgerTabItem(
     Column(
         modifier = Modifier
             .ledgerClickable(onClick = onClick)
-            .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Inline),
+            .padding(horizontal = LedgerSpacing.Small, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
@@ -119,7 +120,7 @@ private fun LedgerTabItem(
             contentDescription = label,
             tint = color,
             modifier = Modifier
-                .size(LedgerTheme.iconSize.Medium)
+                .size(LedgerTheme.iconSize.Navigation)
                 .graphicsLayer { this.alpha = alpha },
         )
         if (selected) {
