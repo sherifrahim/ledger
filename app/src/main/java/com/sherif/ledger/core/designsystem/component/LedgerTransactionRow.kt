@@ -42,22 +42,12 @@ fun LedgerTransactionRow(
             .padding(vertical = LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Merchant Icon / Brand Box (Restored per Mockup)
-        Box(
-            modifier = Modifier
-                .size(LedgerTheme.iconSize.Huge)
-                .ledgerSurface(
-                    backgroundColor = accentColor.copy(alpha = LedgerTheme.opacity.Fill),
-                    borderColor = Color.Transparent,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = title.firstOrNull()?.uppercaseChar()?.toString().orEmpty(),
-                style = LedgerTextStyles.Label,
-                color = accentColor,
-            )
-        }
+        // Merchant Identity (Branded per Release Candidate standards)
+        LedgerMerchantIdentity(
+            name = title,
+            accentColor = accentColor,
+            size = LedgerTheme.iconSize.Huge,
+        )
 
         Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
 

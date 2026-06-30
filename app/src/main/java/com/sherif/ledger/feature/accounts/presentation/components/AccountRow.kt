@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
-import com.sherif.ledger.core.designsystem.component.LedgerAvatar
+import com.sherif.ledger.core.designsystem.component.LedgerMerchantIdentity
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -44,11 +44,11 @@ fun AccountRow(
             .padding(vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LedgerAvatar(
+        LedgerMerchantIdentity(
             name = account.name,
-            color = accent,
+            accentColor = accent,
             size = LedgerTheme.iconSize.Large,
-            painter = logoPainter,
+            logoPainter = logoPainter,
         )
         Spacer(Modifier.width(LedgerSpacing.Medium))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {

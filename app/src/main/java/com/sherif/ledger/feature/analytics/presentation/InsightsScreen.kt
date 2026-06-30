@@ -22,10 +22,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
-import com.sherif.ledger.core.designsystem.component.LedgerAvatar
+import com.sherif.ledger.core.designsystem.component.LedgerLineChart
+import com.sherif.ledger.core.designsystem.component.LedgerMerchantIdentity
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
@@ -107,7 +109,11 @@ fun InsightsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
             ) {
-                Text("Spending overview", style = LedgerTextStyles.Label, color = LedgerTheme.colors.secondaryLabel)
+                Text(
+                    text = "Spending overview",
+                    style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold),
+                    color = LedgerTheme.colors.secondaryLabel
+                )
                 Text(state.dateRange, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
                 Spacer(Modifier.height(LedgerSpacing.Small))
                 LedgerAmount(
@@ -116,6 +122,15 @@ fun InsightsScreen(
                     color = LedgerTheme.colors.label,
                 )
                 Text(state.percentChange, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.success)
+                
+                Spacer(Modifier.height(LedgerSpacing.Large))
+                
+                Box(modifier = Modifier.fillMaxWidth().height(180.dp)) {
+                    LedgerLineChart(
+                        data = listOf(1200f, 1400f, 1300f, 1700f, 1800f, 1600f, 1900f, 1800f, 2400f),
+                        lineColor = LedgerTheme.colors.expense,
+                    )
+                }
             }
         }
 
@@ -173,7 +188,11 @@ private fun CategoryItem(category: CategoryInsightUi) {
             .padding(vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LedgerAvatar(name = category.name, color = category.color, size = LedgerTheme.iconSize.Large)
+        LedgerMerchantIdentity(
+            name = category.name,
+            accentColor = category.color,
+            size = LedgerTheme.iconSize.Large,
+        )
         Spacer(Modifier.width(LedgerSpacing.Medium))
         Text(category.name, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label, modifier = Modifier.weight(1f))
         Text(category.amount, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)

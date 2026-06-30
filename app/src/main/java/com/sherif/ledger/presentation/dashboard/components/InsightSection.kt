@@ -53,25 +53,32 @@ fun InsightSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .ledgerSurface(level = LedgerSurfaceLevel.Level1)
-                .padding(LedgerSpacing.Medium),
+                .padding(vertical = LedgerSpacing.Medium, horizontal = LedgerSpacing.Medium),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
+            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XSmall)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(insight.title, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
+                    Text(
+                        text = insight.title,
+                        style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold),
+                        color = LedgerTheme.colors.label
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Filled.KeyboardArrowDown,
-                            null,
+                            imageVector = Icons.Filled.KeyboardArrowDown,
+                            contentDescription = null,
                             tint = LedgerTheme.colors.income,
-                            modifier = Modifier.size(12.dp),
+                            modifier = Modifier.size(10.dp),
                         )
                         Text(
                             text = insight.indicator,
-                            style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+                            style = LedgerTextStyles.Caption.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                            ),
                             color = LedgerTheme.colors.income,
                         )
                     }
@@ -80,41 +87,46 @@ fun InsightSection(
                 Text(
                     text = insight.subtitle,
                     style = LedgerTextStyles.Caption,
-                    color = LedgerTheme.colors.income,
+                    color = LedgerTheme.colors.success.copy(alpha = 0.8f),
                 )
+                
+                Spacer(Modifier.height(LedgerSpacing.XxSmall))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom,
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Box(
                         modifier = Modifier
                             .ledgerSurface(
                                 backgroundColor = Color.White.copy(alpha = 0.05f),
-                                borderColor = Color.White.copy(alpha = 0.1f),
+                                borderColor = Color.White.copy(alpha = 0.12f),
                                 shape = LedgerTheme.radius.Full,
                             )
                             .ledgerClickable { /* TODO */ }
-                            .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.XxSmall),
+                            .padding(horizontal = LedgerSpacing.Medium, vertical = 6.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 "View insight",
-                                style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+                                style = LedgerTextStyles.Caption.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                ),
                                 color = Color.White.copy(alpha = 0.7f),
                             )
                             Spacer(Modifier.width(LedgerSpacing.XxSmall))
                             Icon(
-                                Icons.AutoMirrored.Filled.ArrowForward,
-                                null,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
                                 tint = Color.White.copy(alpha = 0.4f),
                                 modifier = Modifier.size(10.dp),
                             )
                         }
                     }
 
-                    MiniSparkline(modifier = Modifier.padding(bottom = LedgerSpacing.XxSmall))
+                    MiniSparkline()
                 }
             }
         }

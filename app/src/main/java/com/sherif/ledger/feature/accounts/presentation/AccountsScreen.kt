@@ -64,7 +64,7 @@ fun AccountsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(140.dp)
                     .ledgerSurface(level = LedgerSurfaceLevel.Level1),
             ) {
                 LedgerAtmosphereGlow(Modifier.fillMaxSize())
@@ -73,7 +73,11 @@ fun AccountsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text("Total balance", style = LedgerTextStyles.Label, color = Color.White.copy(alpha = 0.4f))
+                    Text(
+                        text = "Total balance",
+                        style = LedgerTextStyles.Caption,
+                        color = Color.White.copy(alpha = 0.4f)
+                    )
                     Spacer(Modifier.height(LedgerSpacing.Small))
                     LedgerAmount(
                         amount = "AED 2,840.25",

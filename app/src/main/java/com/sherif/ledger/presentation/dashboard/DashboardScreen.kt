@@ -61,13 +61,13 @@ import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSec
 import com.sherif.ledger.presentation.dashboard.preview.DashboardPreviewData
 
 private object HeroTransitions {
-    const val TopBarExit = 0.20f
-    const val TopBarTranslationPx = 40f
-    const val BalanceLabelExit = 0.30f
-    const val AmountExit = 0.50f
-    const val CurrencyExit = 0.55f
-    const val ExpandedExit = 0.60f
-    const val CompactEnter = 0.65f
+    const val TopBarExit = 0.15f
+    const val TopBarTranslationPx = 30f
+    const val BalanceLabelExit = 0.25f
+    const val AmountExit = 0.45f
+    const val CurrencyExit = 0.50f
+    const val ExpandedExit = 0.55f
+    const val CompactEnter = 0.60f
 }
 
 private object HeroSnap {
@@ -150,9 +150,8 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
-            .padding(top = LedgerSpacing.Medium, bottom = LedgerSpacing.XxLarge)
+            .padding(top = 48.dp, bottom = LedgerSpacing.XxLarge) // Manual padding for status bar to avoid clipping glow
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
@@ -288,25 +287,41 @@ private fun MetricItem(
             modifier = Modifier
                 .size(LedgerTheme.iconSize.Medium)
                 .clip(CircleShape)
-                .background(color.copy(alpha = 0.1f)),
+                .background(color.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(12.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(12.dp)
+            )
         }
         Spacer(Modifier.height(LedgerSpacing.Small))
         Text(
             text = label,
-            style = LedgerTextStyles.Caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+            style = LedgerTextStyles.Caption.copy(
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+            ),
             color = Color.White.copy(alpha = 0.35f),
         )
         Text(
             text = value,
-            style = LedgerTextStyles.Label.copy(fontFamily = FontFamily.Monospace),
+            style = LedgerTextStyles.Label.copy(
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 13.sp,
+            ),
             color = color,
         )
         Text(
             text = change,
-            style = LedgerTextStyles.Caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+            style = LedgerTextStyles.Caption.copy(
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold
+            ),
             color = color.copy(alpha = 0.8f),
         )
         Text(
@@ -323,8 +338,8 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
         modifier = Modifier
             .fillMaxSize()
             .background(LedgerTheme.colors.surfaceLevel0)
-            .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
+            .padding(top = 12.dp) // Offset for status bar
             .graphicsLayer {
                 alpha = ((progress - HeroTransitions.CompactEnter) /
                     (1f - HeroTransitions.CompactEnter)).coerceIn(0f, 1f)
