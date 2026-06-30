@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextOverflow
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -21,8 +23,8 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 /**
  * Standard LDL row for transaction-like summaries.
  *
- * Re-integrated the merchant icon/box per mockup requirements while
- * maintaining the refined atomic platform architecture.
+ * Single authority for activity representation. Supports status
+ * indicators, tags, and multi-line metadata.
  */
 @Composable
 fun LedgerTransactionRow(
@@ -32,12 +34,17 @@ fun LedgerTransactionRow(
     subtitle: String? = null,
     metadata: String? = null,
     tag: String? = null,
+    status: String? = null,
     amountColor: Color = LedgerTheme.colors.label,
+    dimmed: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
+    val contentAlpha = if (dimmed) LedgerTheme.opacity.Secondary else 1.0f
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .ledgerClickable { /* TODO */ }
+            .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
             .padding(vertical = LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -45,6 +52,7 @@ fun LedgerTransactionRow(
         LedgerBrandIcon(
             name = title,
             size = LedgerTheme.iconSize.Huge,
+            modifier = Modifier.graphicsLayer { alpha = contentAlpha }
         )
 
         Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
@@ -56,14 +64,18 @@ fun LedgerTransactionRow(
             Text(
                 text = title,
                 style = LedgerTextStyles.Label,
-                color = LedgerTheme.colors.label,
+                color = LedgerTheme.colors.label.copy(alpha = contentAlpha),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            val supportingText = listOfNotNull(subtitle, metadata).joinToString(" - ")
+            val supportingText = listOfNotNull(subtitle, metadata).joinToString(" \u00B7 ")
             if (supportingText.isNotEmpty()) {
                 Text(
                     text = supportingText,
                     style = LedgerTextStyles.Caption,
-                    color = LedgerTheme.colors.secondaryLabel,
+                    color = LedgerTheme.colors.tertiaryLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -73,10 +85,17 @@ fun LedgerTransactionRow(
         Column(horizontalAlignment = Alignment.End) {
             LedgerAmount(
                 amount = amount,
-                color = amountColor,
+                color = amountColor.copy(alpha = contentAlpha),
                 style = LedgerAmountStyle.Regular,
             )
-            if (tag != null) {
+            
+            if (status != null) {
+                Text(
+                    text = status,
+                    style = LedgerTextStyles.Caption,
+                    color = if (status.contains("Pending")) LedgerTheme.colors.pending else LedgerTheme.colors.tertiaryLabel,
+                )
+            } else if (tag != null) {
                 Spacer(Modifier.padding(top = LedgerSpacing.XxSmall))
                 LedgerTag(text = tag)
             }

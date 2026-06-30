@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
+import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
@@ -54,28 +55,20 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item("header") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(vertical = LedgerSpacing.Medium),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Profile",
-                    style = LedgerTextStyles.Headline,
-                    color = LedgerTheme.colors.label,
-                )
-                Icon(
-                    imageVector = Icons.Filled.Settings,
-                    contentDescription = "Settings",
-                    tint = LedgerTheme.colors.label,
-                    modifier = Modifier
-                        .size(LedgerTheme.iconSize.Medium)
-                        .ledgerClickable { onNavigateToSettings() }
-                )
-            }
+            LedgerHeader(
+                title = "Profile",
+                modifier = Modifier.statusBarsPadding(),
+                actions = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        tint = LedgerTheme.colors.label,
+                        modifier = Modifier
+                            .size(LedgerTheme.iconSize.Medium)
+                            .ledgerClickable { onNavigateToSettings() }
+                    )
+                }
+            )
         }
 
         item("user_card") {

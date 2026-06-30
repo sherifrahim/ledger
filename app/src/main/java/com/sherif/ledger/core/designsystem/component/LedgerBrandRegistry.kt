@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -27,6 +28,7 @@ enum class LedgerIdentityType {
  */
 data class BrandIdentity(
     val icon: ImageVector? = null,
+    val painter: Painter? = null,
     val color: Color? = null,
     val monogram: String? = null,
     val backgroundColor: Color? = null,

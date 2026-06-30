@@ -312,16 +312,11 @@ private fun MetricItem(
             ),
             color = Color.White.copy(alpha = 0.60f), // Increased visibility for Level 2
         )
-        Text(
-            text = value,
-            style = LedgerTextStyles.Label.copy(
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 14.sp, // Slightly increased for Level 3 Dominance
-                lineHeight = 18.sp,
-            ),
+        LedgerAmount(
+            amount = value,
+            style = LedgerAmountStyle.Small,
             color = color,
-            maxLines = 1,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = change,

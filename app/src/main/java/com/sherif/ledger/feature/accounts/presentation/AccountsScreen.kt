@@ -37,6 +37,7 @@ import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
+import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
 import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
@@ -146,10 +147,9 @@ fun AccountsScreen(
                             alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
                         }
                 ) {
-                    Text(
-                        text = "Accounts",
-                        style = LedgerTextStyles.Headline,
-                        color = LedgerTheme.colors.label,
+                    LedgerHeader(
+                        title = "Accounts",
+                        modifier = Modifier.padding(horizontal = LedgerSpacing.XxSmall)
                     )
                     
                     Spacer(Modifier.height(LedgerSpacing.Large))

@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerLineChart
 import com.sherif.ledger.core.designsystem.component.LedgerIdentityType
 import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
@@ -81,22 +82,20 @@ fun InsightsScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item("header") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(vertical = LedgerSpacing.Medium),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Insights", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
-                Icon(
-                    Icons.Filled.CalendarToday,
-                    null,
-                    tint = LedgerTheme.colors.label,
-                    modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { /* TODO */ },
-                )
-            }
+            LedgerHeader(
+                title = "Insights",
+                modifier = Modifier.statusBarsPadding(),
+                actions = {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarToday,
+                        contentDescription = "Date Range",
+                        tint = LedgerTheme.colors.label,
+                        modifier = Modifier
+                            .size(LedgerTheme.iconSize.Medium)
+                            .ledgerClickable { /* TODO */ }
+                    )
+                }
+            )
         }
 
         item("tabs") {

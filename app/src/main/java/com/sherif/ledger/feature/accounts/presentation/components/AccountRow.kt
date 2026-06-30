@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
+import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
 import com.sherif.ledger.core.designsystem.component.LedgerIdentityType
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
@@ -40,7 +41,7 @@ fun AccountRow(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
-            .padding(vertical = LedgerSpacing.Small),
+            .padding(vertical = LedgerSpacing.Medium), // Standardized for RC-008
         verticalAlignment = Alignment.CenterVertically,
     ) {
         LedgerBrandIcon(
@@ -63,6 +64,7 @@ fun AccountRow(
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
             LedgerAmount(
                 amount = account.balance,
+                style = LedgerAmountStyle.Regular, // Standardized for RC-008
                 color = balanceColor,
             )
             if (account.subtitle.isNotEmpty()) {

@@ -1,5 +1,6 @@
 package com.sherif.ledger.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
@@ -27,7 +30,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 fun LedgerTopBar(
     title: String,
     modifier: Modifier = Modifier,
-    navigationIcon: @Composable () -> Unit = {},
+    navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = LedgerTheme.colors
@@ -36,25 +39,23 @@ fun LedgerTopBar(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .ledgerSurface(
-                level = LedgerSurfaceLevel.Level0,
-                shape = androidx.compose.ui.graphics.RectangleShape,
-                borderWidth = 0.dp,
-            )
+            .background(Color.Transparent)
             .padding(horizontal = LedgerSpacing.Medium),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart),
-        ) {
-            navigationIcon()
+        if (navigationIcon != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart),
+            ) {
+                navigationIcon()
+            }
         }
 
         Text(
             text = title,
-            style = LedgerTextStyles.Section,
+            style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold),
             color = colors.label,
-            modifier = Modifier.align(Alignment.Center),
         )
 
         Row(

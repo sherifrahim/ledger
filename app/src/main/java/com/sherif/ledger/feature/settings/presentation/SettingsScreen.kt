@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
+import com.sherif.ledger.core.designsystem.component.LedgerTopBar
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
@@ -47,24 +48,20 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item("nav") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(vertical = LedgerSpacing.Medium),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = LedgerTheme.colors.label,
-                    modifier = Modifier
-                        .size(LedgerTheme.iconSize.Medium)
-                        .ledgerClickable { onBackClick() }
-                )
-                Spacer(Modifier.width(LedgerSpacing.Medium))
-                Text("Settings", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
-            }
+            LedgerTopBar(
+                title = "Settings",
+                modifier = Modifier.statusBarsPadding(),
+                navigationIcon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = LedgerTheme.colors.label,
+                        modifier = Modifier
+                            .size(LedgerTheme.iconSize.Medium)
+                            .ledgerClickable { onBackClick() }
+                    )
+                }
+            )
         }
 
         item("appearance") {

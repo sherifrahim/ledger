@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSearchBar
 import com.sherif.ledger.core.designsystem.component.LedgerTag
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
@@ -49,13 +50,11 @@ fun TransactionsScreen(
         ),
     ) {
         item(key = "title") {
-            Text(
-                text = "Transactions",
-                style = LedgerTextStyles.Headline,
-                color = LedgerTheme.colors.label,
+            LedgerHeader(
+                title = "Transactions",
                 modifier = Modifier
                     .statusBarsPadding()
-                    .padding(horizontal = LedgerSpacing.Screen, vertical = LedgerSpacing.Medium),
+                    .padding(horizontal = LedgerSpacing.Screen)
             )
         }
 

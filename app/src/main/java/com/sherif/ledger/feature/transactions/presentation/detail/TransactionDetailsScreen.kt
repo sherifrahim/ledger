@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerTopBar
 import com.sherif.ledger.core.designsystem.component.MerchantHeader
 import com.sherif.ledger.core.designsystem.component.layout.LedgerMetadataRow
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
@@ -90,60 +91,58 @@ fun TransactionDetailsScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item("nav") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(vertical = LedgerSpacing.Medium),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = LedgerTheme.colors.label,
-                    modifier = Modifier
-                        .size(LedgerTheme.iconSize.Medium)
-                        .ledgerClickable { 
-                            haptics.selection()
-                            onBackClick() 
-                        },
-                )
-                Text("Transaction", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
-                Box {
+            LedgerTopBar(
+                title = "Transaction",
+                modifier = Modifier.statusBarsPadding(),
+                navigationIcon = {
                     Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "More",
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
                         tint = LedgerTheme.colors.label,
                         modifier = Modifier
                             .size(LedgerTheme.iconSize.Medium)
                             .ledgerClickable { 
                                 haptics.selection()
-                                showMenu = true 
+                                onBackClick() 
                             },
                     )
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false },
-                        modifier = Modifier.background(LedgerTheme.colors.surfaceLevel1)
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Export PDF", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
-                            onClick = { 
-                                haptics.impact()
-                                showMenu = false 
-                            }
+                },
+                actions = {
+                    Box {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "More",
+                            tint = LedgerTheme.colors.label,
+                            modifier = Modifier
+                                .size(LedgerTheme.iconSize.Medium)
+                                .ledgerClickable { 
+                                    haptics.selection()
+                                    showMenu = true 
+                                },
                         )
-                        DropdownMenuItem(
-                            text = { Text("Report Issue", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
-                            onClick = { 
-                                haptics.impact()
-                                showMenu = false 
-                            }
-                        )
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(LedgerTheme.colors.surfaceLevel1)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Export PDF", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
+                                onClick = { 
+                                    haptics.impact()
+                                    showMenu = false 
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Report Issue", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
+                                onClick = { 
+                                    haptics.impact()
+                                    showMenu = false 
+                                }
+                            )
+                        }
                     }
                 }
-            }
+            )
         }
 
         item("header") {

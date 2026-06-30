@@ -27,7 +27,7 @@ fun MerchantHeader(
     name: String,
     category: String,
     modifier: Modifier = Modifier,
-    avatarSize: Dp = 64.dp,
+    avatarSize: Dp = LedgerTheme.iconSize.Massive,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),

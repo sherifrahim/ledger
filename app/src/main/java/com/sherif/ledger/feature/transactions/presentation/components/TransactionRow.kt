@@ -1,32 +1,15 @@
 package com.sherif.ledger.feature.transactions.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
-import com.sherif.ledger.core.designsystem.component.ledgerClickable
-import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
-import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.transactions.presentation.MerchantCategory
 import com.sherif.ledger.feature.transactions.presentation.TransactionState
 import com.sherif.ledger.feature.transactions.presentation.TransactionUi
 
 /**
- * Stateless transaction row with LDL press compression.
+ * Stateless transaction row proxying to canonical [LedgerTransactionRow].
  */
 @Composable
 fun TransactionRow(
@@ -34,66 +17,26 @@ fun TransactionRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
-    // TODO: Direction will become a dedicated domain concept.
     val isIncome = transaction.category == MerchantCategory.Salary
     val amountColor = if (isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
     val sign = if (isIncome) "+" else "-"
-    val dimmed = transaction.state == TransactionState.Pending
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
-            .defaultMinSize(minHeight = 56.dp)
-            .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Small),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        LedgerBrandIcon(name = transaction.merchant, size = 40.dp)
-        Spacer(Modifier.width(LedgerSpacing.Small))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
-            Text(
-                transaction.merchant, style = LedgerTextStyles.Label,
-                color = LedgerTheme.colors.label.let { if (dimmed) it.copy(alpha = LedgerTheme.opacity.Secondary) else it },
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                "${transaction.subtitle} \u00B7 ${transaction.category.displayName()}",
-                style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(Modifier.width(LedgerSpacing.Content))
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                "${sign}AED ${transaction.amount.stripTrailingZeros().toPlainString()}",
-                style = LedgerTextStyles.Label,
-                color = amountColor.let { if (dimmed) it.copy(alpha = LedgerTheme.opacity.Secondary) else it },
-            )
-            when (transaction.state) {
-                TransactionState.Pending -> Text("\u25CF Pending", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.pending)
-                TransactionState.Recurring -> Text("\u21BA Monthly", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
-                TransactionState.Posted -> {}
-            }
-        }
+    val status = when (transaction.state) {
+        TransactionState.Pending -> "\u25CF Pending"
+        TransactionState.Recurring -> "\u21BA Monthly"
+        else -> null
     }
-}
 
-// TODO: Category colors will migrate into semantic LDL merchant palette tokens
-// once multiple screens consume them.
-private fun MerchantCategory.toColor(): Color = when (this) {
-    MerchantCategory.Grocery -> Color(0xFF22C55E)
-    MerchantCategory.Shopping -> Color(0xFFA855F7)
-    MerchantCategory.Coffee -> Color(0xFF92400E)
-    MerchantCategory.Fuel -> Color(0xFFEF4444)
-    MerchantCategory.Salary -> Color(0xFF047857)
-    MerchantCategory.Bills -> Color(0xFFEAB308)
-    MerchantCategory.Transport -> Color(0xFF3B82F6)
-    MerchantCategory.Entertainment -> Color(0xFFEC4899)
-    MerchantCategory.Electronics -> Color(0xFF6B7280)
-    MerchantCategory.Food -> Color(0xFFF97316)
-    MerchantCategory.Healthcare -> Color(0xFF14B8A6)
-    MerchantCategory.Travel -> Color(0xFF0EA5E9)
-    MerchantCategory.Education -> Color(0xFF8B5CF6)
+    LedgerTransactionRow(
+        title = transaction.merchant,
+        amount = "${sign}AED ${transaction.amount.stripTrailingZeros().toPlainString()}",
+        subtitle = transaction.subtitle,
+        metadata = transaction.category.displayName(),
+        status = status,
+        amountColor = amountColor,
+        dimmed = transaction.state == TransactionState.Pending,
+        onClick = onClick,
+        modifier = modifier
+    )
 }
 
 private fun MerchantCategory.displayName(): String = when (this) {

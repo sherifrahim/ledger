@@ -1,6 +1,6 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -46,14 +47,22 @@ fun LedgerBrandIcon(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (identity.icon != null) {
+        if (identity.painter != null) {
+            Image(
+                painter = identity.painter,
+                contentDescription = name,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(LedgerRadius.Medium)
+            )
+        } else if (identity.icon != null) {
             Icon(
                 imageVector = identity.icon,
                 contentDescription = name,
                 tint = contentColor,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(size * 0.22f) // Normalized padding for optical weight
+                    .padding(size * 0.20f) // Refined for RC-008 optical weight
             )
         } else {
             val label = identity.monogram ?: name.take(1).uppercase()
