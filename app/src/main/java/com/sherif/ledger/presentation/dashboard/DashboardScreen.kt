@@ -126,7 +126,7 @@ fun DashboardScreen(
             contentPadding = PaddingValues(
                 start = LedgerSpacing.Group,
                 end = LedgerSpacing.Group,
-                bottom = LedgerSpacing.ScreenBottom,
+                bottom = LedgerSpacing.ScreenBottom + 100.dp, // Clear the floating dock
             ),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
             modifier = Modifier.fillMaxSize(),
@@ -150,34 +150,14 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
-            .padding(top = 48.dp, bottom = LedgerSpacing.XxLarge) // Manual padding for status bar to avoid clipping glow
+            .padding(top = LedgerSpacing.Large, bottom = LedgerSpacing.XxLarge)
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Identity Frame
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Good morning, ${state.userName} 👋",
-                style = LedgerTextStyles.Label,
-                color = Color.White.copy(alpha = 0.60f),
-            )
-            Icon(
-                Icons.Filled.Notifications,
-                contentDescription = "Notifications",
-                tint = Color.White.copy(alpha = 0.40f),
-                modifier = Modifier
-                    .size(LedgerTheme.iconSize.Small)
-                    .ledgerClickable { /* TODO */ },
-            )
-        }
-
         Spacer(Modifier.weight(1f))
 
         // Total Balance (Centered per Mockup)
@@ -282,7 +262,9 @@ private fun MetricItem(
     icon: ImageVector,
     color: Color,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Box(
             modifier = Modifier
                 .size(LedgerTheme.iconSize.Medium)
@@ -304,6 +286,7 @@ private fun MetricItem(
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp,
+                lineHeight = 12.sp,
             ),
             color = Color.White.copy(alpha = 0.35f),
         )
@@ -313,20 +296,23 @@ private fun MetricItem(
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 13.sp,
+                lineHeight = 16.sp,
             ),
             color = color,
+            maxLines = 1,
         )
         Text(
             text = change,
             style = LedgerTextStyles.Caption.copy(
                 fontSize = 9.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                lineHeight = 12.sp,
             ),
             color = color.copy(alpha = 0.8f),
         )
         Text(
             text = "vs last month",
-            style = LedgerTextStyles.Caption.copy(fontSize = 8.sp),
+            style = LedgerTextStyles.Caption.copy(fontSize = 8.sp, lineHeight = 10.sp),
             color = Color.White.copy(alpha = 0.2f),
         )
     }
@@ -338,8 +324,8 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
         modifier = Modifier
             .fillMaxSize()
             .background(LedgerTheme.colors.surfaceLevel0)
+            .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
-            .padding(top = 12.dp) // Offset for status bar
             .graphicsLayer {
                 alpha = ((progress - HeroTransitions.CompactEnter) /
                     (1f - HeroTransitions.CompactEnter)).coerceIn(0f, 1f)

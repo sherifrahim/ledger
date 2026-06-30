@@ -42,7 +42,8 @@ private fun LedgerApp() {
         LedgerRoute.Home.route,
         LedgerRoute.Accounts.route,
         LedgerRoute.Transactions.route,
-        LedgerRoute.ReviewInbox.route,
+        LedgerRoute.Insights.route,
+        LedgerRoute.Profile.route,
     )
 
     Box(Modifier.fillMaxSize()) {
