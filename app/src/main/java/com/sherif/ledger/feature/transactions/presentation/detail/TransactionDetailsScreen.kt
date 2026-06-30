@@ -2,6 +2,7 @@ package com.sherif.ledger.feature.transactions.presentation.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,38 +11,42 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
-import com.sherif.ledger.core.designsystem.component.LedgerHairline
-import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
-import com.sherif.ledger.core.designsystem.component.LedgerSurface
+import com.sherif.ledger.core.designsystem.component.MerchantHeader
+import com.sherif.ledger.core.designsystem.component.layout.LedgerMetadataRow
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
-import com.sherif.ledger.core.designsystem.component.layout.LedgerMetadataRow
+import com.sherif.ledger.core.designsystem.haptics.LedgerHaptics
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.core.preview.PreviewTransactions
-import com.sherif.ledger.core.designsystem.component.MerchantHeader
 
 private val previewState = run {
     val t = PreviewTransactions.amazonToday
@@ -70,35 +75,74 @@ private val previewState = run {
 
 @Composable
 fun TransactionDetailsScreen(
+    onBackClick: () -> Unit = {},
     state: TransactionDetailsUiState = previewState,
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+    val haptics = LedgerHaptics.current
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
         contentPadding = PaddingValues(
             start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
-            top = LedgerSpacing.Large, bottom = LedgerSpacing.ScreenBottom,
+            bottom = LedgerSpacing.ScreenBottom,
         ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item("nav") {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(vertical = LedgerSpacing.Medium),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    null,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
                     tint = LedgerTheme.colors.label,
-                    modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { /* TODO */ },
+                    modifier = Modifier
+                        .size(LedgerTheme.iconSize.Medium)
+                        .ledgerClickable { 
+                            haptics.selection()
+                            onBackClick() 
+                        },
                 )
                 Text("Transaction", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
-                Icon(
-                    Icons.Filled.MoreVert,
-                    null,
-                    tint = LedgerTheme.colors.label,
-                    modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { /* TODO */ },
-                )
+                Box {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "More",
+                        tint = LedgerTheme.colors.label,
+                        modifier = Modifier
+                            .size(LedgerTheme.iconSize.Medium)
+                            .ledgerClickable { 
+                                haptics.selection()
+                                showMenu = true 
+                            },
+                    )
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(LedgerTheme.colors.surfaceLevel1)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Export PDF", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
+                            onClick = { 
+                                haptics.impact()
+                                showMenu = false 
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Report Issue", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
+                            onClick = { 
+                                haptics.impact()
+                                showMenu = false 
+                            }
+                        )
+                    }
+                }
             }
         }
 
@@ -111,7 +155,6 @@ fun TransactionDetailsScreen(
                 MerchantHeader(
                     name = state.merchant,
                     category = state.merchantCategory,
-                    accentHue = state.merchantAccentHue,
                     avatarSize = LedgerTheme.iconSize.Huge,
                 )
                 
@@ -177,7 +220,7 @@ private fun ActionRow(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.Icon(
+            Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = LedgerTheme.colors.secondaryLabel,
@@ -186,7 +229,7 @@ private fun ActionRow(
             Spacer(Modifier.width(LedgerSpacing.Small))
             Text(label, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
         }
-        androidx.compose.material3.Icon(
+        Icon(
             imageVector = Icons.Filled.ChevronRight,
             contentDescription = null,
             tint = LedgerTheme.colors.tertiaryLabel,

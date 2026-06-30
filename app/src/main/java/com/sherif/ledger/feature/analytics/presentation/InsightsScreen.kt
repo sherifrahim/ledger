@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +28,8 @@ import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerLineChart
-import com.sherif.ledger.core.designsystem.component.LedgerMerchantIdentity
+import com.sherif.ledger.core.designsystem.component.LedgerIdentityType
+import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
@@ -80,7 +82,10 @@ fun InsightsScreen(
     ) {
         item("header") {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(vertical = LedgerSpacing.Medium),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -188,9 +193,9 @@ private fun CategoryItem(category: CategoryInsightUi) {
             .padding(vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LedgerMerchantIdentity(
+        LedgerBrandIcon(
             name = category.name,
-            accentColor = category.color,
+            type = LedgerIdentityType.Category,
             size = LedgerTheme.iconSize.Large,
         )
         Spacer(Modifier.width(LedgerSpacing.Medium))

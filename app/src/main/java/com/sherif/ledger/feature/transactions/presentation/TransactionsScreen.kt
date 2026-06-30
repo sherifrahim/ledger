@@ -35,6 +35,7 @@ import com.sherif.ledger.feature.transactions.presentation.preview.TransactionsP
 fun TransactionsScreen(
     state: TransactionsUiState = TransactionsPreviewData.state,
     onTransactionClick: ((String) -> Unit)? = null,
+    onSearchClick: () -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -63,7 +64,10 @@ fun TransactionsScreen(
                 query = searchQuery,
                 onQueryChange = { searchQuery = it },
                 placeholder = "Search transactions",
-                modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
+                modifier = Modifier
+                    .padding(horizontal = LedgerSpacing.Screen)
+                    .ledgerClickable { onSearchClick() },
+                enabled = false, // Force navigation to SearchFilterScreen
             )
             Spacer(Modifier.height(LedgerSpacing.Group))
             FilterPills(modifier = Modifier.padding(horizontal = LedgerSpacing.Screen))

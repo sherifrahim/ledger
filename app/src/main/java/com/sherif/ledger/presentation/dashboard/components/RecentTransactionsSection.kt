@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
@@ -42,7 +41,6 @@ fun RecentTransactionsSection(
                     subtitle = txn.category,
                     amount = "$sign${txn.amount}",
                     amountColor = if (txn.isExpense) LedgerTheme.colors.expense else LedgerTheme.colors.income,
-                    accentColor = Color(txn.merchantAccentHue),
                 )
                 if (index != state.recentTransactions.lastIndex) {
                     LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))

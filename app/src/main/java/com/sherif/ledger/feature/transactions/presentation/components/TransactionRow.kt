@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.sherif.ledger.core.designsystem.component.LedgerAvatar
+import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -34,7 +34,6 @@ fun TransactionRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
-    val catColor = transaction.category.toColor()
     // TODO: Direction will become a dedicated domain concept.
     val isIncome = transaction.category == MerchantCategory.Salary
     val amountColor = if (isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
@@ -49,7 +48,7 @@ fun TransactionRow(
             .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LedgerAvatar(name = transaction.merchant, color = catColor, modifier = Modifier.size(40.dp))
+        LedgerBrandIcon(name = transaction.merchant, size = 40.dp)
         Spacer(Modifier.width(LedgerSpacing.Small))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
             Text(

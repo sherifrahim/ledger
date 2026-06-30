@@ -32,7 +32,6 @@ fun LedgerTransactionRow(
     subtitle: String? = null,
     metadata: String? = null,
     tag: String? = null,
-    accentColor: Color = LedgerTheme.colors.tint,
     amountColor: Color = LedgerTheme.colors.label,
 ) {
     Row(
@@ -42,10 +41,9 @@ fun LedgerTransactionRow(
             .padding(vertical = LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Merchant Identity (Branded per Release Candidate standards)
-        LedgerMerchantIdentity(
+        // Authentic Brand Identity (RC-007 System)
+        LedgerBrandIcon(
             name = title,
-            accentColor = accentColor,
             size = LedgerTheme.iconSize.Huge,
         )
 

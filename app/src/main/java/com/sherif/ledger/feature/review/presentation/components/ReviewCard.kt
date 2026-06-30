@@ -20,7 +20,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sherif.ledger.core.designsystem.component.LedgerAvatar
+import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
 import com.sherif.ledger.core.designsystem.component.LedgerButton
 import com.sherif.ledger.core.designsystem.component.LedgerButtonStyle
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
@@ -54,7 +54,7 @@ fun ReviewCard(
         contentPadding = PaddingValues(LedgerSpacing.Group),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            LedgerAvatar(name = item.merchant, color = Color(item.merchantAccentHue), modifier = Modifier.size(40.dp))
+            LedgerBrandIcon(name = item.merchant, size = 40.dp)
             Spacer(Modifier.width(LedgerSpacing.Small))
             Column(Modifier.weight(1f)) {
                 Text(item.merchant, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)

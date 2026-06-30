@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,12 +54,14 @@ fun ReviewInboxScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group),
     ) {
         item("header") {
-            Text("Review", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
-            Spacer(Modifier.height(LedgerSpacing.Content))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
-                SummaryCount("Pending", state.pendingCount, LedgerTheme.colors.pending)
-                SummaryCount("Confirmed", state.confirmedTodayCount, LedgerTheme.colors.income)
-                SummaryCount("Ignored", state.ignoredTodayCount, LedgerTheme.colors.tertiaryLabel)
+            Column(modifier = Modifier.statusBarsPadding().padding(vertical = LedgerSpacing.Medium)) {
+                Text("Review", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
+                Spacer(Modifier.height(LedgerSpacing.Content))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
+                    SummaryCount("Pending", state.pendingCount, LedgerTheme.colors.pending)
+                    SummaryCount("Confirmed", state.confirmedTodayCount, LedgerTheme.colors.income)
+                    SummaryCount("Ignored", state.ignoredTodayCount, LedgerTheme.colors.tertiaryLabel)
+                }
             }
         }
 

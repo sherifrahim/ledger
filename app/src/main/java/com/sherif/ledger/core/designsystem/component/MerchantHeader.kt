@@ -26,16 +26,15 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 fun MerchantHeader(
     name: String,
     category: String,
-    accentHue: Long,
     modifier: Modifier = Modifier,
-    avatarSize: Dp = 56.dp,
+    avatarSize: Dp = 64.dp,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Content),
     ) {
-        LedgerAvatar(name = name, color = Color(accentHue), modifier = Modifier.size(avatarSize))
+        LedgerBrandIcon(name = name, size = avatarSize)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(name, style = LedgerTextStyles.Title, color = LedgerTheme.colors.label)
             Spacer(Modifier.height(LedgerSpacing.XxSmall))
