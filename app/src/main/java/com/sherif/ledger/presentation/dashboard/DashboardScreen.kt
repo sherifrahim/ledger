@@ -14,10 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -74,7 +70,7 @@ private object HeroTransitions {
 }
 
 private object HeroSnap {
-    const val Enabled = true
+    const val Enabled = false
     const val ZoneStart = 0.25f
     const val ZoneEnd = 0.75f
     const val DampingRatio = 0.92f
@@ -86,10 +82,8 @@ fun DashboardScreen(
     onNavigateToTransactions: () -> Unit = {},
     state: DashboardUiState = DashboardPreviewData.state,
 ) {
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val expandedHeight = LedgerHeroDefaults.ExpandedHeight + statusBarPadding
-    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight + statusBarPadding
-
+    val expandedHeight = LedgerHeroDefaults.ExpandedHeight
+    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
     val maxOffsetPx = with(LocalDensity.current) {
         (expandedHeight - collapsedHeight).toPx()
     }
@@ -145,7 +139,7 @@ fun DashboardScreen(
             collapseProgress = collapseProgress,
             expandedHeight = expandedHeight,
             collapsedHeight = collapsedHeight,
-            background = SolidColor(Color.Transparent),
+            background = SolidColor(LedgerTheme.colors.surfaceLevel0),
             contentBackground = {
                 LedgerAtmosphereGlow(Modifier.fillMaxSize())
             },
@@ -239,14 +233,14 @@ Column(
         }
 
  Spacer(
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(0.45f)
     )
 
         // 2. Summary Metrics (Anchored to bottom of hero area)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter),
+                .padding(bottom = LedgerSpacing.Medium),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             MetricItem(
@@ -338,8 +332,6 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .background(LedgerTheme.colors.surfaceLevel0)
-            .statusBarsPadding()
             .padding(horizontal = LedgerSpacing.Group)
             .graphicsLayer {
                 alpha = ((progress - HeroTransitions.CompactEnter) /

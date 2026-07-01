@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -91,12 +94,24 @@ fun LedgerCollapsingHero(
         Box(Modifier.fillMaxSize()) {
             expandedContent(collapseProgress)
         }
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(collapsedHeight),
-        ) {
-            compactContent(collapseProgress)
-        }
+AnimatedVisibility(
+    visible = collapseProgress >= 0.85f,
+    enter = fadeIn(),
+    exit = fadeOut(),
+) {
+AnimatedVisibility(
+    visible = collapseProgress >= 0.85f,
+    enter = fadeIn(),
+    exit = fadeOut(),
+) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(collapsedHeight),
+    ) {
+        compactContent(collapseProgress)
     }
+}
+    }
+}
 }

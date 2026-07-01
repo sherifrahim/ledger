@@ -36,8 +36,8 @@ fun LedgerAtmosphereGlow(
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    primary.copy(alpha = 0.04f),
-                    primary.copy(alpha = 0.08f),
+                    primary.copy(alpha = 0.18f),
+                    primary.copy(alpha = 0.22f),
                     Color.Transparent
                 ),
                 startY = 0f,
@@ -66,7 +66,7 @@ fun LedgerAtmosphereGlow(
         // 3. Primary Directional Light (Restrained Surface presence)
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(secondary.copy(alpha = 0.04f), Color.Transparent),
+                colors = listOf(secondary.copy(alpha = 0.12f), Color.Transparent),
                 center = Offset(w / 2f, h * 0.38f),
                 radius = h * 0.30f
             )
