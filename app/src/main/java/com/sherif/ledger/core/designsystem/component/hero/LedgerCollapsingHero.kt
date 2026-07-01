@@ -25,7 +25,7 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerGradients
 object LedgerHeroDefaults {
 
     /** Hero height when fully expanded (scroll offset zero). */
-    val ExpandedHeight: Dp = 320.dp // Increased for RC-003 to provide headroom for metrics
+    val ExpandedHeight: Dp = 340.dp // Increased for RC15 responsive layout
 
     /** Hero height when fully collapsed (pinned compact header). */
     val CollapsedHeight: Dp = 56.dp

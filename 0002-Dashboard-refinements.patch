@@ -1,0 +1,47 @@
+From dc08bcfd6679b4b6e654764a984a26072d78376d Mon Sep 17 00:00:00 2001
+From: sherifrahim <28657313+sherifrahim@users.noreply.github.com>
+Date: Wed, 1 Jul 2026 12:12:36 +0400
+Subject: [PATCH 2/3] Dashboard refinements
+
+---
+ .../presentation/dashboard/DashboardScreen.kt    | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+index 8d274b1..b085bce 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+@@ -119,6 +119,8 @@ fun DashboardScreen(
+     val c = LedgerTheme.colors
+ 
+     Box(Modifier.fillMaxSize().background(c.surfaceLevel0)) {
++        // Global Atmosphere (Subtle wash) - Ensures bleed behind status bar
++        LedgerAtmosphereGlow(Modifier.fillMaxSize())
+ 
+         LazyColumn(
+             state = listState,
+@@ -160,19 +162,9 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
+             },
+         horizontalAlignment = Alignment.CenterHorizontally,
+     ) {
+-        // Standardized Header (Converging with Mock V2 identity)
++        // Standardized Header (Converging with Accounts identity)
+         LedgerHeader(
+-            title = "Good morning, ${state.userName}",
+-            actions = {
+-                Icon(
+-                    imageVector = Icons.Filled.Notifications,
+-                    contentDescription = "Notifications",
+-                    tint = Color.White.copy(alpha = 0.45f),
+-                    modifier = Modifier
+-                        .size(LedgerTheme.iconSize.Medium)
+-                        .ledgerClickable { /* TODO */ }
+-                )
+-            }
++            title = "Dashboard"
+         )
+ 
+         Spacer(Modifier.weight(1.3f)) // Optical centering below header
+-- 
+2.51.0
+

@@ -12,8 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -60,8 +64,9 @@ private object HeroTransitions {
 fun AccountsScreen(
     state: AccountsUiState = AccountsPreviewData.state,
 ) {
-    val expandedHeight = 240.dp
-    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val expandedHeight = LedgerHeroDefaults.ExpandedHeight + statusBarPadding
+    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight + statusBarPadding
     val maxOffsetPx = with(LocalDensity.current) { (expandedHeight - collapsedHeight).toPx() }
     val listState = rememberLazyListState()
     val collapseProgress by remember {
@@ -141,12 +146,15 @@ fun AccountsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .statusBarsPadding()
                         .padding(horizontal = LedgerSpacing.Screen)
                         .graphicsLayer {
                             alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
-                        }
+                        },
+                    verticalArrangement = Arrangement.Top
                 ) {
+                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                    Spacer(Modifier.height(LedgerSpacing.Large))
+
                     LedgerHeader(
                         title = "Accounts",
                         modifier = Modifier.padding(horizontal = LedgerSpacing.XxSmall)

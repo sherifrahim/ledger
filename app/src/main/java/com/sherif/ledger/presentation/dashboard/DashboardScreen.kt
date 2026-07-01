@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -56,7 +60,6 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.presentation.dashboard.components.InsightSection
-import com.sherif.ledger.presentation.dashboard.components.QuickStatsSection
 import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSection
 import com.sherif.ledger.presentation.dashboard.preview.DashboardPreviewData
 
@@ -83,8 +86,10 @@ fun DashboardScreen(
     onNavigateToTransactions: () -> Unit = {},
     state: DashboardUiState = DashboardPreviewData.state,
 ) {
-    val expandedHeight = LedgerHeroDefaults.ExpandedHeight
-    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val expandedHeight = LedgerHeroDefaults.ExpandedHeight + statusBarPadding
+    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight + statusBarPadding
+
     val maxOffsetPx = with(LocalDensity.current) {
         (expandedHeight - collapsedHeight).toPx()
     }
@@ -138,6 +143,8 @@ fun DashboardScreen(
 
         LedgerCollapsingHero(
             collapseProgress = collapseProgress,
+            expandedHeight = expandedHeight,
+            collapsedHeight = collapsedHeight,
             background = SolidColor(Color.Transparent),
             contentBackground = {
                 LedgerAtmosphereGlow(Modifier.fillMaxSize())
@@ -150,7 +157,7 @@ fun DashboardScreen(
 
 @Composable
 private fun ExpandedHero(progress: Float, state: DashboardUiState) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
@@ -159,10 +166,10 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             .graphicsLayer {
                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
             },
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // The Financial Instrument Composition
+        // 1. The Financial Instrument Monolith (Centered in content area)
         Column(
+            modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
         ) {
@@ -171,12 +178,9 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 style = LedgerTextStyles.Caption.copy(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp, // Stronger identity presence
+                    letterSpacing = 2.sp,
                 ),
                 color = Color.White.copy(alpha = 0.35f),
-                modifier = Modifier.graphicsLayer {
-                    translationY = -(progress * 15f)
-                },
             )
             
             LedgerAmount(
@@ -187,11 +191,9 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                     val scale = 1f - (progress * 0.10f)
                     scaleX = scale
                     scaleY = scale
-                    translationY = -(progress * 30f)
                 },
             )
             
-            // Subordinate Currency (Line 3 per SPEC)
             Text(
                 text = state.balanceCurrency,
                 style = LedgerTextStyles.Caption.copy(
@@ -199,27 +201,19 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                     fontSize = 11.sp
                 ),
                 color = Color.White.copy(alpha = 0.45f),
-                modifier = Modifier.graphicsLayer {
-                    alpha = (1f - progress * 1.5f).coerceIn(0f, 1f)
-                    translationY = -(progress * 20f)
-                }
             )
             
             Spacer(Modifier.height(LedgerSpacing.Small))
             
-            // Interaction Pill (Restrained and Intentional)
+            // Interaction Pill
             Box(
                 modifier = Modifier
-                    .graphicsLayer {
-                        alpha = (1f - progress * 2.2f).coerceIn(0f, 1f)
-                        translationY = -(progress * 25f)
-                    }
                     .ledgerSurface(
                         backgroundColor = Color.White.copy(alpha = 0.05f),
                         borderColor = Color.White.copy(alpha = 0.10f),
                         shape = LedgerRadius.Full,
                     )
-                    .ledgerClickable { /* TODO: Period Picker */ }
+                    .ledgerClickable { /* TODO */ }
                     .padding(horizontal = LedgerSpacing.Medium, vertical = 6.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -243,10 +237,11 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             }
         }
 
-        Spacer(Modifier.weight(1f))
-
+        // 2. Summary Metrics (Anchored to bottom of hero area)
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             MetricItem(
@@ -271,8 +266,6 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 color = Color.White.copy(alpha = 0.70f),
             )
         }
-
-        Spacer(Modifier.weight(0.4f))
     }
 }
 
@@ -310,7 +303,7 @@ private fun MetricItem(
                 letterSpacing = 1.2.sp,
                 lineHeight = 12.sp,
             ),
-            color = Color.White.copy(alpha = 0.60f), // Increased visibility for Level 2
+            color = Color.White.copy(alpha = 0.60f),
         )
         LedgerAmount(
             amount = value,
@@ -321,7 +314,7 @@ private fun MetricItem(
         Text(
             text = change,
             style = LedgerTextStyles.Caption.copy(
-                fontSize = 10.sp, // Slightly increased for Level 4 Clarity
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 lineHeight = 14.sp,
             ),
@@ -363,7 +356,6 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
             )
         }
         
-        // Compact secondary info
         Text(
             text = state.currentMonth,
             style = LedgerTextStyles.Mono.copy(fontSize = 11.sp),

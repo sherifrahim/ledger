@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Root cause fix: Reverted to framework theme with explicit modern flags for edge-to-edge -->
     <style name="Theme.Ledger" parent="android:Theme.Material.NoActionBar">
-        <!-- Root cause fix: Explicitly allow drawing behind system bars -->
-        <item name="android:windowTranslucentStatus">false</item>
-        <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
 
-        <!-- Ensure icons remain visible (Light icons for dark app) -->
+        <!-- Crucial for edge-to-edge content overlap -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+
+        <!-- Light icons for dark material background visibility -->
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
     </style>

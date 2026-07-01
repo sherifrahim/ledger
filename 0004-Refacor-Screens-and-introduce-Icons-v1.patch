@@ -1,0 +1,1300 @@
+From 0ac9b1699b3083d886e0c2a9e2400524d7a06f10 Mon Sep 17 00:00:00 2001
+From: sherifrahim <28657313+sherifrahim@users.noreply.github.com>
+Date: Wed, 1 Jul 2026 02:08:12 +0400
+Subject: [PATCH 4/5] Refacor Screens and introduce Icons v1
+
+---
+ .../designsystem/component/LedgerAvatar.kt    |  59 ------
+ .../designsystem/component/LedgerBrandIcon.kt |  70 +++++++
+ .../component/LedgerBrandRegistry.kt          | 105 ++++++++++
+ .../component/LedgerMerchantIdentity.kt       |  57 -----
+ .../component/LedgerTransactionRow.kt         |   6 +-
+ .../designsystem/component/MerchantHeader.kt  |   5 +-
+ .../presentation/components/AccountRow.kt     |  10 +-
+ .../analytics/presentation/InsightsScreen.kt  |  13 +-
+ .../review/presentation/ReviewInboxScreen.kt  |  15 +-
+ .../presentation/components/ReviewCard.kt     |   4 +-
+ .../settings/presentation/ProfileScreen.kt    | 198 ++++++++++++++++++
+ .../settings/presentation/SettingsScreen.kt   | 161 ++++++++++++++
+ .../presentation/TransactionsScreen.kt        |   6 +-
+ .../presentation/components/TransactionRow.kt |   5 +-
+ .../detail/TransactionDetailsScreen.kt        |  85 ++++++--
+ .../dashboard/SearchFilterScreen.kt           |  14 +-
+ .../components/RecentTransactionsSection.kt   |   2 -
+ .../presentation/navigation/LedgerNavHost.kt  |  26 ++-
+ .../presentation/navigation/LedgerRoute.kt    |   2 +
+ 19 files changed, 665 insertions(+), 178 deletions(-)
+ delete mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAvatar.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandIcon.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandRegistry.kt
+ delete mode 100644 app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerMerchantIdentity.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/feature/settings/presentation/ProfileScreen.kt
+ create mode 100644 app/src/main/java/com/sherif/ledger/feature/settings/presentation/SettingsScreen.kt
+
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAvatar.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAvatar.kt
+deleted file mode 100644
+index d5d800e..0000000
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerAvatar.kt
++++ /dev/null
+@@ -1,59 +0,0 @@
+-package com.sherif.ledger.core.designsystem.component
+-
+-import androidx.compose.foundation.Image
+-import androidx.compose.foundation.layout.Box
+-import androidx.compose.foundation.layout.fillMaxSize
+-import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.shape.CircleShape
+-import androidx.compose.material3.Text
+-import androidx.compose.runtime.Composable
+-import androidx.compose.ui.Alignment
+-import androidx.compose.ui.Modifier
+-import androidx.compose.ui.draw.clip
+-import androidx.compose.ui.graphics.Color
+-import androidx.compose.ui.graphics.painter.Painter
+-import androidx.compose.ui.unit.Dp
+-import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+-import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+-
+-/**
+- * LDL avatar for accounts, merchants, and categories.
+- *
+- * Displays an initial inside a tinted circle. When [painter] is provided
+- * (e.g. from Coil or a resource), the image fills the circle instead.
+- * This component is shared between Accounts (bank avatars) and prepared
+- * for Transactions (merchant avatars).
+- */
+-@Composable
+-fun LedgerAvatar(
+-    name: String,
+-    color: Color,
+-    modifier: Modifier = Modifier,
+-    painter: Painter? = null,
+-    size: Dp = LedgerTheme.iconSize.Large,
+-) {
+-    Box(
+-        modifier = modifier
+-            .size(size)
+-            .ledgerSurface(
+-                shape = CircleShape,
+-                backgroundColor = color.copy(alpha = LedgerTheme.opacity.Muted),
+-                borderColor = Color.Transparent,
+-            ),
+-        contentAlignment = Alignment.Center,
+-    ) {
+-        if (painter != null) {
+-            Image(
+-                painter = painter,
+-                contentDescription = name,
+-                modifier = Modifier.fillMaxSize().clip(CircleShape),
+-            )
+-        } else {
+-            Text(
+-                name.take(1).uppercase(),
+-                style = LedgerTextStyles.Label,
+-                color = color,
+-            )
+-        }
+-    }
+-}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandIcon.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandIcon.kt
+new file mode 100644
+index 0000000..b206b95
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandIcon.kt
+@@ -0,0 +1,70 @@
++package com.sherif.ledger.core.designsystem.component
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.material3.Icon
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.Dp
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
++
++/**
++ * Normalized Brand Identity component for Ledger.
++ *
++ * Replaces generic placeholders with authentic, data-driven identities.
++ * Ensures consistent geometric presentation across all vendors and actors.
++ */
++@Composable
++fun LedgerBrandIcon(
++    name: String,
++    modifier: Modifier = Modifier,
++    type: LedgerIdentityType = LedgerIdentityType.Merchant,
++    size: Dp = LedgerTheme.iconSize.Large,
++) {
++    val identity = remember(name, type) { LedgerBrandRegistry.resolve(name, type) }
++    val accent = identity.color ?: LedgerTheme.colors.tint
++    val bg = identity.backgroundColor ?: accent.copy(alpha = 0.12f)
++    val contentColor = if (identity.backgroundColor != null) accent else accent
++
++    Box(
++        modifier = modifier
++            .size(size)
++            .ledgerSurface(
++                shape = LedgerRadius.Medium, // Standardized LDL geometry
++                backgroundColor = bg,
++                borderColor = Color.Transparent,
++            ),
++        contentAlignment = Alignment.Center,
++    ) {
++        if (identity.icon != null) {
++            Icon(
++                imageVector = identity.icon,
++                contentDescription = name,
++                tint = contentColor,
++                modifier = Modifier
++                    .fillMaxSize()
++                    .padding(size * 0.22f) // Normalized padding for optical weight
++            )
++        } else {
++            val label = identity.monogram ?: name.take(1).uppercase()
++            Text(
++                text = label,
++                style = LedgerTextStyles.Label.copy(
++                    fontWeight = FontWeight.Bold,
++                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
++                ),
++                color = contentColor,
++            )
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandRegistry.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandRegistry.kt
+new file mode 100644
+index 0000000..36bc595
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerBrandRegistry.kt
+@@ -0,0 +1,105 @@
++package com.sherif.ledger.core.designsystem.component
++
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.automirrored.filled.Send
++import androidx.compose.material.icons.filled.AccountBalance
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.Coffee
++import androidx.compose.material.icons.filled.CreditCard
++import androidx.compose.material.icons.filled.LocalGroceryStore
++import androidx.compose.material.icons.filled.Payments
++import androidx.compose.material.icons.filled.Restaurant
++import androidx.compose.material.icons.filled.ShoppingBag
++import androidx.compose.material.icons.filled.Smartphone
++import androidx.compose.material.icons.filled.Wallet
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.vector.ImageVector
++
++/**
++ * Ledger Identity System Types.
++ */
++enum class LedgerIdentityType {
++    Merchant, Bank, Card, Category, Action
++}
++
++/**
++ * Authentic Brand Identity model for Ledger.
++ */
++data class BrandIdentity(
++    val icon: ImageVector? = null,
++    val color: Color? = null,
++    val monogram: String? = null,
++    val backgroundColor: Color? = null,
++)
++
++/**
++ * Global registry for Ledger brand identities.
++ */
++object LedgerBrandRegistry {
++    private val registry = mutableMapOf<String, BrandIdentity>()
++
++    init {
++        // --- 1. MERCHANTS ---
++        register("amazon", BrandIdentity(icon = Icons.Filled.ShoppingBag, color = Color(0xFFFF9900), monogram = "a", backgroundColor = Color.Black))
++        register("apple", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color.White, backgroundColor = Color.Black))
++        register("google", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color(0xFF4285F4)))
++        register("netflix", BrandIdentity(monogram = "N", color = Color(0xFFE50914), backgroundColor = Color.Black))
++        register("spotify", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color(0xFF1DB954), backgroundColor = Color.Black))
++        register("carrefour", BrandIdentity(icon = Icons.Filled.LocalGroceryStore, color = Color(0xFF0066BE), backgroundColor = Color.White))
++        register("costa", BrandIdentity(icon = Icons.Filled.Coffee, color = Color.White, backgroundColor = Color(0xFF630821)))
++        register("starbucks", BrandIdentity(icon = Icons.Filled.Coffee, color = Color(0xFF00704A), backgroundColor = Color.White))
++        register("uber", BrandIdentity(monogram = "U", color = Color.White, backgroundColor = Color.Black))
++        register("careem", BrandIdentity(monogram = "C", color = Color(0xFF47D366), backgroundColor = Color.White))
++
++        // --- 2. BANKS ---
++        register("adcb", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFE21E26), backgroundColor = Color.White))
++        register("fab", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF003865), backgroundColor = Color.White))
++        register("wio", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFCCFF00), backgroundColor = Color.Black))
++        register("hsbc", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFDB0011), backgroundColor = Color.White))
++
++        // --- 3. CARDS ---
++        register("visa", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFF1A1F71), backgroundColor = Color.White))
++        register("mastercard", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFFEB001B), backgroundColor = Color.White))
++        register("amex", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFF016FD0), backgroundColor = Color.White))
++
++        // --- 4. CATEGORIES ---
++        register("salary", BrandIdentity(icon = Icons.Filled.Payments, color = Color(0xFF10B981)))
++        register("groceries", BrandIdentity(icon = Icons.Filled.LocalGroceryStore))
++        register("dining", BrandIdentity(icon = Icons.Filled.Restaurant))
++        register("shopping", BrandIdentity(icon = Icons.Filled.ShoppingBag))
++        register("transfer", BrandIdentity(icon = Icons.AutoMirrored.Filled.Send))
++        register("cash", BrandIdentity(icon = Icons.Filled.Wallet))
++        register("cash", BrandIdentity(icon = Icons.Filled.Wallet, color = Color(0xFF10B981), backgroundColor = Color.White))
++    }
++
++    fun register(key: String, identity: BrandIdentity) {
++        registry[key.lowercase().trim()] = identity
++    }
++
++    fun resolve(name: String, type: LedgerIdentityType): BrandIdentity {
++        val normalized = name.lowercase().trim()
++        
++        // Match specific registry entry
++        registry[normalized]?.let { return it }
++        
++        // Partial match
++        registry.entries.find { normalized.contains(it.key) }?.value?.let { return it }
++
++        // Type-based defaults
++        return when (type) {
++            LedgerIdentityType.Bank -> BrandIdentity(icon = Icons.Filled.AccountBalance)
++            LedgerIdentityType.Card -> BrandIdentity(icon = Icons.Filled.CreditCard)
++            LedgerIdentityType.Category -> resolveCategory(normalized)
++            LedgerIdentityType.Action -> if (normalized.contains("add")) BrandIdentity(icon = Icons.Filled.Add) else BrandIdentity()
++            else -> BrandIdentity()
++        }
++    }
++
++    private fun resolveCategory(name: String): BrandIdentity {
++        if (name.contains("food") || name.contains("dining")) return BrandIdentity(icon = Icons.Filled.Restaurant)
++        if (name.contains("grocer")) return BrandIdentity(icon = Icons.Filled.LocalGroceryStore)
++        if (name.contains("shop")) return BrandIdentity(icon = Icons.Filled.ShoppingBag)
++        if (name.contains("salary")) return BrandIdentity(icon = Icons.Filled.Payments, color = Color(0xFF10B981))
++        return BrandIdentity()
++    }
++}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerMerchantIdentity.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerMerchantIdentity.kt
+deleted file mode 100644
+index 67fe1b3..0000000
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerMerchantIdentity.kt
++++ /dev/null
+@@ -1,57 +0,0 @@
+-package com.sherif.ledger.core.designsystem.component
+-
+-import androidx.compose.foundation.Image
+-import androidx.compose.foundation.layout.Box
+-import androidx.compose.foundation.layout.fillMaxSize
+-import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.shape.CircleShape
+-import androidx.compose.material3.Text
+-import androidx.compose.runtime.Composable
+-import androidx.compose.ui.Alignment
+-import androidx.compose.ui.Modifier
+-import androidx.compose.ui.draw.clip
+-import androidx.compose.ui.graphics.Color
+-import androidx.compose.ui.graphics.painter.Painter
+-import androidx.compose.ui.unit.Dp
+-import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+-import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+-
+-/**
+- * LDL Merchant Identity component.
+- *
+- * Replaces generic initials with a branded visual system. Supports logos,
+- * high-fidelity glyphs, and a refined fallback for unknown merchants.
+- */
+-@Composable
+-fun LedgerMerchantIdentity(
+-    name: String,
+-    accentColor: Color,
+-    modifier: Modifier = Modifier,
+-    logoPainter: Painter? = null,
+-    size: Dp = LedgerTheme.iconSize.Large,
+-) {
+-    Box(
+-        modifier = modifier
+-            .size(size)
+-            .ledgerSurface(
+-                shape = CircleShape,
+-                backgroundColor = accentColor.copy(alpha = LedgerTheme.opacity.Fill),
+-                borderColor = Color.Transparent,
+-            ),
+-        contentAlignment = Alignment.Center,
+-    ) {
+-        if (logoPainter != null) {
+-            Image(
+-                painter = logoPainter,
+-                contentDescription = name,
+-                modifier = Modifier.fillMaxSize().clip(CircleShape),
+-            )
+-        } else {
+-            Text(
+-                text = name.take(1).uppercase(),
+-                style = LedgerTextStyles.Label,
+-                color = accentColor,
+-            )
+-        }
+-    }
+-}
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt
+index 7c8845e..44f7c27 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/LedgerTransactionRow.kt
+@@ -32,7 +32,6 @@ fun LedgerTransactionRow(
+     subtitle: String? = null,
+     metadata: String? = null,
+     tag: String? = null,
+-    accentColor: Color = LedgerTheme.colors.tint,
+     amountColor: Color = LedgerTheme.colors.label,
+ ) {
+     Row(
+@@ -42,10 +41,9 @@ fun LedgerTransactionRow(
+             .padding(vertical = LedgerSpacing.Medium),
+         verticalAlignment = Alignment.CenterVertically,
+     ) {
+-        // Merchant Identity (Branded per Release Candidate standards)
+-        LedgerMerchantIdentity(
++        // Authentic Brand Identity (RC-007 System)
++        LedgerBrandIcon(
+             name = title,
+-            accentColor = accentColor,
+             size = LedgerTheme.iconSize.Huge,
+         )
+ 
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/MerchantHeader.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/MerchantHeader.kt
+index 44c84a7..fd0b319 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/MerchantHeader.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/MerchantHeader.kt
+@@ -26,16 +26,15 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ fun MerchantHeader(
+     name: String,
+     category: String,
+-    accentHue: Long,
+     modifier: Modifier = Modifier,
+-    avatarSize: Dp = 56.dp,
++    avatarSize: Dp = 64.dp,
+ ) {
+     Column(
+         modifier = modifier.fillMaxWidth(),
+         horizontalAlignment = Alignment.CenterHorizontally,
+         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Content),
+     ) {
+-        LedgerAvatar(name = name, color = Color(accentHue), modifier = Modifier.size(avatarSize))
++        LedgerBrandIcon(name = name, size = avatarSize)
+         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+             Text(name, style = LedgerTextStyles.Title, color = LedgerTheme.colors.label)
+             Spacer(Modifier.height(LedgerSpacing.XxSmall))
+diff --git a/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/components/AccountRow.kt b/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/components/AccountRow.kt
+index 1e14e2c..2a82aae 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/components/AccountRow.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/components/AccountRow.kt
+@@ -15,7 +15,8 @@ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.painter.Painter
+ import com.sherif.ledger.core.designsystem.component.LedgerAmount
+-import com.sherif.ledger.core.designsystem.component.LedgerMerchantIdentity
++import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
++import com.sherif.ledger.core.designsystem.component.LedgerIdentityType
+ import com.sherif.ledger.core.designsystem.component.ledgerClickable
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+@@ -31,10 +32,8 @@ import com.sherif.ledger.feature.accounts.presentation.AccountUi
+ fun AccountRow(
+     account: AccountUi,
+     modifier: Modifier = Modifier,
+-    logoPainter: Painter? = null,
+     onClick: (() -> Unit)? = null,
+ ) {
+-    val accent = Color(account.accentHue)
+     val balanceColor = if (account.isNegative) LedgerTheme.colors.expense else LedgerTheme.colors.label
+ 
+     Row(
+@@ -44,11 +43,10 @@ fun AccountRow(
+             .padding(vertical = LedgerSpacing.Small),
+         verticalAlignment = Alignment.CenterVertically,
+     ) {
+-        LedgerMerchantIdentity(
++        LedgerBrandIcon(
+             name = account.name,
+-            accentColor = accent,
+             size = LedgerTheme.iconSize.Large,
+-            logoPainter = logoPainter,
++            type = LedgerIdentityType.Bank,
+         )
+         Spacer(Modifier.width(LedgerSpacing.Medium))
+         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
+diff --git a/app/src/main/java/com/sherif/ledger/feature/analytics/presentation/InsightsScreen.kt b/app/src/main/java/com/sherif/ledger/feature/analytics/presentation/InsightsScreen.kt
+index 012f076..153c5ae 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/analytics/presentation/InsightsScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/analytics/presentation/InsightsScreen.kt
+@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.statusBarsPadding
+ import androidx.compose.foundation.layout.width
+ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.items
+@@ -27,7 +28,8 @@ import androidx.compose.ui.unit.dp
+ import com.sherif.ledger.core.designsystem.component.LedgerAmount
+ import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+ import com.sherif.ledger.core.designsystem.component.LedgerLineChart
+-import com.sherif.ledger.core.designsystem.component.LedgerMerchantIdentity
++import com.sherif.ledger.core.designsystem.component.LedgerIdentityType
++import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
+ import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
+ import com.sherif.ledger.core.designsystem.component.ledgerClickable
+ import com.sherif.ledger.core.designsystem.component.ledgerSurface
+@@ -80,7 +82,10 @@ fun InsightsScreen(
+     ) {
+         item("header") {
+             Row(
+-                modifier = Modifier.fillMaxWidth(),
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .statusBarsPadding()
++                    .padding(vertical = LedgerSpacing.Medium),
+                 horizontalArrangement = Arrangement.SpaceBetween,
+                 verticalAlignment = Alignment.CenterVertically,
+             ) {
+@@ -188,9 +193,9 @@ private fun CategoryItem(category: CategoryInsightUi) {
+             .padding(vertical = LedgerSpacing.Small),
+         verticalAlignment = Alignment.CenterVertically,
+     ) {
+-        LedgerMerchantIdentity(
++        LedgerBrandIcon(
+             name = category.name,
+-            accentColor = category.color,
++            type = LedgerIdentityType.Category,
+             size = LedgerTheme.iconSize.Large,
+         )
+         Spacer(Modifier.width(LedgerSpacing.Medium))
+diff --git a/app/src/main/java/com/sherif/ledger/feature/review/presentation/ReviewInboxScreen.kt b/app/src/main/java/com/sherif/ledger/feature/review/presentation/ReviewInboxScreen.kt
+index 1d1009d..4c1d41f 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/review/presentation/ReviewInboxScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/review/presentation/ReviewInboxScreen.kt
+@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.layout.statusBarsPadding
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.getValue
+@@ -53,12 +54,14 @@ fun ReviewInboxScreen(
+         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group),
+     ) {
+         item("header") {
+-            Text("Review", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
+-            Spacer(Modifier.height(LedgerSpacing.Content))
+-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
+-                SummaryCount("Pending", state.pendingCount, LedgerTheme.colors.pending)
+-                SummaryCount("Confirmed", state.confirmedTodayCount, LedgerTheme.colors.income)
+-                SummaryCount("Ignored", state.ignoredTodayCount, LedgerTheme.colors.tertiaryLabel)
++            Column(modifier = Modifier.statusBarsPadding().padding(vertical = LedgerSpacing.Medium)) {
++                Text("Review", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
++                Spacer(Modifier.height(LedgerSpacing.Content))
++                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
++                    SummaryCount("Pending", state.pendingCount, LedgerTheme.colors.pending)
++                    SummaryCount("Confirmed", state.confirmedTodayCount, LedgerTheme.colors.income)
++                    SummaryCount("Ignored", state.ignoredTodayCount, LedgerTheme.colors.tertiaryLabel)
++                }
+             }
+         }
+ 
+diff --git a/app/src/main/java/com/sherif/ledger/feature/review/presentation/components/ReviewCard.kt b/app/src/main/java/com/sherif/ledger/feature/review/presentation/components/ReviewCard.kt
+index 7aa3a01..c0b6f00 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/review/presentation/components/ReviewCard.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/review/presentation/components/ReviewCard.kt
+@@ -20,7 +20,7 @@ import androidx.compose.ui.text.TextStyle
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
+-import com.sherif.ledger.core.designsystem.component.LedgerAvatar
++import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
+ import com.sherif.ledger.core.designsystem.component.LedgerButton
+ import com.sherif.ledger.core.designsystem.component.LedgerButtonStyle
+ import com.sherif.ledger.core.designsystem.component.LedgerHairline
+@@ -54,7 +54,7 @@ fun ReviewCard(
+         contentPadding = PaddingValues(LedgerSpacing.Group),
+     ) {
+         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+-            LedgerAvatar(name = item.merchant, color = Color(item.merchantAccentHue), modifier = Modifier.size(40.dp))
++            LedgerBrandIcon(name = item.merchant, size = 40.dp)
+             Spacer(Modifier.width(LedgerSpacing.Small))
+             Column(Modifier.weight(1f)) {
+                 Text(item.merchant, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
+diff --git a/app/src/main/java/com/sherif/ledger/feature/settings/presentation/ProfileScreen.kt b/app/src/main/java/com/sherif/ledger/feature/settings/presentation/ProfileScreen.kt
+new file mode 100644
+index 0000000..530b299
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/feature/settings/presentation/ProfileScreen.kt
+@@ -0,0 +1,198 @@
++package com.sherif.ledger.feature.settings.presentation
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.statusBarsPadding
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.ChevronRight
++import androidx.compose.material.icons.filled.CreditCard
++import androidx.compose.material.icons.filled.HelpOutline
++import androidx.compose.material.icons.filled.Info
++import androidx.compose.material.icons.filled.Logout
++import androidx.compose.material.icons.filled.Notifications
++import androidx.compose.material.icons.filled.Person
++import androidx.compose.material.icons.filled.Security
++import androidx.compose.material.icons.filled.Settings
++import androidx.compose.material3.Icon
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.unit.dp
++import com.sherif.ledger.core.designsystem.component.LedgerHairline
++import com.sherif.ledger.core.designsystem.component.ledgerClickable
++import com.sherif.ledger.core.designsystem.component.ledgerSurface
++import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
++
++@Composable
++fun ProfileScreen(
++    onNavigateToSettings: () -> Unit = {},
++) {
++    LazyColumn(
++        modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
++        contentPadding = PaddingValues(
++            start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
++            top = LedgerSpacing.Large, bottom = LedgerSpacing.ScreenBottom + 100.dp,
++        ),
++        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
++    ) {
++        item("header") {
++            Row(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .statusBarsPadding()
++                    .padding(vertical = LedgerSpacing.Medium),
++                horizontalArrangement = Arrangement.SpaceBetween,
++                verticalAlignment = Alignment.CenterVertically
++            ) {
++                Text(
++                    text = "Profile",
++                    style = LedgerTextStyles.Headline,
++                    color = LedgerTheme.colors.label,
++                )
++                Icon(
++                    imageVector = Icons.Filled.Settings,
++                    contentDescription = "Settings",
++                    tint = LedgerTheme.colors.label,
++                    modifier = Modifier
++                        .size(LedgerTheme.iconSize.Medium)
++                        .ledgerClickable { onNavigateToSettings() }
++                )
++            }
++        }
++
++        item("user_card") {
++            Row(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .padding(vertical = LedgerSpacing.Medium),
++                verticalAlignment = Alignment.CenterVertically
++            ) {
++                // Profile Monolith
++                Box(
++                    modifier = Modifier
++                        .size(64.dp)
++                        .ledgerSurface(
++                            level = LedgerSurfaceLevel.Level1, 
++                            shape = LedgerRadius.Full,
++                        ),
++                    contentAlignment = Alignment.Center
++                ) {
++                    Text(
++                        text = "SR",
++                        style = LedgerTextStyles.Section,
++                        color = LedgerTheme.colors.label
++                    )
++                }
++                
++                Spacer(Modifier.width(LedgerSpacing.Medium))
++
++                Column {
++                    Text(
++                        text = "Sherif Rahim",
++                        style = LedgerTextStyles.Section,
++                        color = LedgerTheme.colors.label
++                    )
++                    Text(
++                        text = "sherif.rahim@email.com",
++                        style = LedgerTextStyles.Caption,
++                        color = LedgerTheme.colors.tertiaryLabel
++                    )
++                }
++            }
++        }
++
++        item("actions") {
++            Column(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .ledgerSurface(level = LedgerSurfaceLevel.Level1)
++            ) {
++                ProfileRow(icon = Icons.Filled.Person, label = "Personal information")
++                LedgerHairline(Modifier.padding(start = 56.dp))
++                ProfileRow(icon = Icons.Filled.Security, label = "Security")
++                LedgerHairline(Modifier.padding(start = 56.dp))
++                ProfileRow(icon = Icons.Filled.CreditCard, label = "Payment methods")
++                LedgerHairline(Modifier.padding(start = 56.dp))
++                ProfileRow(icon = Icons.Filled.Notifications, label = "Notifications")
++                LedgerHairline(Modifier.padding(start = 56.dp))
++                ProfileRow(icon = Icons.Filled.HelpOutline, label = "Help & support")
++                LedgerHairline(Modifier.padding(start = 56.dp))
++                ProfileRow(icon = Icons.Filled.Info, label = "About Ledger")
++            }
++        }
++
++        item("logout") {
++            Row(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .ledgerSurface(level = LedgerSurfaceLevel.Level1)
++                    .ledgerClickable { /* TODO */ }
++                    .padding(LedgerSpacing.Medium),
++                verticalAlignment = Alignment.CenterVertically
++            ) {
++                Icon(
++                    imageVector = Icons.Filled.Logout,
++                    contentDescription = null,
++                    tint = LedgerTheme.colors.expense,
++                    modifier = Modifier.size(LedgerTheme.iconSize.Small)
++                )
++                Spacer(Modifier.width(LedgerSpacing.Medium))
++                Text(
++                    text = "Log out",
++                    style = LedgerTextStyles.Label,
++                    color = LedgerTheme.colors.expense
++                )
++            }
++        }
++    }
++}
++
++@Composable
++private fun ProfileRow(
++    icon: ImageVector,
++    label: String,
++) {
++    Row(
++        modifier = Modifier
++            .fillMaxWidth()
++            .ledgerClickable { /* TODO */ }
++            .padding(LedgerSpacing.Medium),
++        verticalAlignment = Alignment.CenterVertically,
++        horizontalArrangement = Arrangement.SpaceBetween
++    ) {
++        Row(verticalAlignment = Alignment.CenterVertically) {
++            Icon(
++                imageVector = icon,
++                contentDescription = null,
++                tint = LedgerTheme.colors.secondaryLabel,
++                modifier = Modifier.size(LedgerTheme.iconSize.Small)
++            )
++            Spacer(Modifier.width(LedgerSpacing.Medium))
++            Text(label, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
++        }
++        Icon(
++            imageVector = Icons.Filled.ChevronRight,
++            contentDescription = null,
++            tint = LedgerTheme.colors.tertiaryLabel,
++            modifier = Modifier.size(LedgerTheme.iconSize.Small)
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherif/ledger/feature/settings/presentation/SettingsScreen.kt b/app/src/main/java/com/sherif/ledger/feature/settings/presentation/SettingsScreen.kt
+new file mode 100644
+index 0000000..4318b9b
+--- /dev/null
++++ b/app/src/main/java/com/sherif/ledger/feature/settings/presentation/SettingsScreen.kt
+@@ -0,0 +1,161 @@
++package com.sherif.ledger.feature.settings.presentation
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.statusBarsPadding
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.automirrored.filled.ArrowBack
++import androidx.compose.material.icons.filled.ChevronRight
++import androidx.compose.material3.Icon
++import androidx.compose.material3.Switch
++import androidx.compose.material3.SwitchDefaults
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.unit.dp
++import com.sherif.ledger.core.designsystem.component.LedgerHairline
++import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
++import com.sherif.ledger.core.designsystem.component.ledgerClickable
++import com.sherif.ledger.core.designsystem.component.ledgerSurface
++import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
++import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
++import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
++import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++
++@Composable
++fun SettingsScreen(
++    onBackClick: () -> Unit = {},
++) {
++    LazyColumn(
++        modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
++        contentPadding = PaddingValues(
++            start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
++            top = LedgerSpacing.Large, bottom = LedgerSpacing.ScreenBottom,
++        ),
++        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
++    ) {
++        item("nav") {
++            Row(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .statusBarsPadding()
++                    .padding(vertical = LedgerSpacing.Medium),
++                verticalAlignment = Alignment.CenterVertically
++            ) {
++                Icon(
++                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
++                    contentDescription = "Back",
++                    tint = LedgerTheme.colors.label,
++                    modifier = Modifier
++                        .size(LedgerTheme.iconSize.Medium)
++                        .ledgerClickable { onBackClick() }
++                )
++                Spacer(Modifier.width(LedgerSpacing.Medium))
++                Text("Settings", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
++            }
++        }
++
++        item("appearance") {
++            SettingsGroup(title = "Appearance") {
++                SettingsRow(label = "Dark mode", trailing = {
++                    Switch(
++                        checked = true,
++                        onCheckedChange = {},
++                        colors = SwitchDefaults.colors(
++                            checkedThumbColor = Color.White,
++                            checkedTrackColor = LedgerTheme.colors.success
++                        )
++                    )
++                })
++                LedgerHairline()
++                SettingsRow(label = "Currency", value = "AED")
++                LedgerHairline()
++                SettingsRow(label = "Language", value = "English")
++            }
++        }
++
++        item("preferences") {
++            SettingsGroup(title = "Preferences") {
++                SettingsRow(label = "Default account", value = "Personal Account")
++                LedgerHairline()
++                SettingsRow(label = "Expense reminders", value = "On")
++                LedgerHairline()
++                SettingsRow(label = "Weekly insights", value = "On")
++            }
++        }
++
++        item("data") {
++            SettingsGroup(title = "Data & Privacy") {
++                SettingsRow(label = "Export data")
++                LedgerHairline()
++                SettingsRow(label = "Delete account", labelColor = LedgerTheme.colors.expense)
++            }
++        }
++    }
++}
++
++@Composable
++private fun SettingsGroup(
++    title: String,
++    content: @Composable () -> Unit
++) {
++    Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group)) {
++        LedgerSectionHeader(title = title.uppercase())
++        Column(
++            modifier = Modifier
++                .fillMaxWidth()
++                .ledgerSurface(level = LedgerSurfaceLevel.Level1)
++        ) {
++            content()
++        }
++    }
++}
++
++@Composable
++private fun SettingsRow(
++    label: String,
++    value: String? = null,
++    labelColor: Color = LedgerTheme.colors.label,
++    trailing: @Composable (() -> Unit)? = null
++) {
++    Row(
++        modifier = Modifier
++            .fillMaxWidth()
++            .ledgerClickable { /* TODO */ }
++            .padding(LedgerSpacing.Medium),
++        verticalAlignment = Alignment.CenterVertically,
++        horizontalArrangement = Arrangement.SpaceBetween
++    ) {
++        Text(label, style = LedgerTextStyles.Label, color = labelColor)
++        
++        Row(verticalAlignment = Alignment.CenterVertically) {
++            if (value != null) {
++                Text(value, style = LedgerTextStyles.Label, color = LedgerTheme.colors.secondaryLabel)
++                Spacer(Modifier.width(LedgerSpacing.Small))
++            }
++            
++            if (trailing != null) {
++                trailing()
++            } else {
++                Icon(
++                    imageVector = Icons.Filled.ChevronRight,
++                    contentDescription = null,
++                    tint = LedgerTheme.colors.tertiaryLabel,
++                    modifier = Modifier.size(LedgerTheme.iconSize.Small)
++                )
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/TransactionsScreen.kt b/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/TransactionsScreen.kt
+index 4c47a86..c1819cc 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/TransactionsScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/TransactionsScreen.kt
+@@ -35,6 +35,7 @@ import com.sherif.ledger.feature.transactions.presentation.preview.TransactionsP
+ fun TransactionsScreen(
+     state: TransactionsUiState = TransactionsPreviewData.state,
+     onTransactionClick: ((String) -> Unit)? = null,
++    onSearchClick: () -> Unit = {},
+ ) {
+     var searchQuery by remember { mutableStateOf("") }
+ 
+@@ -63,7 +64,10 @@ fun TransactionsScreen(
+                 query = searchQuery,
+                 onQueryChange = { searchQuery = it },
+                 placeholder = "Search transactions",
+-                modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
++                modifier = Modifier
++                    .padding(horizontal = LedgerSpacing.Screen)
++                    .ledgerClickable { onSearchClick() },
++                enabled = false, // Force navigation to SearchFilterScreen
+             )
+             Spacer(Modifier.height(LedgerSpacing.Group))
+             FilterPills(modifier = Modifier.padding(horizontal = LedgerSpacing.Screen))
+diff --git a/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/components/TransactionRow.kt b/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/components/TransactionRow.kt
+index cc9cbb6..104ec4c 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/components/TransactionRow.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/components/TransactionRow.kt
+@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+-import com.sherif.ledger.core.designsystem.component.LedgerAvatar
++import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
+ import com.sherif.ledger.core.designsystem.component.ledgerClickable
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+@@ -34,7 +34,6 @@ fun TransactionRow(
+     modifier: Modifier = Modifier,
+     onClick: (() -> Unit)? = null,
+ ) {
+-    val catColor = transaction.category.toColor()
+     // TODO: Direction will become a dedicated domain concept.
+     val isIncome = transaction.category == MerchantCategory.Salary
+     val amountColor = if (isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
+@@ -49,7 +48,7 @@ fun TransactionRow(
+             .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Small),
+         verticalAlignment = Alignment.CenterVertically,
+     ) {
+-        LedgerAvatar(name = transaction.merchant, color = catColor, modifier = Modifier.size(40.dp))
++        LedgerBrandIcon(name = transaction.merchant, size = 40.dp)
+         Spacer(Modifier.width(LedgerSpacing.Small))
+         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall)) {
+             Text(
+diff --git a/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/detail/TransactionDetailsScreen.kt b/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/detail/TransactionDetailsScreen.kt
+index f6b4d62..07b06d2 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/detail/TransactionDetailsScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/transactions/presentation/detail/TransactionDetailsScreen.kt
+@@ -2,6 +2,7 @@ package com.sherif.ledger.feature.transactions.presentation.detail
+ 
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+@@ -10,38 +11,42 @@ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.lazy.LazyColumn
+-import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.statusBarsPadding
+ import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.automirrored.filled.ArrowBack
+ import androidx.compose.material.icons.automirrored.filled.Notes
+ import androidx.compose.material.icons.filled.ChevronRight
+ import androidx.compose.material.icons.filled.GridView
+ import androidx.compose.material.icons.filled.MoreVert
++import androidx.compose.material3.DropdownMenu
++import androidx.compose.material3.DropdownMenuItem
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.vector.ImageVector
+ import com.sherif.ledger.core.designsystem.component.LedgerAmount
+ import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+-import com.sherif.ledger.core.designsystem.component.LedgerHairline
+-import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
+-import com.sherif.ledger.core.designsystem.component.LedgerSurface
++import com.sherif.ledger.core.designsystem.component.MerchantHeader
++import com.sherif.ledger.core.designsystem.component.layout.LedgerMetadataRow
+ import com.sherif.ledger.core.designsystem.component.ledgerClickable
+ import com.sherif.ledger.core.designsystem.component.ledgerSurface
+-import com.sherif.ledger.core.designsystem.component.layout.LedgerMetadataRow
++import com.sherif.ledger.core.designsystem.haptics.LedgerHaptics
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+ import com.sherif.ledger.core.preview.PreviewTransactions
+-import com.sherif.ledger.core.designsystem.component.MerchantHeader
+ 
+ private val previewState = run {
+     val t = PreviewTransactions.amazonToday
+@@ -70,35 +75,74 @@ private val previewState = run {
+ 
+ @Composable
+ fun TransactionDetailsScreen(
++    onBackClick: () -> Unit = {},
+     state: TransactionDetailsUiState = previewState,
+ ) {
++    var showMenu by remember { mutableStateOf(false) }
++    val haptics = LedgerHaptics.current
++
+     LazyColumn(
+         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
+         contentPadding = PaddingValues(
+             start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
+-            top = LedgerSpacing.Large, bottom = LedgerSpacing.ScreenBottom,
++            bottom = LedgerSpacing.ScreenBottom,
+         ),
+         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
+     ) {
+         item("nav") {
+             Row(
+-                modifier = Modifier.fillMaxWidth(),
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .statusBarsPadding()
++                    .padding(vertical = LedgerSpacing.Medium),
+                 horizontalArrangement = Arrangement.SpaceBetween,
+                 verticalAlignment = Alignment.CenterVertically,
+             ) {
+                 Icon(
+-                    Icons.AutoMirrored.Filled.ArrowBack,
+-                    null,
++                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
++                    contentDescription = "Back",
+                     tint = LedgerTheme.colors.label,
+-                    modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { /* TODO */ },
++                    modifier = Modifier
++                        .size(LedgerTheme.iconSize.Medium)
++                        .ledgerClickable { 
++                            haptics.selection()
++                            onBackClick() 
++                        },
+                 )
+                 Text("Transaction", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
+-                Icon(
+-                    Icons.Filled.MoreVert,
+-                    null,
+-                    tint = LedgerTheme.colors.label,
+-                    modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { /* TODO */ },
+-                )
++                Box {
++                    Icon(
++                        imageVector = Icons.Filled.MoreVert,
++                        contentDescription = "More",
++                        tint = LedgerTheme.colors.label,
++                        modifier = Modifier
++                            .size(LedgerTheme.iconSize.Medium)
++                            .ledgerClickable { 
++                                haptics.selection()
++                                showMenu = true 
++                            },
++                    )
++                    DropdownMenu(
++                        expanded = showMenu,
++                        onDismissRequest = { showMenu = false },
++                        modifier = Modifier.background(LedgerTheme.colors.surfaceLevel1)
++                    ) {
++                        DropdownMenuItem(
++                            text = { Text("Export PDF", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
++                            onClick = { 
++                                haptics.impact()
++                                showMenu = false 
++                            }
++                        )
++                        DropdownMenuItem(
++                            text = { Text("Report Issue", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
++                            onClick = { 
++                                haptics.impact()
++                                showMenu = false 
++                            }
++                        )
++                    }
++                }
+             }
+         }
+ 
+@@ -111,7 +155,6 @@ fun TransactionDetailsScreen(
+                 MerchantHeader(
+                     name = state.merchant,
+                     category = state.merchantCategory,
+-                    accentHue = state.merchantAccentHue,
+                     avatarSize = LedgerTheme.iconSize.Huge,
+                 )
+                 
+@@ -177,7 +220,7 @@ private fun ActionRow(
+         horizontalArrangement = Arrangement.SpaceBetween,
+     ) {
+         Row(verticalAlignment = Alignment.CenterVertically) {
+-            androidx.compose.material3.Icon(
++            Icon(
+                 imageVector = icon,
+                 contentDescription = null,
+                 tint = LedgerTheme.colors.secondaryLabel,
+@@ -186,7 +229,7 @@ private fun ActionRow(
+             Spacer(Modifier.width(LedgerSpacing.Small))
+             Text(label, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
+         }
+-        androidx.compose.material3.Icon(
++        Icon(
+             imageVector = Icons.Filled.ChevronRight,
+             contentDescription = null,
+             tint = LedgerTheme.colors.tertiaryLabel,
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/SearchFilterScreen.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/SearchFilterScreen.kt
+index 1374869..9fc7259 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/SearchFilterScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/SearchFilterScreen.kt
+@@ -3,7 +3,6 @@ package com.sherif.ledger.presentation.dashboard
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+@@ -11,14 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.ChevronRight
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.unit.dp
+ import com.sherif.ledger.core.designsystem.component.LedgerButton
+ import com.sherif.ledger.core.designsystem.component.LedgerSearchBar
+@@ -29,12 +26,15 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+ 
+ /**
+  * Search and Filter screen (Screen 8).
+  */
+ @Composable
+-fun SearchFilterScreen() {
++fun SearchFilterScreen(
++    onBackClick: () -> Unit = {},
++) {
+     Column(
+         modifier = Modifier
+             .fillMaxSize()
+@@ -56,7 +56,7 @@ fun SearchFilterScreen() {
+                 "Cancel",
+                 style = LedgerTextStyles.Label,
+                 color = LedgerTheme.colors.label,
+-                modifier = Modifier.padding(start = LedgerSpacing.Medium).ledgerClickable { /* TODO */ },
++                modifier = Modifier.padding(start = LedgerSpacing.Medium).ledgerClickable { onBackClick() },
+             )
+         }
+ 
+@@ -92,7 +92,7 @@ fun SearchFilterScreen() {
+ 
+         LedgerButton(
+             text = "Apply filters",
+-            onClick = { /* TODO */ },
++            onClick = { onBackClick() },
+             modifier = Modifier.fillMaxWidth(),
+         )
+     }
+@@ -105,7 +105,7 @@ private fun RecentSearchPill(label: String) {
+         style = LedgerTextStyles.Caption,
+         color = LedgerTheme.colors.secondaryLabel,
+         modifier = Modifier
+-            .ledgerSurface(level = LedgerSurfaceLevel.Level2, shape = LedgerTheme.radius.Full)
++            .ledgerSurface(level = LedgerSurfaceLevel.Level2, shape = LedgerRadius.Full)
+             .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.XxSmall),
+     )
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt
+index a06ef1c..f1715c6 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/components/RecentTransactionsSection.kt
+@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.graphics.Color
+ import com.sherif.ledger.core.designsystem.component.LedgerHairline
+ import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
+ import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
+@@ -42,7 +41,6 @@ fun RecentTransactionsSection(
+                     subtitle = txn.category,
+                     amount = "$sign${txn.amount}",
+                     amountColor = if (txn.isExpense) LedgerTheme.colors.expense else LedgerTheme.colors.income,
+-                    accentColor = Color(txn.merchantAccentHue),
+                 )
+                 if (index != state.recentTransactions.lastIndex) {
+                     LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerNavHost.kt b/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerNavHost.kt
+index 3ccddc3..6c31bae 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerNavHost.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerNavHost.kt
+@@ -11,6 +11,8 @@ import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
+ import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
+ import com.sherif.ledger.feature.analytics.presentation.InsightsScreen
+ import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
++import com.sherif.ledger.feature.settings.presentation.ProfileScreen
++import com.sherif.ledger.feature.settings.presentation.SettingsScreen
+ import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
+ import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsScreen
+ import com.sherif.ledger.presentation.dashboard.DashboardScreen
+@@ -47,8 +49,15 @@ fun LedgerNavHost(
+         }
+ 
+         composable(LedgerRoute.Profile.route) {
+-            // Profile / Settings screen placeholder
+-            SearchFilterScreen()
++            ProfileScreen(
++                onNavigateToSettings = { navController.navigate(LedgerRoute.Settings.route) }
++            )
++        }
++
++        composable(LedgerRoute.Settings.route) {
++            SettingsScreen(
++                onBackClick = { navController.popBackStack() }
++            )
+         }
+ 
+         composable(LedgerRoute.Transactions.route) {
+@@ -56,6 +65,15 @@ fun LedgerNavHost(
+                 onTransactionClick = { id ->
+                     navController.navigate(LedgerRoute.TransactionDetails.create(id))
+                 },
++                onSearchClick = {
++                    navController.navigate(LedgerRoute.SearchFilter.route)
++                }
++            )
++        }
++
++        composable(LedgerRoute.SearchFilter.route) {
++            SearchFilterScreen(
++                onBackClick = { navController.popBackStack() }
+             )
+         }
+ 
+@@ -71,7 +89,9 @@ fun LedgerNavHost(
+             route = LedgerRoute.TransactionDetails.route,
+             arguments = listOf(navArgument("transactionId") { type = NavType.StringType }),
+         ) {
+-            TransactionDetailsScreen()
++            TransactionDetailsScreen(
++                onBackClick = { navController.popBackStack() }
++            )
+         }
+     }
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerRoute.kt b/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerRoute.kt
+index ee5f460..2aedc6c 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerRoute.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerRoute.kt
+@@ -9,6 +9,8 @@ sealed class LedgerRoute(val route: String) {
+     data object Transactions : LedgerRoute("transactions")
+     data object Insights : LedgerRoute("insights")
+     data object Profile : LedgerRoute("profile")
++    data object Settings : LedgerRoute("settings")
++    data object SearchFilter : LedgerRoute("search_filter")
+     data object ReviewInbox : LedgerRoute("review")
+     data object TransactionDetails : LedgerRoute("transaction/{transactionId}") {
+         fun create(transactionId: String): String = "transaction/$transactionId"
+-- 
+2.51.0
+

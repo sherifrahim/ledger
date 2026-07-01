@@ -1,0 +1,101 @@
+From f262d5280225562b133917766626392445e8f0d1 Mon Sep 17 00:00:00 2001
+From: sherifrahim <28657313+sherifrahim@users.noreply.github.com>
+Date: Wed, 1 Jul 2026 13:15:19 +0400
+Subject: [PATCH 3/3] RC12
+
+---
+ .../main/java/com/sherif/ledger/MainActivity.kt   | 15 ++++++++++++---
+ .../presentation/dashboard/DashboardScreen.kt     |  8 --------
+ app/src/main/res/values/styles.xml                | 14 +++++++++++---
+ 3 files changed, 23 insertions(+), 14 deletions(-)
+
+diff --git a/app/src/main/java/com/sherif/ledger/MainActivity.kt b/app/src/main/java/com/sherif/ledger/MainActivity.kt
+index 0902853..9abb243 100644
+--- a/app/src/main/java/com/sherif/ledger/MainActivity.kt
++++ b/app/src/main/java/com/sherif/ledger/MainActivity.kt
+@@ -4,10 +4,10 @@ import android.os.Bundle
+ import androidx.activity.ComponentActivity
+ import androidx.activity.compose.setContent
+ import androidx.activity.enableEdgeToEdge
+-import androidx.compose.foundation.layout.padding
+-import androidx.compose.material3.Scaffold
++import androidx.core.view.WindowCompat
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.material3.Surface
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.getValue
+ import androidx.compose.ui.Modifier
+@@ -23,10 +23,19 @@ import dagger.hilt.android.AndroidEntryPoint
+ class MainActivity : ComponentActivity() {
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
++        
++        // Root Cause Fix: Ensure the window is configured for edge-to-edge rendering.
++        WindowCompat.setDecorFitsSystemWindows(window, false)
+         enableEdgeToEdge()
++        
+         setContent {
+             LedgerTheme {
+-                LedgerApp()
++                Surface(
++                    modifier = Modifier.fillMaxSize(),
++                    color = LedgerTheme.colors.surfaceLevel0
++                ) {
++                    LedgerApp()
++                }
+             }
+         }
+     }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+index b085bce..bb77ae0 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.sp
+ import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
+ import com.sherif.ledger.core.designsystem.component.LedgerAmount
+ import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+-import com.sherif.ledger.core.designsystem.component.LedgerHeader
+ import com.sherif.ledger.core.designsystem.component.ledgerClickable
+ import com.sherif.ledger.core.designsystem.component.ledgerSurface
+ import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
+@@ -162,13 +161,6 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
+             },
+         horizontalAlignment = Alignment.CenterHorizontally,
+     ) {
+-        // Standardized Header (Converging with Accounts identity)
+-        LedgerHeader(
+-            title = "Dashboard"
+-        )
+-
+-        Spacer(Modifier.weight(1.3f)) // Optical centering below header
+-
+         // The Financial Instrument Composition
+         Column(
+             horizontalAlignment = Alignment.CenterHorizontally,
+diff --git a/app/src/main/res/values/styles.xml b/app/src/main/res/values/styles.xml
+index 423f22c..53f9a3f 100644
+--- a/app/src/main/res/values/styles.xml
++++ b/app/src/main/res/values/styles.xml
+@@ -1,7 +1,15 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+-    <style name="Theme.Ledger" parent="android:style/Theme.Material.Light.NoActionBar">
+-        <item name="android:windowLightStatusBar">true</item>
+-        <item name="android:windowLightNavigationBar">true</item>
++    <style name="Theme.Ledger" parent="android:Theme.Material.NoActionBar">
++        <!-- Root cause fix: Explicitly allow drawing behind system bars -->
++        <item name="android:windowTranslucentStatus">false</item>
++        <item name="android:windowTranslucentNavigation">false</item>
++        <item name="android:statusBarColor">@android:color/transparent</item>
++        <item name="android:navigationBarColor">@android:color/transparent</item>
++        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
++
++        <!-- Ensure icons remain visible (Light icons for dark app) -->
++        <item name="android:windowLightStatusBar">false</item>
++        <item name="android:windowLightNavigationBar">false</item>
+     </style>
+ </resources>
+-- 
+2.51.0
+

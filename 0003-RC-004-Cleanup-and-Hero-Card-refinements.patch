@@ -1,0 +1,609 @@
+From 94327e9d1cd07dd9d4a3730f6d716515e832e421 Mon Sep 17 00:00:00 2001
+From: sherifrahim <28657313+sherifrahim@users.noreply.github.com>
+Date: Tue, 30 Jun 2026 23:37:12 +0400
+Subject: [PATCH 3/5] RC-004-Cleanup and Hero Card refinements
+
+---
+ .../atmosphere/LedgerAtmosphereGlow.kt        |  66 ++++++-----
+ .../component/hero/LedgerCollapsingHero.kt    |   4 +-
+ .../designsystem/theme/LedgerTypography.kt    |   4 +-
+ .../designsystem/tokens/LedgerIconSize.kt     |   2 +-
+ .../accounts/presentation/AccountsScreen.kt   |  93 +++++++++++----
+ .../presentation/dashboard/DashboardScreen.kt | 106 +++++++++++-------
+ .../navigation/LedgerBottomBar.kt             |  13 ++-
+ 7 files changed, 178 insertions(+), 110 deletions(-)
+
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt
+index added5a..19ac31d 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/atmosphere/LedgerAtmosphereGlow.kt
+@@ -13,11 +13,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
+ import androidx.compose.ui.unit.dp
+ 
+ /**
+- * Renders the volumetric atmospheric glow.
++ * Renders the Material Surface Illumination.
+  *
+- * This component pulls from the current [Atmosphere] to create the
+- * signature Ledger lighting effect. It should be placed at the
+- * bottom of the Z-stack.
++ * This component moves away from "glow" and toward "material lighting."
++ * It recreates the effect of light grazing a curved premium surface.
+  */
+ @Composable
+ fun LedgerAtmosphereGlow(
+@@ -26,51 +25,50 @@ fun LedgerAtmosphereGlow(
+ ) {
+     val primary = atmosphere.primaryGlow
+     val secondary = atmosphere.secondaryGlow
+-    val cool = atmosphere.coolGlow
+-    val warm = atmosphere.warmGlow
+-
++    
+     Canvas(modifier) {
+         val w = size.width
+         val h = size.height
+ 
+-        // 1. The Horizon Arc (Signature Ledger Element)
+-        // Faithfully recreates the elegant emerald curve seen in Screen 1.
++        // 1. Directional Surface Wash (Environmental Depth)
++        // This is a large, low-contrast wash that gives the material its emerald base.
++        // It is NOT a circular glow; it follows a wide vertical gradient.
++        drawRect(
++            brush = Brush.verticalGradient(
++                colors = listOf(
++                    primary.copy(alpha = 0.04f),
++                    primary.copy(alpha = 0.08f),
++                    Color.Transparent
++                ),
++                startY = 0f,
++                endY = h * 0.45f
++            )
++        )
++
++        // 2. The Restrained Grazing Arc (Edge Illumination)
++        // Simulates light catching a curved "carved" edge.
+         val arcPath = Path().apply {
+-            moveTo(0f, h * 0.35f)
++            moveTo(0f, h * 0.42f)
+             quadraticTo(
+-                w / 2f, h * 0.30f,
+-                w, h * 0.35f
++                w / 2f, h * 0.38f,
++                w, h * 0.42f
+             )
+         }
+ 
+-        // Draw the glowing atmospheric wash above the arc
++        // Grazing light - subtle stroke representing physical surface edge
+         drawPath(
+             path = arcPath,
+-            brush = Brush.verticalGradient(
+-                colors = listOf(
+-                    primary.copy(alpha = 0.08f),
+-                    Color.Transparent
+-                ),
+-                startY = h * 0.15f,
+-                endY = h * 0.35f
+-            ),
++            color = primary.copy(alpha = 0.12f),
++            style = Stroke(width = 0.5.dp.toPx(), cap = StrokeCap.Round)
+         )
+ 
+-        // 2. Primary concentrated light core (below balance area)
++        // 3. Primary Directional Light (Restrained Surface presence)
++        // This is the core light hitting the material, shifted off-center for depth.
+         drawCircle(
+             brush = Brush.radialGradient(
+-                colors = listOf(secondary.copy(alpha = 0.12f), Color.Transparent),
+-                center = Offset(w / 2f, h * 0.28f),
+-                radius = h * 0.15f
+-            )
+-        )
+-
+-        // 3. Ambient atmospheric temperature (Cool and Warm wisps)
+-        drawRect(
+-            brush = Brush.linearGradient(
+-                colors = listOf(cool.copy(alpha = 0.04f), warm.copy(alpha = 0.02f), Color.Transparent),
+-                start = Offset(0f, 0f),
+-                end = Offset(w, h * 0.40f)
++                colors = listOf(secondary.copy(alpha = 0.05f), Color.Transparent),
++                center = Offset(w / 2f, h * 0.35f),
++                radius = h * 0.25f
+             )
+         )
+     }
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+index c9fd8a4..9b3d92b 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/component/hero/LedgerCollapsingHero.kt
+@@ -25,7 +25,7 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerGradients
+ object LedgerHeroDefaults {
+ 
+     /** Hero height when fully expanded (scroll offset zero). */
+-    val ExpandedHeight: Dp = 280.dp
++    val ExpandedHeight: Dp = 320.dp // Increased for RC-003 to provide headroom for metrics
+ 
+     /** Hero height when fully collapsed (pinned compact header). */
+     val CollapsedHeight: Dp = 56.dp
+@@ -68,6 +68,7 @@ fun LedgerCollapsingHero(
+     collapsedHeight: Dp = LedgerHeroDefaults.CollapsedHeight,
+     cornerRadius: Dp = LedgerHeroDefaults.CornerRadius,
+     background: Brush = LedgerHeroDefaults.Background,
++    contentBackground: @Composable () -> Unit = {},
+     expandedContent: @Composable (collapseProgress: Float) -> Unit,
+     compactContent: @Composable (collapseProgress: Float) -> Unit,
+ ) {
+@@ -86,6 +87,7 @@ fun LedgerCollapsingHero(
+             )
+             .background(background),
+     ) {
++        contentBackground()
+         Box(Modifier.fillMaxSize()) {
+             expandedContent(collapseProgress)
+         }
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTypography.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTypography.kt
+index cb214e2..ceca470 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTypography.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/theme/LedgerTypography.kt
+@@ -20,8 +20,8 @@ object LedgerTextStyles {
+     val Display = TextStyle(
+         fontFamily = Inter,
+         fontWeight = FontWeight.Bold,
+-        fontSize = 54.sp,
+-        lineHeight = 58.sp,
++        fontSize = 50.sp, // Reduced by ~8% for RC-003 parity
++        lineHeight = 54.sp,
+         letterSpacing = (-1.5).sp,
+     )
+ 
+diff --git a/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerIconSize.kt b/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerIconSize.kt
+index 564f036..86d77a1 100644
+--- a/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerIconSize.kt
++++ b/app/src/main/java/com/sherif/ledger/core/designsystem/tokens/LedgerIconSize.kt
+@@ -16,5 +16,5 @@ object LedgerIconSize {
+     val XLarge: Dp = 32.dp
+     val Huge: Dp = 48.dp
+     val Massive: Dp = 64.dp
+-    val Navigation: Dp = 24.dp
++    val Navigation: Dp = 20.dp // Reduced for RC-003 to feel lighter
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/AccountsScreen.kt b/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/AccountsScreen.kt
+index 69283c3..a207129 100644
+--- a/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/AccountsScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/feature/accounts/presentation/AccountsScreen.kt
+@@ -38,23 +38,29 @@ import com.sherif.ledger.core.designsystem.component.LedgerAmount
+ import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+ import com.sherif.ledger.core.designsystem.component.LedgerHairline
+ import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
+-import com.sherif.ledger.core.designsystem.component.LedgerSurface
+ import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
++import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
+ import com.sherif.ledger.core.designsystem.component.ledgerClickable
+ import com.sherif.ledger.core.designsystem.component.ledgerSurface
+ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
++import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+ import com.sherif.ledger.feature.accounts.presentation.components.AccountRow
+ import com.sherif.ledger.feature.accounts.presentation.preview.AccountsPreviewData
+ 
++private object HeroTransitions {
++    const val ExpandedExit = 0.55f
++    const val CompactEnter = 0.60f
++}
++
+ @Composable
+ fun AccountsScreen(
+     state: AccountsUiState = AccountsPreviewData.state,
+ ) {
+-    val expandedHeight = 220.dp
+-    val collapsedHeight = 56.dp
++    val expandedHeight = 240.dp
++    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
+     val maxOffsetPx = with(LocalDensity.current) { (expandedHeight - collapsedHeight).toPx() }
+     val listState = rememberLazyListState()
+     val collapseProgress by remember {
+@@ -65,15 +71,14 @@ fun AccountsScreen(
+     }
+ 
+     Box(Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0)) {
+-        LedgerAtmosphereGlow(Modifier.fillMaxSize())
+-
++        
+         LazyColumn(
+             state = listState,
+             modifier = Modifier.fillMaxSize(),
+             contentPadding = PaddingValues(
+                 start = LedgerSpacing.Screen,
+                 end = LedgerSpacing.Screen,
+-                bottom = LedgerSpacing.ScreenBottom + 80.dp
++                bottom = LedgerSpacing.ScreenBottom + 100.dp
+             ),
+             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
+         ) {
+@@ -87,7 +92,7 @@ fun AccountsScreen(
+                             section.accounts.forEachIndexed { index, account ->
+                                 AccountRow(
+                                     account = account,
+-                                    onClick = { /* TODO */ }
++                                    onClick = { /* TODO: Account Detail */ }
+                                 )
+                                 if (index != section.accounts.lastIndex) {
+                                     LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
+@@ -97,7 +102,7 @@ fun AccountsScreen(
+                     }
+                 }
+             }
+-
++            
+             item(key = "add_account") {
+                 Row(
+                     modifier = Modifier
+@@ -128,26 +133,64 @@ fun AccountsScreen(
+             expandedHeight = expandedHeight,
+             collapsedHeight = collapsedHeight,
+             background = SolidColor(Color.Transparent),
++            contentBackground = {
++                LedgerAtmosphereGlow(Modifier.fillMaxSize())
++            },
+             expandedContent = { progress ->
+-                Box(
++                Column(
+                     modifier = Modifier
+                         .fillMaxSize()
+                         .statusBarsPadding()
+-                        .graphicsLayer { alpha = (1f - progress * 2f).coerceIn(0f, 1f) },
+-                    contentAlignment = Alignment.Center
++                        .padding(horizontal = LedgerSpacing.Screen)
++                        .graphicsLayer {
++                            alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
++                        }
+                 ) {
+-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+-                        Text(
+-                            text = "TOTAL BALANCE",
+-                            style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+-                            color = Color.White.copy(alpha = 0.35f)
+-                        )
+-                        Spacer(Modifier.height(LedgerSpacing.XxSmall))
+-                        LedgerAmount(
+-                            amount = "AED 2,840.25",
+-                            style = LedgerAmountStyle.Display,
+-                            color = Color.White,
+-                        )
++                    Text(
++                        text = "Accounts",
++                        style = LedgerTextStyles.Headline,
++                        color = LedgerTheme.colors.label,
++                    )
++                    
++                    Spacer(Modifier.height(LedgerSpacing.Large))
++
++                    Box(
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .height(132.dp)
++                            .ledgerSurface(
++                                level = LedgerSurfaceLevel.Level1,
++                                shape = LedgerRadius.Large,
++                            ),
++                    ) {
++                        LedgerAtmosphereGlow(Modifier.fillMaxSize())
++
++                        Column(
++                            modifier = Modifier
++                                .fillMaxSize()
++                                .padding(LedgerSpacing.Medium),
++                            verticalArrangement = Arrangement.Center,
++                        ) {
++                            Text(
++                                text = "Total balance",
++                                style = LedgerTextStyles.Label,
++                                color = LedgerTheme.colors.tertiaryLabel,
++                            )
++                            Spacer(Modifier.height(LedgerSpacing.XxSmall))
++                            Row(verticalAlignment = Alignment.CenterVertically) {
++                                Text(
++                                    text = "AED",
++                                    style = LedgerTextStyles.Section.copy(fontWeight = FontWeight.Bold),
++                                    color = LedgerTheme.colors.success,
++                                )
++                                Spacer(Modifier.width(LedgerSpacing.Small))
++                                LedgerAmount(
++                                    amount = "2,840.25",
++                                    style = LedgerAmountStyle.Large,
++                                    color = Color.White,
++                                )
++                            }
++                        }
+                     }
+                 }
+             },
+@@ -156,7 +199,9 @@ fun AccountsScreen(
+                     modifier = Modifier
+                         .fillMaxSize()
+                         .statusBarsPadding()
+-                        .graphicsLayer { alpha = ((progress - 0.6f) * 2.5f).coerceIn(0f, 1f) },
++                        .graphicsLayer { 
++                            alpha = ((progress - HeroTransitions.CompactEnter) * 4f).coerceIn(0f, 1f) 
++                        },
+                     contentAlignment = Alignment.CenterStart
+                 ) {
+                     Text(
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+index 8020629..443c3bc 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardScreen.kt
+@@ -119,8 +119,6 @@ fun DashboardScreen(
+ 
+     Box(Modifier.fillMaxSize().background(c.surfaceLevel0)) {
+ 
+-        LedgerAtmosphereGlow(Modifier.fillMaxSize())
+-
+         LazyColumn(
+             state = listState,
+             contentPadding = PaddingValues(
+@@ -139,6 +137,9 @@ fun DashboardScreen(
+         LedgerCollapsingHero(
+             collapseProgress = collapseProgress,
+             background = SolidColor(Color.Transparent),
++            contentBackground = {
++                LedgerAtmosphereGlow(Modifier.fillMaxSize())
++            },
+             expandedContent = { progress -> ExpandedHero(progress, state) },
+             compactContent = { progress -> CompactHero(progress, state) },
+         )
+@@ -152,76 +153,97 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
+             .fillMaxSize()
+             .statusBarsPadding()
+             .padding(horizontal = LedgerSpacing.Group)
+-            .padding(top = LedgerSpacing.Large, bottom = LedgerSpacing.XxLarge)
++            .padding(bottom = LedgerSpacing.XxLarge)
+             .graphicsLayer {
+                 alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
+             },
+         horizontalAlignment = Alignment.CenterHorizontally,
+     ) {
+-        Spacer(Modifier.weight(1f))
++        Spacer(Modifier.weight(1.3f)) // Calibrated optical centering for Screen 1
+ 
+-        // Total Balance (Centered per Mockup)
+-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
++        // The Financial Instrument Composition
++        Column(
++            horizontalAlignment = Alignment.CenterHorizontally,
++            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
++        ) {
+             Text(
+-                text = "TOTAL BALANCE",
++                text = "MONTHLY SPENDING",
+                 style = LedgerTextStyles.Caption.copy(
+-                    fontSize = 9.sp,
++                    fontSize = 10.sp,
+                     fontWeight = FontWeight.Bold,
+-                    letterSpacing = 1.5.sp,
++                    letterSpacing = 2.sp, // Stronger identity presence
+                 ),
+-                color = Color.White.copy(alpha = 0.40f),
++                color = Color.White.copy(alpha = 0.35f),
+                 modifier = Modifier.graphicsLayer {
+-                    alpha = (1f - progress / HeroTransitions.BalanceLabelExit).coerceIn(0f, 1f)
+-                    translationY = -(progress * 20f)
++                    translationY = -(progress * 15f)
+                 },
+             )
+-            Spacer(Modifier.height(LedgerSpacing.XxSmall))
++            
++            // Subordinate Currency (Occupying its own hierarchy level per Mockup)
++            Text(
++                text = state.balanceCurrency,
++                style = LedgerTextStyles.Caption.copy(
++                    fontWeight = FontWeight.Bold,
++                    fontSize = 11.sp
++                ),
++                color = Color.White.copy(alpha = 0.45f),
++                modifier = Modifier.graphicsLayer {
++                    alpha = (1f - progress * 1.5f).coerceIn(0f, 1f)
++                    translationY = -(progress * 20f)
++                }
++            )
++
+             LedgerAmount(
+-                amount = state.balanceAmount,
++                amount = state.totalSpent.replace(state.balanceCurrency, "").trim(),
+                 style = LedgerAmountStyle.Display,
+                 color = Color.White,
+                 modifier = Modifier.graphicsLayer {
+-                    alpha = (1f - progress / HeroTransitions.AmountExit).coerceIn(0f, 1f)
+-                    val scale = 1f - (progress * 0.12f)
++                    val scale = 1f - (progress * 0.10f)
+                     scaleX = scale
+                     scaleY = scale
+-                    translationY = -(progress * 40f)
++                    translationY = -(progress * 30f)
+                 },
+             )
++            
+             Spacer(Modifier.height(LedgerSpacing.Small))
+-            // Currency Pill (Restored per Mockup)
++            
++            // Interaction Pill (Restrained and Intentional)
+             Box(
+                 modifier = Modifier
+                     .graphicsLayer {
+-                        alpha = (1f - progress / HeroTransitions.CurrencyExit).coerceIn(0f, 1f)
+-                        translationY = -(progress * 30f)
++                        alpha = (1f - progress * 2.2f).coerceIn(0f, 1f)
++                        translationY = -(progress * 25f)
+                     }
+                     .ledgerSurface(
+-                        backgroundColor = Color.White.copy(alpha = 0.08f),
+-                        borderColor = Color.White.copy(alpha = 0.15f),
++                        backgroundColor = Color.White.copy(alpha = 0.05f),
++                        borderColor = Color.White.copy(alpha = 0.10f),
+                         shape = LedgerRadius.Full,
+                     )
+-                    .ledgerClickable { /* TODO: Currency Picker */ }
+-                    .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.XxSmall),
++                    .ledgerClickable { /* TODO: Period Picker */ }
++                    .padding(horizontal = LedgerSpacing.Medium, vertical = 6.dp),
+             ) {
+                 Row(verticalAlignment = Alignment.CenterVertically) {
+                     Text(
+-                        text = state.balanceCurrency,
+-                        style = LedgerTextStyles.Caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+-                        color = Color.White.copy(alpha = 0.8f),
++                        text = state.currentMonth.uppercase(),
++                        style = LedgerTextStyles.Caption.copy(
++                            fontSize = 10.sp, 
++                            fontWeight = FontWeight.Bold,
++                            letterSpacing = 0.5.sp
++                        ),
++                        color = Color.White.copy(alpha = 0.65f),
+                     )
+                     Spacer(Modifier.width(LedgerSpacing.XxSmall))
+                     Icon(
+-                        Icons.Filled.KeyboardArrowDown,
++                        imageVector = Icons.Filled.KeyboardArrowDown,
+                         contentDescription = null,
+-                        tint = Color.White.copy(alpha = 0.6f),
+-                        modifier = Modifier.size(12.dp),
++                        tint = Color.White.copy(alpha = 0.45f),
++                        modifier = Modifier.size(10.dp),
+                     )
+                 }
+             }
+         }
+ 
+-        Spacer(Modifier.height(LedgerSpacing.Large))
++        Spacer(Modifier.weight(1f))
+ 
+         Row(
+             modifier = Modifier.fillMaxWidth(),
+@@ -231,21 +253,21 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
+                 label = "INCOME",
+                 value = state.income,
+                 change = state.incomeChange,
+-                icon = Icons.AutoMirrored.Filled.ArrowForward, // Placeholder for Upward
++                icon = Icons.AutoMirrored.Filled.ArrowForward,
+                 color = LedgerTheme.colors.income,
+             )
+             MetricItem(
+                 label = "EXPENSES",
+                 value = state.expense,
+                 change = state.expenseChange,
+-                icon = Icons.Filled.KeyboardArrowDown, // Placeholder for Downward
++                icon = Icons.Filled.KeyboardArrowDown,
+                 color = LedgerTheme.colors.expense,
+             )
+             MetricItem(
+                 label = "SAVINGS",
+                 value = state.savings,
+                 change = state.savingsChange,
+-                icon = Icons.Filled.Star, // Placeholder for Safe
++                icon = Icons.Filled.Star,
+                 color = Color.White.copy(alpha = 0.70f),
+             )
+         }
+@@ -285,18 +307,18 @@ private fun MetricItem(
+             style = LedgerTextStyles.Caption.copy(
+                 fontSize = 9.sp,
+                 fontWeight = FontWeight.Bold,
+-                letterSpacing = 1.sp,
++                letterSpacing = 1.2.sp,
+                 lineHeight = 12.sp,
+             ),
+-            color = Color.White.copy(alpha = 0.35f),
++            color = Color.White.copy(alpha = 0.60f), // Increased visibility for Level 2
+         )
+         Text(
+             text = value,
+             style = LedgerTextStyles.Label.copy(
+                 fontWeight = FontWeight.Bold,
+                 fontFamily = FontFamily.Monospace,
+-                fontSize = 13.sp,
+-                lineHeight = 16.sp,
++                fontSize = 14.sp, // Slightly increased for Level 3 Dominance
++                lineHeight = 18.sp,
+             ),
+             color = color,
+             maxLines = 1,
+@@ -304,16 +326,16 @@ private fun MetricItem(
+         Text(
+             text = change,
+             style = LedgerTextStyles.Caption.copy(
+-                fontSize = 9.sp,
++                fontSize = 10.sp, // Slightly increased for Level 4 Clarity
+                 fontWeight = FontWeight.Bold,
+-                lineHeight = 12.sp,
++                lineHeight = 14.sp,
+             ),
+-            color = color.copy(alpha = 0.8f),
++            color = color.copy(alpha = 0.90f),
+         )
+         Text(
+             text = "vs last month",
+             style = LedgerTextStyles.Caption.copy(fontSize = 8.sp, lineHeight = 10.sp),
+-            color = Color.White.copy(alpha = 0.2f),
++            color = Color.White.copy(alpha = 0.30f),
+         )
+     }
+ }
+diff --git a/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerBottomBar.kt b/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerBottomBar.kt
+index f11de18..1b08927 100644
+--- a/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerBottomBar.kt
++++ b/app/src/main/java/com/sherif/ledger/presentation/navigation/LedgerBottomBar.kt
+@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.graphicsLayer
+ import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.unit.dp
+ import androidx.navigation.NavDestination.Companion.hierarchy
+ import androidx.navigation.NavGraph.Companion.findStartDestination
+ import androidx.navigation.NavHostController
+@@ -65,18 +66,18 @@ fun LedgerBottomBar(navController: NavHostController) {
+         modifier = Modifier
+             .fillMaxWidth()
+             .navigationBarsPadding()
+-            .padding(start = LedgerSpacing.Large, end = LedgerSpacing.Large, bottom = LedgerSpacing.Medium),
++            .padding(start = LedgerSpacing.Medium, end = LedgerSpacing.Medium, bottom = LedgerSpacing.Small),
+         contentAlignment = Alignment.Center,
+     ) {
+         Row(
+             modifier = Modifier
+-                .wrapContentWidth()
++                .fillMaxWidth()
+                 .ledgerSurface(
+                     level = LedgerSurfaceLevel.Level1,
+                     shape = LedgerRadius.Full,
+                 )
+-                .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small),
+-            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
++                .padding(horizontal = LedgerSpacing.Small, vertical = 6.dp),
++            horizontalArrangement = Arrangement.SpaceEvenly,
+             verticalAlignment = Alignment.CenterVertically,
+         ) {
+             BottomTab.entries.forEach { tab ->
+@@ -111,7 +112,7 @@ private fun LedgerTabItem(
+     Column(
+         modifier = Modifier
+             .ledgerClickable(onClick = onClick)
+-            .padding(horizontal = LedgerSpacing.Group, vertical = LedgerSpacing.Inline),
++            .padding(horizontal = LedgerSpacing.Small, vertical = 4.dp),
+         horizontalAlignment = Alignment.CenterHorizontally,
+     ) {
+         Icon(
+@@ -119,7 +120,7 @@ private fun LedgerTabItem(
+             contentDescription = label,
+             tint = color,
+             modifier = Modifier
+-                .size(LedgerTheme.iconSize.Medium)
++                .size(LedgerTheme.iconSize.Navigation)
+                 .graphicsLayer { this.alpha = alpha },
+         )
+         if (selected) {
+-- 
+2.51.0
+
