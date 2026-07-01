@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
-import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
@@ -162,13 +161,6 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Standardized Header (Converging with Accounts identity)
-        LedgerHeader(
-            title = "Dashboard"
-        )
-
-        Spacer(Modifier.weight(1.3f)) // Optical centering below header
-
         // The Financial Instrument Composition
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
