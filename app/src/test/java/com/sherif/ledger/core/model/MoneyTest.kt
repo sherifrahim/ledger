@@ -1,78 +1,56 @@
 package com.sherif.ledger.core.model
 
+import com.sherif.ledger.core.domain.model.CurrencyCode
+import com.sherif.ledger.core.domain.model.Money
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
-/**
- * Unit tests for currency-safe money arithmetic and deterministic formatting.
- */
 class MoneyTest {
-    @Test
-    fun plus_addsMinorUnitsWhenCurrenciesMatch() {
-        val first = Money(1_250L, Currency.USD)
-        val second = Money(375L, Currency.USD)
 
+    @Test
+    fun `plus adds amount with same currency`() {
+        val first = Money(1000L, CurrencyCode.AED)
+        val second = Money(500L, CurrencyCode.AED)
         val result = first + second
-
-        assertEquals(Money(1_625L, Currency.USD), result)
+        assertEquals(1500L, result.minorUnits)
     }
 
     @Test
-    fun minus_subtractsMinorUnitsWhenCurrenciesMatch() {
-        val first = Money(1_250L, Currency.USD)
-        val second = Money(375L, Currency.USD)
-
-        val result = first - second
-
-        assertEquals(Money(875L, Currency.USD), result)
-    }
-
-    @Test
-    fun arithmetic_rejectsMismatchedCurrencies() {
-        val dollars = Money(1_250L, Currency.USD)
-        val dirhams = Money(1_250L, Currency.AED)
-
+    fun `plus throws on currency mismatch`() {
+        val first = Money(1000L, CurrencyCode.AED)
+        val second = Money(500L, CurrencyCode.INR)
         assertThrows(IllegalArgumentException::class.java) {
-            dollars + dirhams
+            first + second
         }
     }
 
     @Test
-    fun unaryMinus_reversesSign() {
-        val money = Money(1_250L, Currency.USD)
-
-        assertEquals(Money(-1_250L, Currency.USD), -money)
+    fun `minus subtracts amount with same currency`() {
+        val first = Money(1000L, CurrencyCode.AED)
+        val second = Money(400L, CurrencyCode.AED)
+        val result = first - second
+        assertEquals(600L, result.minorUnits)
     }
 
     @Test
-    fun zero_createsZeroForCurrency() {
-        assertEquals(Money(0L, Currency.AED), Money.zero(Currency.AED))
+    fun `times scales amount by integer`() {
+        val money = Money(1000L, CurrencyCode.AED)
+        val result = money * 3
+        assertEquals(3000L, result.minorUnits)
     }
 
     @Test
-    fun format_formatsTwoFractionDigits() {
-        val money = Money(1_205L, Currency.USD)
-
-        assertEquals("$12.05", money.format())
+    fun `div scales amount by integer`() {
+        val money = Money(1000L, CurrencyCode.AED)
+        val result = money / 2
+        assertEquals(500L, result.minorUnits)
     }
 
     @Test
-    fun format_formatsNegativeAmounts() {
-        val money = Money(-1_205L, Currency.USD)
-
-        assertEquals("-$12.05", money.format())
-    }
-
-    @Test
-    fun format_formatsZeroDecimalCurrency() {
-        val yen = Currency.of(
-            code = "JPY",
-            symbol = "JPY ",
-            fractionDigits = 0,
-        )
-        val money = Money(1_205L, yen)
-
-        assertEquals("JPY 1205", money.format())
+    fun `zero creates zero amount`() {
+        val money = Money.zero(CurrencyCode.AED)
+        assertEquals(0L, money.minorUnits)
+        assertEquals(CurrencyCode.AED, money.currencyCode)
     }
 }

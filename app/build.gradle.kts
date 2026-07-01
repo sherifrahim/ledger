@@ -64,3 +64,7 @@ dependencies {
 
     debugImplementation(libs.compose.ui.tooling)
 }
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
