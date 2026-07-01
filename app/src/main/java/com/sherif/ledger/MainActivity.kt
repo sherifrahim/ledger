@@ -51,7 +51,6 @@ private fun LedgerApp() {
         LedgerRoute.Home.route,
         LedgerRoute.Accounts.route,
         LedgerRoute.Transactions.route,
-        LedgerRoute.Insights.route,
         LedgerRoute.Profile.route,
     )
 

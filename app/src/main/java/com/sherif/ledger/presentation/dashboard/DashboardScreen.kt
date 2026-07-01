@@ -55,7 +55,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
-import com.sherif.ledger.presentation.dashboard.components.InsightSection
+import com.sherif.ledger.feature.analytics.presentation.InsightsPreview
 import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSection
 import com.sherif.ledger.presentation.dashboard.preview.DashboardPreviewData
 
@@ -80,6 +80,7 @@ private object HeroSnap {
 @Composable
 fun DashboardScreen(
     onNavigateToTransactions: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {},
     state: DashboardUiState = DashboardPreviewData.state,
 ) {
     val expandedHeight = LedgerHeroDefaults.ExpandedHeight
@@ -132,7 +133,17 @@ fun DashboardScreen(
         ) {
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
             item(key = "transactions") { RecentTransactionsSection(state, onSeeAllClick = onNavigateToTransactions) }
-            item(key = "insights") { InsightSection(state) }
+            item(key = "insights") {
+                if (state.insights.isNotEmpty()) {
+                    val insight = state.insights.first()
+                    InsightsPreview(
+                        title = insight.title,
+                        subtitle = insight.subtitle,
+                        indicator = insight.indicator,
+                        onClick = onNavigateToInsights
+                    )
+                }
+            }
         }
 
         LedgerCollapsingHero(
@@ -165,6 +176,7 @@ Column(
     ) {
         // 1. The Financial Instrument Monolith (Centered in content area)
         Column(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
         ) {
@@ -173,9 +185,9 @@ Column(
                 style = LedgerTextStyles.Caption.copy(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
+                    letterSpacing = 2.4.sp, // Refined identity
                 ),
-                color = Color.White.copy(alpha = 0.35f),
+                color = Color.White.copy(alpha = 0.25f), // Refined contrast
             )
             
             LedgerAmount(
@@ -187,25 +199,27 @@ Column(
                     scaleX = scale
                     scaleY = scale
                 },
+                textAlign = TextAlign.Center
             )
             
             Text(
                 text = state.balanceCurrency,
                 style = LedgerTextStyles.Caption.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+                    fontSize = 11.sp,
+                    letterSpacing = 0.5.sp
                 ),
-                color = Color.White.copy(alpha = 0.45f),
+                color = Color.White.copy(alpha = 0.30f), // Refined contrast
             )
             
-            Spacer(Modifier.height(LedgerSpacing.Small))
+            Spacer(Modifier.height(LedgerSpacing.XSmall)) // Stronger visual grouping
             
             // Interaction Pill
             Box(
                 modifier = Modifier
                     .ledgerSurface(
-                        backgroundColor = Color.White.copy(alpha = 0.05f),
-                        borderColor = Color.White.copy(alpha = 0.10f),
+                        backgroundColor = Color.White.copy(alpha = 0.04f),
+                        borderColor = Color.White.copy(alpha = 0.08f),
                         shape = LedgerRadius.Full,
                     )
                     .ledgerClickable { /* TODO */ }
@@ -217,15 +231,15 @@ Column(
                         style = LedgerTextStyles.Caption.copy(
                             fontSize = 10.sp, 
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
+                            letterSpacing = 0.8.sp
                         ),
-                        color = Color.White.copy(alpha = 0.65f),
+                        color = Color.White.copy(alpha = 0.60f),
                     )
                     Spacer(Modifier.width(LedgerSpacing.XxSmall))
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.45f),
+                        tint = Color.White.copy(alpha = 0.40f),
                         modifier = Modifier.size(10.dp),
                     )
                 }
@@ -290,7 +304,7 @@ private fun MetricItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.size(12.dp)
+                modifier = Modifier.size(10.dp) // Refined for RC17 Dashboard local
             )
         }
         Spacer(Modifier.height(LedgerSpacing.Small))
@@ -299,10 +313,10 @@ private fun MetricItem(
             style = LedgerTextStyles.Caption.copy(
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.2.sp,
+                letterSpacing = 1.6.sp, // Stronger identity
                 lineHeight = 12.sp,
             ),
-            color = Color.White.copy(alpha = 0.60f),
+            color = Color.White.copy(alpha = 0.50f), // Softened for hierarchy
         )
         LedgerAmount(
             amount = value,
@@ -317,12 +331,12 @@ private fun MetricItem(
                 fontWeight = FontWeight.Bold,
                 lineHeight = 14.sp,
             ),
-            color = color.copy(alpha = 0.90f),
+            color = color.copy(alpha = 0.85f), // Subordinate to amount
         )
         Text(
             text = "vs last month",
             style = LedgerTextStyles.Caption.copy(fontSize = 8.sp, lineHeight = 10.sp),
-            color = Color.White.copy(alpha = 0.30f),
+            color = Color.White.copy(alpha = 0.25f),
         )
     }
 }

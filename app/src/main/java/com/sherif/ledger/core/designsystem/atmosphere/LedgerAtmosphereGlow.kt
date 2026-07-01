@@ -31,23 +31,21 @@ fun LedgerAtmosphereGlow(
         val h = size.height
 
         // 1. Directional Surface Wash (Environmental Depth)
-        // This is a large, low-contrast wash that gives the material its emerald base.
-        // It is NOT a circular glow; it follows a wide vertical gradient.
+        // Refined for DFC-01: Deeper emerald base with higher vertical depth.
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    primary.copy(alpha = 0.18f),
-                    primary.copy(alpha = 0.22f),
+                    primary.copy(alpha = 0.03f),
+                    primary.copy(alpha = 0.07f),
                     Color.Transparent
                 ),
                 startY = 0f,
-                endY = h * 0.45f
+                endY = h * 0.50f
             )
         )
 
         // 2. The Restrained Grazing Arc (Edge Illumination)
-        // Simulates light catching a curved "carved" edge.
-        // Refined for RC-010: More integrated into the material surface.
+        // Refined for DFC-01: Sharper, more integrated physical surface edge.
         val arcPath = Path().apply {
             moveTo(0f, h * 0.44f)
             quadraticTo(
@@ -59,16 +57,17 @@ fun LedgerAtmosphereGlow(
         // Grazing light - subtle stroke representing physical surface edge
         drawPath(
             path = arcPath,
-            color = primary.copy(alpha = 0.10f),
-            style = Stroke(width = 0.6.dp.toPx(), cap = StrokeCap.Round)
+            color = primary.copy(alpha = 0.09f),
+            style = Stroke(width = 0.4.dp.toPx(), cap = StrokeCap.Round)
         )
 
         // 3. Primary Directional Light (Restrained Surface presence)
+        // Refined for DFC-01: Core light integrated into the material surface.
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(secondary.copy(alpha = 0.12f), Color.Transparent),
+                colors = listOf(secondary.copy(alpha = 0.04f), Color.Transparent),
                 center = Offset(w / 2f, h * 0.38f),
-                radius = h * 0.30f
+                radius = h * 0.32f
             )
         )
     }

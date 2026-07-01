@@ -52,6 +52,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+import com.sherif.ledger.feature.analytics.presentation.InsightsPreview
 import com.sherif.ledger.feature.accounts.presentation.components.AccountRow
 import com.sherif.ledger.feature.accounts.presentation.preview.AccountsPreviewData
 
@@ -62,6 +63,7 @@ private object HeroTransitions {
 
 @Composable
 fun AccountsScreen(
+    onNavigateToInsights: () -> Unit = {},
     state: AccountsUiState = AccountsPreviewData.state,
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -89,6 +91,15 @@ fun AccountsScreen(
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
         ) {
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
+
+            item(key = "insights") {
+                InsightsPreview(
+                    title = "Monthly Spending",
+                    subtitle = "Spending is 8% lower than last week",
+                    indicator = "↓ 8%",
+                    onClick = onNavigateToInsights
+                )
+            }
 
             state.sections.forEach { section ->
                 item(key = "section_${section.title}") {

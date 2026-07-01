@@ -37,11 +37,18 @@ fun LedgerNavHost(
                 onNavigateToTransactions = {
                     navController.navigate(LedgerRoute.Transactions.route) { launchSingleTop = true }
                 },
+                onNavigateToInsights = {
+                    navController.navigate(LedgerRoute.Insights.route)
+                }
             )
         }
 
         composable(LedgerRoute.Accounts.route) {
-            AccountsScreen()
+            AccountsScreen(
+                onNavigateToInsights = {
+                    navController.navigate(LedgerRoute.Insights.route)
+                }
+            )
         }
 
         composable(LedgerRoute.Insights.route) {

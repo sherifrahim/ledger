@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -46,7 +47,6 @@ private enum class BottomTab(
     Home(LedgerRoute.Home.route, "Home", Icons.Filled.Home),
     Accounts(LedgerRoute.Accounts.route, "Accounts", Icons.Filled.AccountBalanceWallet),
     Activity(LedgerRoute.Transactions.route, "Activity", Icons.AutoMirrored.Filled.List),
-    Insights(LedgerRoute.Insights.route, "Insights", Icons.Filled.BarChart),
     Profile(LedgerRoute.Profile.route, "Profile", Icons.Filled.Person),
 }
 
@@ -75,8 +75,9 @@ fun LedgerBottomBar(navController: NavHostController) {
                 .ledgerSurface(
                     level = LedgerSurfaceLevel.Level1,
                     shape = LedgerRadius.Full,
+                    borderColor = Color.White.copy(alpha = 0.08f) // Refined depth
                 )
-                .padding(horizontal = LedgerSpacing.Small, vertical = 6.dp),
+                .padding(horizontal = LedgerSpacing.Small, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -106,8 +107,8 @@ private fun LedgerTabItem(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val color = if (selected) LedgerTheme.colors.tint else LedgerTheme.colors.tertiaryLabel
-    val alpha = if (selected) 1.0f else 0.45f
+    val tint = if (selected) LedgerTheme.colors.tint else LedgerTheme.colors.tertiaryLabel
+    val contentAlpha = if (selected) 1.0f else 0.35f // Heavier calm contrast
 
     Column(
         modifier = Modifier
@@ -118,16 +119,16 @@ private fun LedgerTabItem(
         Icon(
             icon,
             contentDescription = label,
-            tint = color,
+            tint = tint,
             modifier = Modifier
                 .size(LedgerTheme.iconSize.Navigation)
-                .graphicsLayer { this.alpha = alpha },
+                .graphicsLayer { alpha = contentAlpha },
         )
         if (selected) {
             Text(
-                label,
+                text = label,
                 style = LedgerTextStyles.Caption,
-                color = color,
+                color = tint,
                 modifier = Modifier.padding(top = LedgerSpacing.XxSmall),
             )
         }

@@ -15,7 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -45,14 +47,16 @@ fun LedgerTransactionRow(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
-            .padding(vertical = LedgerSpacing.Medium),
+            .padding(vertical = LedgerSpacing.Medium, horizontal = LedgerSpacing.Small), // Optimized padding
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Authentic Brand Identity (RC-007 System)
         LedgerBrandIcon(
             name = title,
             size = LedgerTheme.iconSize.Huge,
-            modifier = Modifier.graphicsLayer { alpha = contentAlpha }
+            modifier = Modifier
+                .graphicsLayer { alpha = contentAlpha }
+                .padding(4.dp) // Refined asset normalization
         )
 
         Spacer(modifier = Modifier.width(LedgerSpacing.Medium))
@@ -63,7 +67,7 @@ fun LedgerTransactionRow(
         ) {
             Text(
                 text = title,
-                style = LedgerTextStyles.Label,
+                style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold),
                 color = LedgerTheme.colors.label.copy(alpha = contentAlpha),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -73,7 +77,7 @@ fun LedgerTransactionRow(
                 Text(
                     text = supportingText,
                     style = LedgerTextStyles.Caption,
-                    color = LedgerTheme.colors.tertiaryLabel,
+                    color = LedgerTheme.colors.tertiaryLabel.copy(alpha = 0.50f), // Sharper hierarchy
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
