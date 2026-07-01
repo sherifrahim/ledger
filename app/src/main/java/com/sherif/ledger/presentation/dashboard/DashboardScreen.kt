@@ -119,6 +119,8 @@ fun DashboardScreen(
     val c = LedgerTheme.colors
 
     Box(Modifier.fillMaxSize().background(c.surfaceLevel0)) {
+        // Global Atmosphere (Subtle wash) - Ensures bleed behind status bar
+        LedgerAtmosphereGlow(Modifier.fillMaxSize())
 
         LazyColumn(
             state = listState,
@@ -160,19 +162,9 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Standardized Header (Converging with Mock V2 identity)
+        // Standardized Header (Converging with Accounts identity)
         LedgerHeader(
-            title = "Good morning, ${state.userName}",
-            actions = {
-                Icon(
-                    imageVector = Icons.Filled.Notifications,
-                    contentDescription = "Notifications",
-                    tint = Color.White.copy(alpha = 0.45f),
-                    modifier = Modifier
-                        .size(LedgerTheme.iconSize.Medium)
-                        .ledgerClickable { /* TODO */ }
-                )
-            }
+            title = "Dashboard"
         )
 
         Spacer(Modifier.weight(1.3f)) // Optical centering below header
