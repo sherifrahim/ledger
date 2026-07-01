@@ -67,7 +67,7 @@ fun AccountsScreen(
     state: AccountsUiState = AccountsPreviewData.state,
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val expandedHeight = LedgerHeroDefaults.ExpandedHeight + statusBarPadding
+    val expandedHeight = 240.dp + statusBarPadding
     val collapsedHeight = LedgerHeroDefaults.CollapsedHeight + statusBarPadding
     val maxOffsetPx = with(LocalDensity.current) { (expandedHeight - collapsedHeight).toPx() }
     val listState = rememberLazyListState()
