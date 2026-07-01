@@ -47,28 +47,28 @@ fun LedgerAtmosphereGlow(
 
         // 2. The Restrained Grazing Arc (Edge Illumination)
         // Simulates light catching a curved "carved" edge.
+        // Refined for RC-010: More integrated into the material surface.
         val arcPath = Path().apply {
-            moveTo(0f, h * 0.42f)
+            moveTo(0f, h * 0.44f)
             quadraticTo(
-                w / 2f, h * 0.38f,
-                w, h * 0.42f
+                w / 2f, h * 0.40f,
+                w, h * 0.44f
             )
         }
 
         // Grazing light - subtle stroke representing physical surface edge
         drawPath(
             path = arcPath,
-            color = primary.copy(alpha = 0.12f),
-            style = Stroke(width = 0.5.dp.toPx(), cap = StrokeCap.Round)
+            color = primary.copy(alpha = 0.10f),
+            style = Stroke(width = 0.6.dp.toPx(), cap = StrokeCap.Round)
         )
 
         // 3. Primary Directional Light (Restrained Surface presence)
-        // This is the core light hitting the material, shifted off-center for depth.
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(secondary.copy(alpha = 0.05f), Color.Transparent),
-                center = Offset(w / 2f, h * 0.35f),
-                radius = h * 0.25f
+                colors = listOf(secondary.copy(alpha = 0.04f), Color.Transparent),
+                center = Offset(w / 2f, h * 0.38f),
+                radius = h * 0.30f
             )
         )
     }

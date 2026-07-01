@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
@@ -159,7 +160,22 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.weight(1.3f)) // Calibrated optical centering for Screen 1
+        // Standardized Header (Converging with Mock V2 identity)
+        LedgerHeader(
+            title = "Good morning, ${state.userName}",
+            actions = {
+                Icon(
+                    imageVector = Icons.Filled.Notifications,
+                    contentDescription = "Notifications",
+                    tint = Color.White.copy(alpha = 0.45f),
+                    modifier = Modifier
+                        .size(LedgerTheme.iconSize.Medium)
+                        .ledgerClickable { /* TODO */ }
+                )
+            }
+        )
+
+        Spacer(Modifier.weight(1.3f)) // Optical centering below header
 
         // The Financial Instrument Composition
         Column(
@@ -179,7 +195,19 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 },
             )
             
-            // Subordinate Currency (Occupying its own hierarchy level per Mockup)
+            LedgerAmount(
+                amount = state.totalSpent.replace(state.balanceCurrency, "").trim(),
+                style = LedgerAmountStyle.Display,
+                color = Color.White,
+                modifier = Modifier.graphicsLayer {
+                    val scale = 1f - (progress * 0.10f)
+                    scaleX = scale
+                    scaleY = scale
+                    translationY = -(progress * 30f)
+                },
+            )
+            
+            // Subordinate Currency (Line 3 per SPEC)
             Text(
                 text = state.balanceCurrency,
                 style = LedgerTextStyles.Caption.copy(
@@ -191,18 +219,6 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                     alpha = (1f - progress * 1.5f).coerceIn(0f, 1f)
                     translationY = -(progress * 20f)
                 }
-            )
-
-            LedgerAmount(
-                amount = state.totalSpent.replace(state.balanceCurrency, "").trim(),
-                style = LedgerAmountStyle.Display,
-                color = Color.White,
-                modifier = Modifier.graphicsLayer {
-                    val scale = 1f - (progress * 0.10f)
-                    scaleX = scale
-                    scaleY = scale
-                    translationY = -(progress * 30f)
-                },
             )
             
             Spacer(Modifier.height(LedgerSpacing.Small))

@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
+import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerShapes
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
@@ -54,8 +55,8 @@ fun ReviewInboxScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group),
     ) {
         item("header") {
-            Column(modifier = Modifier.statusBarsPadding().padding(vertical = LedgerSpacing.Medium)) {
-                Text("Review", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.label)
+            Column(modifier = Modifier.statusBarsPadding()) {
+                LedgerHeader(title = "Review")
                 Spacer(Modifier.height(LedgerSpacing.Content))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
                     SummaryCount("Pending", state.pendingCount, LedgerTheme.colors.pending)

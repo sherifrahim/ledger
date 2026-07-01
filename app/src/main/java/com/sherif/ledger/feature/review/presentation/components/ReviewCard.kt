@@ -20,6 +20,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sherif.ledger.core.designsystem.component.LedgerAmount
+import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
 import com.sherif.ledger.core.designsystem.component.LedgerButton
 import com.sherif.ledger.core.designsystem.component.LedgerButtonStyle
@@ -60,7 +62,11 @@ fun ReviewCard(
                 Text(item.merchant, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
                 Text(item.timestamp, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
             }
-            Text("${sign}AED ${item.amount}", style = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = amountColor)
+            LedgerAmount(
+                amount = "${sign}AED ${item.amount}",
+                style = LedgerAmountStyle.Regular,
+                color = amountColor
+            )
         }
         Spacer(Modifier.height(LedgerSpacing.Small))
         LedgerHairline()

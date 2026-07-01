@@ -10,11 +10,11 @@ import androidx.compose.ui.unit.dp
  * consistent across screens.
  */
 object LedgerIconSize {
-    val Small: Dp = 16.dp
-    val Medium: Dp = 18.dp // Reduced from 20
-    val Large: Dp = 20.dp // Reduced from 24
-    val XLarge: Dp = 28.dp // Reduced from 32
-    val Huge: Dp = 44.dp // Reduced from 48
-    val Massive: Dp = 56.dp // Reduced from 64
+    val Small: Dp = 12.dp
+    val Medium: Dp = 14.dp
+    val Large: Dp = 18.dp
+    val XLarge: Dp = 24.dp
+    val Huge: Dp = 36.dp // Reduced for RC-009 (~20% reduction from 44dp)
+    val Massive: Dp = 48.dp // Reduced for RC-009
     val Navigation: Dp = 20.dp
 }
