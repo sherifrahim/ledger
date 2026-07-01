@@ -100,14 +100,14 @@ AnimatedVisibility(
     exit = fadeOut(),
 ) {
 AnimatedVisibility(
-    visible = collapseProgress >= 0.85f,
+    visible = collapseProgress >= HeroTransitions.CompactEnter,
     enter = fadeIn(),
-    exit = fadeOut(),
+    exit = fadeOut()
 ) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(collapsedHeight),
+            .height(collapsedHeight)
     ) {
         compactContent(collapseProgress)
     }
