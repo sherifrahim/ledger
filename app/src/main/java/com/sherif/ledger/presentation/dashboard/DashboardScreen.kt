@@ -157,19 +157,20 @@ fun DashboardScreen(
 
 @Composable
 private fun ExpandedHero(progress: Float, state: DashboardUiState) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .padding(horizontal = LedgerSpacing.Group)
-            .padding(bottom = LedgerSpacing.XxLarge)
-            .graphicsLayer {
-                alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
-            },
+Column(
+    modifier = Modifier
+        .fillMaxSize()
+        .statusBarsPadding()
+        .padding(horizontal = LedgerSpacing.Group)
+        .padding(bottom = LedgerSpacing.XxLarge)
+        .graphicsLayer {
+            alpha = (1f - progress / HeroTransitions.ExpandedExit)
+                .coerceIn(0f, 1f)
+        },
+    horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 1. The Financial Instrument Monolith (Centered in content area)
         Column(
-            modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
         ) {
@@ -236,6 +237,10 @@ private fun ExpandedHero(progress: Float, state: DashboardUiState) {
                 }
             }
         }
+
+ Spacer(
+        modifier = Modifier.weight(1f)
+    )
 
         // 2. Summary Metrics (Anchored to bottom of hero area)
         Row(
