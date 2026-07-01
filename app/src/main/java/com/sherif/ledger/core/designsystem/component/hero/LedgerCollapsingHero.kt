@@ -91,27 +91,25 @@ fun LedgerCollapsingHero(
             .background(background),
     ) {
         contentBackground()
-        Box(Modifier.fillMaxSize()) {
+
+        Box(
+            Modifier.fillMaxSize()
+        ) {
             expandedContent(collapseProgress)
         }
-AnimatedVisibility(
-    visible = collapseProgress >= 0.85f,
-    enter = fadeIn(),
-    exit = fadeOut(),
-) {
-AnimatedVisibility(
-    visible = collapseProgress >= 0.85f,
-    enter = fadeIn(),
-    exit = fadeOut(),
-) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(collapsedHeight),
-    ) {
-        compactContent(collapseProgress)
+
+        AnimatedVisibility(
+            visible = collapseProgress >= 0.85f,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(collapsedHeight),
+            ) {
+                compactContent(collapseProgress)
+            }
+        }
     }
-}
-    }
-}
 }
