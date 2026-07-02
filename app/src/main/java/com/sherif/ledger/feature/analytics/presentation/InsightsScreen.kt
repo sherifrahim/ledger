@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerHeader
@@ -138,12 +139,21 @@ fun InsightsScreen(
             }
         }
 
-        item("categories_header") {
-            LedgerSectionHeader(title = "Categories", trailing = "See all")
-        }
+        if (state.categories.isEmpty()) {
+            item("empty_state") {
+                LedgerEmptyState(
+                    title = "No insights yet",
+                    subtitle = "We'll analyze your spending and provide insights here once you have some transactions."
+                )
+            }
+        } else {
+            item("categories_header") {
+                LedgerSectionHeader(title = "Categories", trailing = "See all")
+            }
 
-        items(state.categories) { category ->
-            CategoryItem(category)
+            items(state.categories) { category ->
+                CategoryItem(category)
+            }
         }
     }
 }

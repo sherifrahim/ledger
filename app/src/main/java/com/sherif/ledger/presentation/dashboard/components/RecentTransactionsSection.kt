@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
@@ -29,21 +30,28 @@ fun RecentTransactionsSection(
         LedgerSectionHeader(
             title = "RECENT ACTIVITY",
             titleColor = LedgerTheme.colors.tertiaryLabel,
-            trailing = "See all",
+            trailing = if (state.recentTransactions.isNotEmpty()) "See all" else null,
             onTrailingClick = onSeeAllClick,
         )
 
-        Column(modifier = Modifier.fillMaxWidth()) {
-            state.recentTransactions.forEachIndexed { index, txn ->
-                val sign = if (txn.isExpense) "-" else "+"
-                LedgerTransactionRow(
-                    title = txn.merchant,
-                    subtitle = txn.category,
-                    amount = "$sign${txn.amount}",
-                    amountColor = if (txn.isExpense) LedgerTheme.colors.expense else LedgerTheme.colors.income,
-                )
-                if (index != state.recentTransactions.lastIndex) {
-                    LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
+        if (state.recentTransactions.isEmpty()) {
+            LedgerEmptyState(
+                title = "No activity yet",
+                subtitle = "Your transactions will appear here automatically as they are detected from your notifications."
+            )
+        } else {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                state.recentTransactions.forEachIndexed { index, txn ->
+                    val sign = if (txn.isExpense) "-" else "+"
+                    LedgerTransactionRow(
+                        title = txn.merchant,
+                        subtitle = txn.category,
+                        amount = "$sign${txn.amount}",
+                        amountColor = if (txn.isExpense) LedgerTheme.colors.expense else LedgerTheme.colors.income,
+                    )
+                    if (index != state.recentTransactions.lastIndex) {
+                        LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
+                    }
                 }
             }
         }

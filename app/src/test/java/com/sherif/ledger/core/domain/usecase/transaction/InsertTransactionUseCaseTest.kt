@@ -131,7 +131,16 @@ class InsertTransactionUseCaseTest {
             override suspend fun insertTransaction(transaction: Transaction): LedgerResult<Long> = 
                 LedgerResult.Failure(LedgerError.DuplicateTransaction)
         }
-        val useCaseWithDuplicate = InsertTransactionUseCase(repoDuplicate, accountRepository, merchantRepository, transactionRunner)
+        val useCaseWithDuplicate = InsertTransactionUseCase(
+            transactionRepository = repoDuplicate,
+            accountRepository = accountRepository,
+            transactionRunner = transactionRunner,
+            validator = com.sherif.ledger.core.domain.service.transaction.TransactionValidator(),
+            fingerprintGenerator = com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator(),
+            merchantResolver = com.sherif.ledger.core.domain.service.transaction.MerchantResolver(merchantRepository),
+            categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver(),
+            balanceCalculator = com.sherif.ledger.core.domain.service.transaction.BalanceCalculator()
+        )
         
         val resultDuplicate = useCaseWithDuplicate.execute(params)
         assertTrue(resultDuplicate is LedgerResult.Failure)

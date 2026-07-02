@@ -1,7 +1,10 @@
 package com.sherif.ledger.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -9,14 +12,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
+import com.sherif.ledger.feature.accounts.presentation.viewmodel.AccountsViewModel
 import com.sherif.ledger.feature.analytics.presentation.InsightsScreen
+import com.sherif.ledger.feature.analytics.presentation.viewmodel.InsightsViewModel
 import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
 import com.sherif.ledger.feature.settings.presentation.ProfileScreen
 import com.sherif.ledger.feature.settings.presentation.SettingsScreen
 import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
+import com.sherif.ledger.feature.transactions.presentation.viewmodel.TransactionsViewModel
 import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsScreen
 import com.sherif.ledger.presentation.dashboard.DashboardScreen
 import com.sherif.ledger.presentation.dashboard.SearchFilterScreen
+import com.sherif.ledger.presentation.dashboard.viewmodel.DashboardViewModel
 
 @Composable
 fun LedgerNavHost(
@@ -33,7 +40,11 @@ fun LedgerNavHost(
         popExitTransition = { LedgerAnimations.screenPopExit },
     ) {
         composable(LedgerRoute.Home.route) {
+            val viewModel: DashboardViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+            
             DashboardScreen(
+                state = state,
                 onNavigateToTransactions = {
                     navController.navigate(LedgerRoute.Transactions.route) { launchSingleTop = true }
                 },
@@ -44,7 +55,11 @@ fun LedgerNavHost(
         }
 
         composable(LedgerRoute.Accounts.route) {
+            val viewModel: AccountsViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+
             AccountsScreen(
+                state = state,
                 onNavigateToInsights = {
                     navController.navigate(LedgerRoute.Insights.route)
                 }
@@ -52,7 +67,9 @@ fun LedgerNavHost(
         }
 
         composable(LedgerRoute.Insights.route) {
-            InsightsScreen()
+            val viewModel: InsightsViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+            InsightsScreen(state = state)
         }
 
         composable(LedgerRoute.Profile.route) {
@@ -68,7 +85,11 @@ fun LedgerNavHost(
         }
 
         composable(LedgerRoute.Transactions.route) {
+            val viewModel: TransactionsViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+
             TransactionsScreen(
+                state = state,
                 onTransactionClick = { id ->
                     navController.navigate(LedgerRoute.TransactionDetails.create(id))
                 },

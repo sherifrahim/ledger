@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
 import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
@@ -93,26 +94,37 @@ fun AccountsScreen(
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
 
             item(key = "insights") {
-                InsightsPreview(
-                    title = "Monthly Spending",
-                    subtitle = "Spending is 8% lower than last week",
-                    indicator = "↓ 8%",
-                    onClick = onNavigateToInsights
-                )
+                if (state.sections.isNotEmpty()) {
+                    InsightsPreview(
+                        title = "Monthly Spending",
+                        subtitle = "Spending is 8% lower than last week",
+                        indicator = "↓ 8%",
+                        onClick = onNavigateToInsights
+                    )
+                }
             }
 
-            state.sections.forEach { section ->
-                item(key = "section_${section.title}") {
-                    Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group)) {
-                        LedgerSectionHeader(title = section.title.uppercase())
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            section.accounts.forEachIndexed { index, account ->
-                                AccountRow(
-                                    account = account,
-                                    onClick = { /* TODO: Account Detail */ }
-                                )
-                                if (index != section.accounts.lastIndex) {
-                                    LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
+            if (state.sections.isEmpty()) {
+                item(key = "empty_state") {
+                    LedgerEmptyState(
+                        title = "No accounts yet",
+                        subtitle = "Your accounts will appear here automatically as transactions are detected."
+                    )
+                }
+            } else {
+                state.sections.forEach { section ->
+                    item(key = "section_${section.title}") {
+                        Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group)) {
+                            LedgerSectionHeader(title = section.title.uppercase())
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                section.accounts.forEachIndexed { index, account ->
+                                    AccountRow(
+                                        account = account,
+                                        onClick = { /* TODO: Account Detail */ }
+                                    )
+                                    if (index != section.accounts.lastIndex) {
+                                        LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
+                                    }
                                 }
                             }
                         }
@@ -198,13 +210,13 @@ fun AccountsScreen(
                             Spacer(Modifier.height(LedgerSpacing.XxSmall))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "AED",
+                                    text = state.netWorthCurrency,
                                     style = LedgerTextStyles.Section.copy(fontWeight = FontWeight.Bold),
                                     color = LedgerTheme.colors.success,
                                 )
                                 Spacer(Modifier.width(LedgerSpacing.Small))
                                 LedgerAmount(
-                                    amount = "2,840.25",
+                                    amount = state.netWorth,
                                     style = LedgerAmountStyle.Large,
                                     color = Color.White,
                                 )

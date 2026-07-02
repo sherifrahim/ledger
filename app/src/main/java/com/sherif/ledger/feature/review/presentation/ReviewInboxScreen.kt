@@ -77,7 +77,7 @@ fun ReviewInboxScreen(
         if (filtered.isEmpty()) {
             item("empty") {
                 Spacer(Modifier.height(LedgerSpacing.XxLarge))
-                LedgerEmptyState(title = "All clear", message = "No transactions need review right now.")
+                LedgerEmptyState(title = "All clear", subtitle = "No transactions need review right now.")
             }
         } else {
             items(filtered, key = { it.id }) { item ->

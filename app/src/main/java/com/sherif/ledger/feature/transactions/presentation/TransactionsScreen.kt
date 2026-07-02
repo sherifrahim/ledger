@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSearchBar
 import com.sherif.ledger.core.designsystem.component.LedgerTag
@@ -73,13 +74,22 @@ fun TransactionsScreen(
             Spacer(Modifier.height(LedgerSpacing.Section))
         }
 
-        items(state.groups, key = { it.id }) { group ->
-            TimelineSection(
-                group = group,
-                onTransactionClick = onTransactionClick,
-                modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
-            )
-            Spacer(Modifier.height(LedgerSpacing.Section))
+        if (state.groups.isEmpty()) {
+            item(key = "empty_state") {
+                LedgerEmptyState(
+                    title = "No history yet",
+                    subtitle = "Your transaction history will build up automatically as you spend."
+                )
+            }
+        } else {
+            items(state.groups, key = { it.id }) { group ->
+                TimelineSection(
+                    group = group,
+                    onTransactionClick = onTransactionClick,
+                    modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
+                )
+                Spacer(Modifier.height(LedgerSpacing.Section))
+            }
         }
     }
 }
