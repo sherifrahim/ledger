@@ -1,24 +1,28 @@
 package com.sherif.ledger.feature.capture.parsing
 
+import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Registry responsible for selecting and delegating to the appropriate bank parser.
+ * Registry responsible for managing parsers and delegating parsing requests.
  */
 @Singleton
-class ParserRegistry @Inject constructor() {
-    private val parsers = mutableListOf<BankParser>()
-
+class ParserRegistry @Inject constructor(
+    private val parsers: Set<@JvmSuppressWildcards BankParser>
+) {
     /**
-     * Registers a new bank parser into the registry.
+     * Finds a matching parser and attempts to extract financial facts.
      */
-    fun registerParser(parser: BankParser) {
-        parsers.add(parser)
+    fun parse(envelope: NotificationEnvelope): ParseResult {
+        val parser = parsers.find { it.supports(envelope) }
+            ?: return ParseResult.Failed("No matching parser found for ${envelope.packageName}")
+        
+        return parser.parse(envelope)
     }
 
     /**
-     * Returns all registered parsers.
+     * Returns all registered parsers for inspection.
      */
-    fun getParsers(): List<BankParser> = parsers
+    fun getParsers(): List<BankParser> = parsers.toList()
 }

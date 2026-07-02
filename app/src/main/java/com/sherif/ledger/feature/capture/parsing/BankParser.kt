@@ -1,14 +1,18 @@
 package com.sherif.ledger.feature.capture.parsing
 
-import com.sherif.ledger.core.domain.model.LedgerResult
-import com.sherif.ledger.core.domain.model.TransactionCandidate
+import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 
 /**
  * Common contract for bank-specific notification parsers.
  */
 interface BankParser {
     /**
-     * Attempts to parse raw notification text into a TransactionCandidate.
+     * Determines if this parser can handle the given notification.
      */
-    fun parse(packageName: String, title: String, text: String): LedgerResult<TransactionCandidate>
+    fun supports(envelope: NotificationEnvelope): Boolean
+
+    /**
+     * Attempts to parse a NotificationEnvelope into a ParseResult.
+     */
+    fun parse(envelope: NotificationEnvelope): ParseResult
 }

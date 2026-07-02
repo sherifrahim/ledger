@@ -14,5 +14,6 @@ data class TransactionCandidate(
     val currencyCode: CurrencyCode?,
     val timestamp: Instant,
     val accountHint: String?, // e.g., last 4 digits of account
+    val accountId: Long? = null, // Resolved account ID
     val transactionType: TransactionType?
 )
