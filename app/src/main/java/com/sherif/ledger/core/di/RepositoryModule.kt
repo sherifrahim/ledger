@@ -6,12 +6,14 @@ import com.sherif.ledger.core.database.repository.RoomCategoryRepository
 import com.sherif.ledger.core.database.repository.RoomInsightsRepository
 import com.sherif.ledger.core.database.repository.RoomMerchantRepository
 import com.sherif.ledger.core.database.repository.RoomTransactionRepository
+import com.sherif.ledger.core.database.repository.RoomTransactionRunner
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.BudgetRepository
 import com.sherif.ledger.core.domain.repository.CategoryRepository
 import com.sherif.ledger.core.domain.repository.InsightsRepository
 import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionRunner
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -45,4 +47,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindInsightsRepository(repo: RoomInsightsRepository): InsightsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTransactionRunner(runner: RoomTransactionRunner): TransactionRunner
 }
