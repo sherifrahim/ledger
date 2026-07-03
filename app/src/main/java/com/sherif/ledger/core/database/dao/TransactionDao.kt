@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TransactionDao {
     
+    @Query("SELECT * FROM transactions WHERE id = :id AND is_deleted = 0")
+    suspend fun getTransactionById(id: Long): TransactionEntity?
+
     @Query("SELECT * FROM transactions WHERE is_deleted = 0 ORDER BY timestamp_millis DESC LIMIT :limit")
     fun observeRecentTransactions(limit: Int): Flow<List<TransactionEntity>>
 

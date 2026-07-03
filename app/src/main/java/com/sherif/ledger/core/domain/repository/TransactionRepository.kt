@@ -9,6 +9,7 @@ interface TransactionRepository {
     fun observeRecentTransactions(limit: Int): Flow<LedgerResult<List<Transaction>>>
     fun observeTransactionsForAccount(accountId: Long): Flow<LedgerResult<List<Transaction>>>
     fun observeTransactionsBetween(start: Instant, end: Instant): Flow<LedgerResult<List<Transaction>>>
+    suspend fun getTransactionById(id: Long): LedgerResult<Transaction>
     suspend fun insertTransaction(transaction: Transaction): LedgerResult<Long>
     suspend fun deleteTransaction(id: Long): LedgerResult<Unit>
 }

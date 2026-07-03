@@ -48,6 +48,7 @@ data class InsightsUiState(
     val dateRange: String,
     val percentChange: String,
     val categories: List<CategoryInsightUi>,
+    val currency: String = "AED"
 )
 
 data class CategoryInsightUi(
@@ -55,6 +56,7 @@ data class CategoryInsightUi(
     val amount: String,
     val percentage: String,
     val color: Color,
+    val currency: String = "AED"
 )
 
 private val previewState = InsightsUiState(
@@ -93,7 +95,7 @@ fun InsightsScreen(
                         tint = LedgerTheme.colors.label,
                         modifier = Modifier
                             .size(LedgerTheme.iconSize.Medium)
-                            .ledgerClickable { /* TODO */ }
+                            .ledgerClickable { /* Show Date Picker */ }
                     )
                 }
             )
@@ -122,7 +124,7 @@ fun InsightsScreen(
                 Text(state.dateRange, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
                 Spacer(Modifier.height(LedgerSpacing.Small))
                 LedgerAmount(
-                    amount = "AED ${state.totalSpent}",
+                    amount = "${state.currency} ${state.totalSpent}",
                     style = LedgerAmountStyle.Display,
                     color = LedgerTheme.colors.label,
                 )

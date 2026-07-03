@@ -20,7 +20,7 @@ fun AccountEntity.toDomain(): Account = Account(
     id = id,
     name = name,
     type = type,
-    balance = Money.zero(currencyCode), // Balance is a derived value, defaults to zero
+    balance = Money(balanceMinor, currencyCode),
     accountNumberTail = accountNumberTail,
     bankBrandId = bankBrandId
 )
@@ -29,6 +29,7 @@ fun Account.toEntity(): AccountEntity = AccountEntity(
     id = id,
     name = name,
     type = type,
+    balanceMinor = balance.minorUnits,
     currencyCode = balance.currencyCode,
     accountNumberTail = accountNumberTail,
     bankBrandId = bankBrandId

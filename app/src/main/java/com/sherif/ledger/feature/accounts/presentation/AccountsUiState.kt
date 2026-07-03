@@ -6,6 +6,7 @@ data class AccountsUiState(
     val assetsTotal: String,
     val liabilitiesTotal: String,
     val sections: List<AccountSectionUi>,
+    val insight: com.sherif.ledger.presentation.dashboard.InsightUiModel? = null,
 )
 
 data class AccountSectionUi(

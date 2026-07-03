@@ -19,6 +19,9 @@ data class AccountEntity(
     
     val type: AccountType,
     
+    @ColumnInfo(name = "balance_minor")
+    val balanceMinor: Long,
+
     @ColumnInfo(name = "currency_code")
     val currencyCode: CurrencyCode,
     

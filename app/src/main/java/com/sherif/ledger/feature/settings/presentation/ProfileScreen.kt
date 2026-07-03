@@ -42,9 +42,12 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
+import androidx.compose.material.icons.filled.BugReport
+
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToDebugConsole: () -> Unit = {},
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
@@ -99,12 +102,12 @@ fun ProfileScreen(
 
                 Column {
                     Text(
-                        text = "Sherif Rahim",
+                        text = "User",
                         style = LedgerTextStyles.Section,
                         color = LedgerTheme.colors.label
                     )
                     Text(
-                        text = "sherif.rahim@email.com",
+                        text = "",
                         style = LedgerTextStyles.Caption,
                         color = LedgerTheme.colors.tertiaryLabel
                     )
@@ -129,6 +132,15 @@ fun ProfileScreen(
                 ProfileRow(icon = Icons.Filled.HelpOutline, label = "Help & support")
                 LedgerHairline(Modifier.padding(start = 56.dp))
                 ProfileRow(icon = Icons.Filled.Info, label = "About Ledger")
+                
+                if (com.sherif.ledger.BuildConfig.DEBUG) {
+                    LedgerHairline(Modifier.padding(start = 56.dp))
+                    ProfileRow(
+                        icon = Icons.Filled.BugReport, 
+                        label = "Developer Console",
+                        onClick = onNavigateToDebugConsole
+                    )
+                }
             }
         }
 
@@ -162,11 +174,12 @@ fun ProfileScreen(
 private fun ProfileRow(
     icon: ImageVector,
     label: String,
+    onClick: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .ledgerClickable { /* TODO */ }
+            .ledgerClickable(onClick = onClick)
             .padding(LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween

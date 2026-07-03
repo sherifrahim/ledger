@@ -19,7 +19,6 @@ fun TransactionRow(
 ) {
     val isIncome = transaction.category == MerchantCategory.Salary
     val amountColor = if (isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
-    val sign = if (isIncome) "+" else "-"
     val status = when (transaction.state) {
         TransactionState.Pending -> "\u25CF Pending"
         TransactionState.Recurring -> "\u21BA Monthly"
@@ -28,7 +27,7 @@ fun TransactionRow(
 
     LedgerTransactionRow(
         title = transaction.merchant,
-        amount = "${sign}AED ${transaction.amount.stripTrailingZeros().toPlainString()}",
+        amount = transaction.amount,
         subtitle = transaction.subtitle,
         metadata = transaction.category.displayName(),
         status = status,

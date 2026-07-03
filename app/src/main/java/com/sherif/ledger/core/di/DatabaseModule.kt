@@ -25,7 +25,11 @@ object DatabaseModule {
             context,
             LedgerDatabase::class.java,
             LedgerDatabase.DATABASE_NAME
-        ).build()
+        )
+            // TEMPORARY: Enabled for Alpha phase to simplify schema evolution.
+            // TECH DEBT: Replace destructive migration with explicit Room migrations before Beta.
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
     }
 
     @Provides

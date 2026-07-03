@@ -5,6 +5,7 @@ import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.repository.TransactionRunner
 import com.sherif.ledger.core.domain.service.transaction.*
+import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
 import com.sherif.ledger.feature.capture.parsing.ParseResult
@@ -24,6 +25,7 @@ class ProcessNotificationUseCaseTest {
         override fun observeRecentTransactions(limit: Int): Flow<LedgerResult<List<Transaction>>> = flowOf()
         override fun observeTransactionsForAccount(accountId: Long): Flow<LedgerResult<List<Transaction>>> = flowOf()
         override fun observeTransactionsBetween(start: Instant, end: Instant): Flow<LedgerResult<List<Transaction>>> = flowOf(LedgerResult.Success(emptyList()))
+        override suspend fun getTransactionById(id: Long): LedgerResult<Transaction> = LedgerResult.Failure(LedgerError.Unknown("Not implemented in test"))
         override suspend fun insertTransaction(transaction: Transaction): LedgerResult<Long> {
             insertedCount++
             return LedgerResult.Success(insertedCount.toLong())
@@ -74,7 +76,8 @@ class ProcessNotificationUseCaseTest {
             parserRegistry,
             reconciliationEngine,
             transactionRepository,
-            insertTransactionUseCase
+            insertTransactionUseCase,
+            EnsureDefaultAccountUseCase(accountRepository)
         )
 
         useCase.execute(envelope)

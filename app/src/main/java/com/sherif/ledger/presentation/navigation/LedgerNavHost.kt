@@ -21,6 +21,7 @@ import com.sherif.ledger.feature.settings.presentation.SettingsScreen
 import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
 import com.sherif.ledger.feature.transactions.presentation.viewmodel.TransactionsViewModel
 import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsScreen
+import com.sherif.ledger.feature.transactions.presentation.detail.viewmodel.TransactionDetailsViewModel
 import com.sherif.ledger.presentation.dashboard.DashboardScreen
 import com.sherif.ledger.presentation.dashboard.SearchFilterScreen
 import com.sherif.ledger.presentation.dashboard.viewmodel.DashboardViewModel
@@ -74,7 +75,8 @@ fun LedgerNavHost(
 
         composable(LedgerRoute.Profile.route) {
             ProfileScreen(
-                onNavigateToSettings = { navController.navigate(LedgerRoute.Settings.route) }
+                onNavigateToSettings = { navController.navigate(LedgerRoute.Settings.route) },
+                onNavigateToDebugConsole = { navController.navigate(LedgerRoute.DebugConsole.route) }
             )
         }
 
@@ -117,9 +119,17 @@ fun LedgerNavHost(
             route = LedgerRoute.TransactionDetails.route,
             arguments = listOf(navArgument("transactionId") { type = NavType.StringType }),
         ) {
-            TransactionDetailsScreen(
-                onBackClick = { navController.popBackStack() }
-            )
+            val viewModel: TransactionDetailsViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+
+            state?.let {
+                TransactionDetailsScreen(
+                    state = it,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
+
+        debugNavGraph(navController)
     }
 }

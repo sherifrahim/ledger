@@ -40,6 +40,7 @@ class RoomTransactionRepositoryTest {
 
         override fun observeTransactionsForAccount(accountId: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())
         override fun observeTransactionsBetween(start: Long, end: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())
+        override suspend fun getTransactionById(id: Long): TransactionEntity? = null
         override suspend fun insertTransaction(transaction: TransactionEntity): Long = 1L
         override suspend fun softDeleteTransaction(id: Long, timestamp: Long) {}
     }

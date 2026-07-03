@@ -1,5 +1,6 @@
 package com.sherif.ledger.feature.capture.reconciliation
 
+import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionCandidate
 import com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator
@@ -19,64 +20,78 @@ class ReconciliationEngine @Inject constructor(
      */
     fun reconcile(candidate: TransactionCandidate, existingTransactions: List<Transaction>): ReconciliationResult {
         val candidateFingerprint = generateFingerprint(candidate)
+        LedgerLogger.pipeline("Reconciliation", "Fingerprint: $candidateFingerprint")
         
         // 1. Exact Fingerprint Match (100% confidence)
         val exactMatch = existingTransactions.find { it.fingerprint == candidateFingerprint }
         if (exactMatch != null) {
+            LedgerLogger.pipeline("Reconciliation", "Exact match found (Fingerprint)")
             return ReconciliationResult.Duplicate(exactMatch.id)
         }
 
         // 2. Fuzzy Matching Signals
         val matches = existingTransactions.map { existing ->
-            calculateConfidence(candidate, existing) to existing
-        }.filter { it.first >= 90 } // Min threshold for reconciliation
-         .sortedByDescending { it.first }
+            calculateConfidenceWithDetails(candidate, existing) to existing
+        }.filter { it.first.score >= 90 } // Min threshold for reconciliation
+         .sortedByDescending { it.first.score }
 
         val bestMatch = matches.firstOrNull()
 
         return when {
-            bestMatch == null -> ReconciliationResult.New(candidate)
+            bestMatch == null -> {
+                LedgerLogger.pipeline("Reconciliation", "No match found. Score < 90")
+                ReconciliationResult.New(candidate)
+            }
             
             // Logic for Updated vs Duplicate (e.g. amount change or status change)
-            bestMatch.first >= 98 -> ReconciliationResult.Duplicate(bestMatch.second.id)
+            bestMatch.first.score >= 98 -> {
+                LedgerLogger.pipeline("Reconciliation", "Match Score: ${bestMatch.first.score}. Reason: ${bestMatch.first.details}")
+                ReconciliationResult.Duplicate(bestMatch.second.id)
+            }
             
-            else -> ReconciliationResult.Updated(bestMatch.second.id, candidate)
+            else -> {
+                LedgerLogger.pipeline("Reconciliation", "Match Score: ${bestMatch.first.score}. Reason: ${bestMatch.first.details}")
+                ReconciliationResult.Updated(bestMatch.second.id, candidate)
+            }
         }
     }
 
-    private fun calculateConfidence(candidate: TransactionCandidate, existing: Transaction): Int {
+    private data class ScoreResult(val score: Int, val details: String)
+
+    private fun calculateConfidenceWithDetails(candidate: TransactionCandidate, existing: Transaction): ScoreResult {
         // Absolute Reject: Different merchants or currencies
         if (candidate.merchantName != null && candidate.merchantName != existing.rawText) {
-            // Note: In a real system, we'd use normalized brand IDs here.
-            // For DFC-09, we stick to deterministic string comparison or assume brand resolution happened.
-            return 0 
+            return ScoreResult(0, "Merchant mismatch") 
         }
         
-        if (candidate.currencyCode != existing.amount.currencyCode) return 0
-        if (candidate.accountId != null && candidate.accountId != existing.accountId) return 0
+        if (candidate.currencyCode != existing.amount.currencyCode) return ScoreResult(0, "Currency mismatch")
+        if (candidate.accountId != null && candidate.accountId != existing.accountId) return ScoreResult(0, "Account mismatch")
 
         var score = 0
+        val details = mutableListOf<String>()
         
         // Amount Match
         if (candidate.amountMinor == existing.amount.minorUnits) {
             score += 70
+            details.add("Amount: 70")
         }
 
         // Time Proximity
         val timeDrift = Duration.between(candidate.timestamp, existing.timestamp).abs().toMinutes()
         when {
-            timeDrift <= 1 -> score += 30
-            timeDrift <= 5 -> score += 25
-            timeDrift <= 30 -> score += 15
-            timeDrift <= 1440 -> score += 5 // Within 24 hours
+            timeDrift <= 1 -> { score += 30; details.add("Time: 30") }
+            timeDrift <= 5 -> { score += 25; details.add("Time: 25") }
+            timeDrift <= 30 -> { score += 15; details.add("Time: 15") }
+            timeDrift <= 1440 -> { score += 5; details.add("Time: 5") }
         }
 
         // Transaction Type
         if (candidate.transactionType == existing.type) {
             score += 10
+            details.add("Type: 10")
         }
 
-        return score.coerceIn(0, 100)
+        return ScoreResult(score.coerceIn(0, 100), details.joinToString(", "))
     }
 
     private fun generateFingerprint(candidate: TransactionCandidate): String {

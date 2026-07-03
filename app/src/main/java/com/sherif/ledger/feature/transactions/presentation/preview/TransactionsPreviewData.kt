@@ -1,7 +1,6 @@
 package com.sherif.ledger.feature.transactions.presentation.preview
 
 import com.sherif.ledger.feature.transactions.presentation.*
-import java.math.BigDecimal
 
 object TransactionsPreviewData {
 
@@ -12,36 +11,36 @@ object TransactionsPreviewData {
                 "today",
                 "Today",
                 DaySummaryUi(
-                    BigDecimal("197"),
-                    BigDecimal.ZERO,
+                    "AED 197.00",
+                    "AED 0.00",
                     3,
                     MerchantCategory.Grocery
                 ),
                 listOf(
-                    TransactionUi("amazon", "Amazon", MerchantCategory.Shopping, BigDecimal("52"), "10:45 AM"),
-                    TransactionUi("careem", "Careem", MerchantCategory.Transport, BigDecimal("25"), "9:15 AM"),
-                    TransactionUi("salary", "Salary", MerchantCategory.Salary, BigDecimal("5200"), "9:00 AM"),
+                    TransactionUi("amazon", "Amazon", MerchantCategory.Shopping, "52.00", "10:45 AM"),
+                    TransactionUi("careem", "Careem", MerchantCategory.Transport, "25.00", "9:15 AM"),
+                    TransactionUi("salary", "Salary", MerchantCategory.Salary, "5,200.00", "9:00 AM"),
                 ),
             ),
 
             TransactionGroupUi(
                 "yesterday",
                 "Yesterday",
-                DaySummaryUi(BigDecimal("210"), BigDecimal.ZERO, 3, MerchantCategory.Grocery),
+                DaySummaryUi("AED 210.00", "AED 0.00", 3, MerchantCategory.Grocery),
                 listOf(
-                    TransactionUi("carrefour", "Carrefour", MerchantCategory.Grocery, BigDecimal("126"), "9:32 AM"),
-                    TransactionUi("costa", "Costa Coffee", MerchantCategory.Coffee, BigDecimal("19"), "6:21 PM"),
-                    TransactionUi("enoc", "Enoc", MerchantCategory.Fuel, BigDecimal("65"), "12:11 PM"),
+                    TransactionUi("carrefour", "Carrefour", MerchantCategory.Grocery, "126.00", "9:32 AM"),
+                    TransactionUi("costa", "Costa Coffee", MerchantCategory.Coffee, "19.00", "6:21 PM"),
+                    TransactionUi("enoc", "Enoc", MerchantCategory.Fuel, "65.00", "12:11 PM"),
                 ),
             ),
 
             TransactionGroupUi(
                 "2026-06-24",
                 "Jun 24, Tue",
-                DaySummaryUi(BigDecimal("42"), BigDecimal("850"), 2, MerchantCategory.Salary),
+                DaySummaryUi("AED 42.00", "AED 850.00", 2, MerchantCategory.Salary),
                 listOf(
-                    TransactionUi("netflix", "Netflix", MerchantCategory.Entertainment, BigDecimal("42"), "9:45 PM"),
-                    TransactionUi("freelance", "Freelance Work", MerchantCategory.Salary, BigDecimal("850"), "2:30 PM"),
+                    TransactionUi("netflix", "Netflix", MerchantCategory.Entertainment, "42.00", "9:45 PM"),
+                    TransactionUi("freelance", "Freelance Work", MerchantCategory.Salary, "850.00", "2:30 PM"),
                 ),
             ),
         ),

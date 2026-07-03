@@ -47,6 +47,9 @@ private class AdcbPurchasePattern(private val normalizer: MerchantNormalizer) : 
         val amount = ExtractionHelpers.extractAmountMinor(normalizedText)
         val currency = ExtractionHelpers.extractCurrency(normalizedText)
         val account = ExtractionHelpers.extractAccountHint(normalizedText)
+        
+        com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Parser", "Extraction: Amount=$amount, Currency=$currency, AccountHint=$account")
+
         val merchantRaw = normalizedText.substringAfter(" at ").substringBefore(".").trim()
         val merchantCanonical = normalizer.normalize(merchantRaw)
 

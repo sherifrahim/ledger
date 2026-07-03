@@ -47,6 +47,17 @@ class RoomTransactionRepository @Inject constructor(
                 emit(LedgerResult.Failure(LedgerError.Unknown(e.message ?: "Database error"))) 
             }
 
+    override suspend fun getTransactionById(id: Long): LedgerResult<Transaction> = try {
+        val entity = transactionDao.getTransactionById(id)
+        if (entity != null) {
+            LedgerResult.Success(entity.toDomain())
+        } else {
+            LedgerResult.Failure(LedgerError.Unknown("Transaction not found"))
+        }
+    } catch (e: Exception) {
+        LedgerResult.Failure(LedgerError.DatabaseFailure)
+    }
+
     override suspend fun insertTransaction(transaction: Transaction): LedgerResult<Long> = try {
         val id = transactionDao.insertTransaction(transaction.toEntity())
         if (id == -1L) {

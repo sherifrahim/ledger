@@ -12,6 +12,7 @@ sealed class LedgerRoute(val route: String) {
     data object Settings : LedgerRoute("settings")
     data object SearchFilter : LedgerRoute("search_filter")
     data object ReviewInbox : LedgerRoute("review")
+    data object DebugConsole : LedgerRoute("debug_console")
     data object TransactionDetails : LedgerRoute("transaction/{transactionId}") {
         fun create(transactionId: String): String = "transaction/$transactionId"
     }

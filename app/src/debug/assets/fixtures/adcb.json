@@ -1,0 +1,40 @@
+[
+  {
+    "id": "adcb_purchase_001",
+    "bank": "ADCB",
+    "source": "Notification",
+    "type": "Purchase",
+    "shouldParse": true,
+    "raw": "Purchase of AED 50.00 at COSTA COFFEE with card ending 1234.",
+    "expected": {
+      "amount": 5000,
+      "currency": "AED",
+      "merchant": "Costa Coffee",
+      "transactionType": "EXPENSE",
+      "accountHint": "1234"
+    }
+  },
+  {
+    "id": "adcb_otp_001",
+    "bank": "ADCB",
+    "source": "Notification",
+    "type": "OTP",
+    "shouldParse": false,
+    "raw": "Your OTP is 123456. Do not share this code.",
+    "expected": null
+  },
+  {
+    "id": "adcb_credit_001",
+    "bank": "ADCB",
+    "source": "Notification",
+    "type": "Credit",
+    "shouldParse": true,
+    "raw": "You received AED 1,000.00 from MASHREQ BANK.",
+    "expected": {
+      "amount": 100000,
+      "currency": "AED",
+      "merchant": "Mashreq",
+      "transactionType": "INCOME"
+    }
+  }
+]

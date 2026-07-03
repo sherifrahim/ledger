@@ -40,11 +40,13 @@ class MerchantNormalizer @Inject constructor() {
         
         for ((pattern, canonical) in normalizationMap) {
             if (upper.contains(pattern)) {
+                com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Normalization", "Mapped '$rawMerchant' to '$canonical'")
                 return canonical
             }
         }
         
-        // Title case fallback if no match found
-        return rawMerchant.trim().lowercase().split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+        val fallback = rawMerchant.trim().lowercase().split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+        com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Normalization", "Fallback TitleCase: '$fallback'")
+        return fallback
     }
 }

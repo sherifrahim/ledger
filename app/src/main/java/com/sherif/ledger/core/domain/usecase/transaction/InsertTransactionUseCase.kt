@@ -51,6 +51,8 @@ class InsertTransactionUseCase @Inject constructor(
         val brandId = merchantResolver.resolve(params.rawMerchantText)
         val categoryId = categoryResolver.resolve(params.rawMerchantText, brandId)
 
+        com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Pipeline", "Resolved: Merchant=$brandId, Category=$categoryId")
+
         // 4. Atomic Persistence Boundary
         return transactionRunner.runInTransaction {
             val transaction = Transaction(
@@ -65,6 +67,8 @@ class InsertTransactionUseCase @Inject constructor(
                 rawText = params.rawMerchantText,
                 fingerprint = fingerprint
             )
+            
+            com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Pipeline", "Persistence Input: ${params.amountMinor} ${params.currencyCode}")
 
             // Persistence
             val insertResult = transactionRepository.insertTransaction(transaction)

@@ -4,16 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.view.WindowCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.sherif.ledger.core.common.util.PermissionUtils
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.feature.onboarding.presentation.NotificationAccessScreen
 import com.sherif.ledger.presentation.navigation.LedgerBottomBar
 import com.sherif.ledger.presentation.navigation.LedgerNavHost
 import com.sherif.ledger.presentation.navigation.LedgerRoute
@@ -24,17 +33,34 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Root Cause Fix: Ensure the window is configured for edge-to-edge rendering.
+        com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity onCreate - Checking Notification Access")
+        val isEnabled = PermissionUtils.isNotificationServiceEnabled(this)
+        com.sherif.ledger.core.common.logging.LedgerLogger.d("Notification Access Status: $isEnabled")
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
         
         setContent {
             LedgerTheme {
+                val context = LocalContext.current
+                var isPermissionGranted by remember { 
+                    mutableStateOf(PermissionUtils.isNotificationServiceEnabled(context)) 
+                }
+
+                // Refresh state when returning from settings
+                LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                    isPermissionGranted = PermissionUtils.isNotificationServiceEnabled(context)
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = LedgerTheme.colors.surfaceLevel0
                 ) {
-                    LedgerApp()
+                    if (isPermissionGranted) {
+                        LedgerApp()
+                    } else {
+                        NotificationAccessScreen()
+                    }
                 }
             }
         }
@@ -61,7 +87,7 @@ private fun LedgerApp() {
         )
         
         if (currentRoute in tabRoutes) {
-            Box(Modifier.align(androidx.compose.ui.Alignment.BottomCenter)) {
+            Box(Modifier.align(Alignment.BottomCenter)) {
                 LedgerBottomBar(navController)
             }
         }

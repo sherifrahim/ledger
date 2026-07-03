@@ -57,7 +57,7 @@ fun DaySummary(
             )
 
             Text(
-                text = "AED ${summary.spent}",
+                text = summary.spent,
                 style = LedgerTextStyles.Title,
                 color = LedgerTheme.colors.expense,
             )
@@ -77,7 +77,7 @@ fun DaySummary(
             )
 
             Text(
-                text = "AED ${summary.income}",
+                text = summary.income,
                 style = LedgerTextStyles.Title,
                 color = LedgerTheme.colors.income,
             )

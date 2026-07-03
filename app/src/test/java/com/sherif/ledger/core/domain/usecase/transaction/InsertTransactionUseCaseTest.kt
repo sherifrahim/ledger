@@ -30,6 +30,7 @@ class InsertTransactionUseCaseTest {
         override fun observeRecentTransactions(limit: Int): Flow<LedgerResult<List<Transaction>>> = flowOf()
         override fun observeTransactionsForAccount(accountId: Long): Flow<LedgerResult<List<Transaction>>> = flowOf()
         override fun observeTransactionsBetween(start: Instant, end: Instant): Flow<LedgerResult<List<Transaction>>> = flowOf()
+        override suspend fun getTransactionById(id: Long): LedgerResult<Transaction> = LedgerResult.Failure(LedgerError.Unknown("Not implemented in test"))
         override suspend fun insertTransaction(transaction: Transaction): LedgerResult<Long> {
             if (transaction.fingerprint == "duplicate") return LedgerResult.Failure(LedgerError.DuplicateTransaction)
             lastInserted = transaction

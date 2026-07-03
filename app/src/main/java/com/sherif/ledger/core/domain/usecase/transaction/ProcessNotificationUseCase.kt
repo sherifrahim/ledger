@@ -5,6 +5,7 @@ import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
 import com.sherif.ledger.feature.capture.parsing.ParseResult
@@ -23,7 +24,8 @@ class ProcessNotificationUseCase @Inject constructor(
     private val parserRegistry: ParserRegistry,
     private val reconciliationEngine: ReconciliationEngine,
     private val transactionRepository: TransactionRepository,
-    private val insertTransactionUseCase: InsertTransactionUseCase
+    private val insertTransactionUseCase: InsertTransactionUseCase,
+    private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase
 ) {
     suspend fun execute(envelope: NotificationEnvelope) {
         LedgerLogger.pipeline("Capture", "Received notification from ${envelope.packageName}")
@@ -67,8 +69,12 @@ class ProcessNotificationUseCase @Inject constructor(
         when (reconciliationResult) {
             is ReconciliationResult.New -> {
                 LedgerLogger.pipeline("Reconciliation", "Classified as NEW transaction")
+                
+                // Ensure a valid account exists before insertion
+                val accountId = candidate.accountId ?: ensureDefaultAccountUseCase.execute()
+                
                 val params = InsertTransactionUseCase.Params(
-                    accountId = candidate.accountId ?: 1L,
+                    accountId = accountId,
                     amountMinor = candidate.amountMinor ?: 0L,
                     currencyCode = candidate.currencyCode ?: CurrencyCode.AED,
                     type = candidate.transactionType ?: TransactionType.EXPENSE,

@@ -22,7 +22,7 @@ import com.sherif.ledger.core.database.entity.TransactionEntity
         BrandEntity::class,
         MerchantAliasEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)

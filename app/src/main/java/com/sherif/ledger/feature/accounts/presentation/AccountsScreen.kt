@@ -94,11 +94,11 @@ fun AccountsScreen(
             item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
 
             item(key = "insights") {
-                if (state.sections.isNotEmpty()) {
+                state.insight?.let { insight ->
                     InsightsPreview(
-                        title = "Monthly Spending",
-                        subtitle = "Spending is 8% lower than last week",
-                        indicator = "↓ 8%",
+                        title = insight.title,
+                        subtitle = insight.subtitle,
+                        indicator = insight.indicator,
                         onClick = onNavigateToInsights
                     )
                 }

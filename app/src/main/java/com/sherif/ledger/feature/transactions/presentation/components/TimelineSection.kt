@@ -29,7 +29,7 @@ fun TimelineSection(
     ) {
         LedgerSectionHeader(
             title = group.title,
-            trailing = "-AED ${group.summary.spent}",
+            trailing = "-${group.summary.spent}",
         )
 
         Column(modifier = Modifier.fillMaxWidth()) {
