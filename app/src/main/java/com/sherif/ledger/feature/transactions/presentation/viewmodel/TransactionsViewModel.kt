@@ -35,7 +35,7 @@ class TransactionsViewModel @Inject constructor(
                         TransactionUi(
                             id = txn.id.toString(),
                             merchant = txn.rawText ?: "Unknown",
-                            category = MerchantCategory.Grocery, // Placeholder
+                            category = categoryFor(txn),
                             amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                             subtitle = txn.source.name
                         )
@@ -53,7 +53,7 @@ class TransactionsViewModel @Inject constructor(
                             spent = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(expenseUnits, primaryCurrency)),
                             income = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(incomeUnits, primaryCurrency)),
                             transactionCount = txns.size,
-                            dominantCategory = MerchantCategory.Grocery
+                            dominantCategory = if (incomeUnits > 0 && expenseUnits == 0L) MerchantCategory.Salary else MerchantCategory.Shopping
                         ),
                         transactions = transactionUiModels
                     )
@@ -79,4 +79,16 @@ class TransactionsViewModel @Inject constructor(
     private fun formatDate(date: LocalDate): String {
         return date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d"))
     }
+
+    private fun categoryFor(txn: com.sherif.ledger.core.domain.model.Transaction): MerchantCategory {
+        val name = (txn.rawText ?: "").uppercase()
+        return when {
+            txn.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME -> MerchantCategory.Salary
+            "COSTA" in name -> MerchantCategory.Coffee
+            "CARREFOUR" in name -> MerchantCategory.Grocery
+            "AMAZON" in name -> MerchantCategory.Shopping
+            else -> MerchantCategory.Shopping
+        }
+    }
+
 }

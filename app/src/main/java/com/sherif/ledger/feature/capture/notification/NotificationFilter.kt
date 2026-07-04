@@ -16,7 +16,9 @@ class NotificationFilter @Inject constructor() {
         "com.oppo.market", // Example for regional bank apps
         "com.adcb.mobileapp", // ADCB
         "com.mashreq.mobile", // Mashreq
-        "com.emiratesnbd.mobile" // Emirates NBD
+        "com.emiratesnbd.mobile", // Emirates NBD
+        "com.google.android.apps.messaging", // Google Messages (SMS bank alerts)
+        "com.samsung.android.messaging" // Samsung Messages
     )
 
     fun shouldProcess(envelope: NotificationEnvelope): Boolean {
