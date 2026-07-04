@@ -98,8 +98,10 @@ class InsertTransactionUseCase @Inject constructor(
             }
 
             LedgerResult.Success(persistedTransaction).also {
-                com.sherif.ledger.core.common.logging.LedgerLogger.d("InsertTransactionUseCase: RETURNING Success(id=${it.data.id})")
-            }
+                com.sherif.ledger.core.common.logging.LedgerLogger.pipeline(
+    "Insert",
+    "SUCCESS id=${it.data.id}, amount=${params.amountMinor}, type=${params.type}, merchant=${params.rawMerchantText}"
+)            }
         }
     }
 

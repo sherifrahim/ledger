@@ -47,6 +47,14 @@ class ProcessNotificationUseCase @Inject constructor(
 
         // 2. Parse
         val parseResult = parserRegistry.parse(envelope)
+LedgerLogger.pipeline(
+    "Parser",
+    "RESULT=${parseResult::class.simpleName}"
+)
+LedgerLogger.pipeline(
+    "Parser",
+    "RESULT=${parseResult::class.simpleName}"
+)
         val candidate = when (parseResult) {
             is ParseResult.Success -> {
                 LedgerLogger.d("ProcessNotificationUseCase: PARSED candidate=${parseResult.candidate}")

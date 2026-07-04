@@ -4,6 +4,7 @@ import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.model.TransactionCandidate
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
+import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
 import com.sherif.ledger.feature.capture.parsing.extraction.MerchantNormalizer
 import com.sherif.ledger.feature.capture.parsing.extraction.PatternEngine
@@ -48,7 +49,6 @@ private class AdcbPurchasePattern(private val normalizer: MerchantNormalizer) : 
         val amount = ExtractionHelpers.extractAmountMinor(normalizedText)
         val currency = ExtractionHelpers.extractCurrency(normalizedText)
         val account = ExtractionHelpers.extractAccountHint(normalizedText)
-        
         com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Parser", "Extraction: Amount=$amount, Currency=$currency, AccountHint=$account")
 
         val merchantRaw = normalizedText.substringAfter(" at ").substringBefore(".").trim()
@@ -80,8 +80,23 @@ private class AdcbSalaryCreditPattern(private val normalizer: MerchantNormalizer
         val textForAmount = normalizedText.substringBefore("balance is").substringBefore("available")
         
         val amount = ExtractionHelpers.extractAmountMinor(textForAmount)
-        val currency = ExtractionHelpers.extractCurrency(normalizedText)
-        val account = ExtractionHelpers.extractAccountHint(normalizedText)
+val currency = ExtractionHelpers.extractCurrency(normalizedText)
+val account = ExtractionHelpers.extractAccountHint(normalizedText)
+
+LedgerLogger.pipeline(
+    "Salary",
+    "TEXT=$normalizedText"
+)
+
+LedgerLogger.pipeline(
+    "Salary",
+    "AMOUNT=$amount"
+)
+
+LedgerLogger.pipeline(
+    "Salary",
+    "ACCOUNT=$account"
+)
 
         return ParseResult.Success(
             TransactionCandidate(
