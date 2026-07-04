@@ -36,7 +36,7 @@ class TransactionsViewModel @Inject constructor(
                             id = txn.id.toString(),
                             merchant = txn.rawText ?: "Unknown",
                             category = MerchantCategory.Grocery, // Placeholder
-                            amount = MoneyFormatter.format(txn.amount),
+                            amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                             subtitle = txn.source.name
                         )
                     }

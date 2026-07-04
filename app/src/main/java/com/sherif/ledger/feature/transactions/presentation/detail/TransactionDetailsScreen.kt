@@ -160,7 +160,7 @@ fun TransactionDetailsScreen(
                 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     LedgerAmount(
-                        amount = "${state.sign}AED ${state.amount}",
+                        amount = "${state.sign}AED ${state.amount.ifBlank { "0.00" }}",
                         style = LedgerAmountStyle.Display,
                         color = if (state.isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense,
                     )

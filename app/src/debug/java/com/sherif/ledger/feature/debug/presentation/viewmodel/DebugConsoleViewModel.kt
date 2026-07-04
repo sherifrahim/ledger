@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import javax.inject.Inject
@@ -167,7 +169,12 @@ class DebugConsoleViewModel @Inject constructor(
 
     private fun clearDatabase() {
         viewModelScope.launch {
-            database.clearAllTables()
+            LedgerLogger.d("DebugConsole: Initiating database clear...")
+            withContext(Dispatchers.IO) {
+                database.clearAllTables()
+            }
+            LedgerLogger.d("DebugConsole: Database cleared successfully.")
+            pipelineTracker.clear()
         }
     }
 
