@@ -1,5 +1,6 @@
 package com.sherif.ledger.core.domain.usecase.transaction
 
+import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.model.LedgerError
@@ -32,8 +33,15 @@ class InsertTransactionUseCase @Inject constructor(
     private val categoryResolver: CategoryResolver,
     private val balanceCalculator: BalanceCalculator
 ) {
+    init {
+        com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: InsertTransactionUseCase")
+    }
 
     suspend fun execute(params: Params): LedgerResult<Transaction> {
+        val traceId = LedgerLogger.getTraceId()
+        LedgerLogger.d("InsertTransactionUseCase.execute(params=$params)")
+        LedgerLogger.pipeline("Persistence", "LINEAGE: Params -> AccountId=${params.accountId}, Amount=${params.amountMinor}, Type=${params.type}, Merchant=${params.rawMerchantText}")
+
         // 1. Static Input Validation
         val inputError = validator.validateInput(params)
         if (inputError != null) return LedgerResult.Failure(inputError)
@@ -68,6 +76,7 @@ class InsertTransactionUseCase @Inject constructor(
                 fingerprint = fingerprint
             )
             
+            LedgerLogger.pipeline("Persistence", "LINEAGE: Domain -> Merchant=${transaction.rawText}, Amount=${transaction.amount.minorUnits}, Fingerprint=${transaction.fingerprint.take(8)}")
             com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Pipeline", "Persistence Input: ${params.amountMinor} ${params.currencyCode}")
 
             // Persistence
@@ -88,7 +97,9 @@ class InsertTransactionUseCase @Inject constructor(
                 throw IllegalStateException("Critical failure: Could not update account balance for transaction $newTransactionId")
             }
 
-            LedgerResult.Success(persistedTransaction)
+            LedgerResult.Success(persistedTransaction).also {
+                com.sherif.ledger.core.common.logging.LedgerLogger.d("InsertTransactionUseCase: RETURNING Success(id=${it.data.id})")
+            }
         }
     }
 

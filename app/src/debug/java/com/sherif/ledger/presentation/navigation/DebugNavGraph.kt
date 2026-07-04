@@ -7,6 +7,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.sherif.ledger.feature.debug.presentation.DebugConsoleScreen
+import com.sherif.ledger.feature.debug.presentation.PipelineDiagnosticsScreen
 import com.sherif.ledger.feature.debug.presentation.viewmodel.DebugConsoleViewModel
 
 fun NavGraphBuilder.debugNavGraph(navController: NavHostController) {
@@ -19,6 +20,13 @@ fun NavGraphBuilder.debugNavGraph(navController: NavHostController) {
             state = state,
             dbSummary = dbSummary,
             onAction = { action -> viewModel.handleAction(action) },
+            onNavigateToDiagnostics = { navController.navigate(LedgerRoute.PipelineDiagnostics.route) },
+            onBackClick = { navController.popBackStack() }
+        )
+    }
+
+    composable(LedgerRoute.PipelineDiagnostics.route) {
+        PipelineDiagnosticsScreen(
             onBackClick = { navController.popBackStack() }
         )
     }

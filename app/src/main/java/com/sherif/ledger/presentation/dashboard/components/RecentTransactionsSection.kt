@@ -26,6 +26,7 @@ fun RecentTransactionsSection(
     modifier: Modifier = Modifier,
     onSeeAllClick: (() -> Unit)? = null,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: RecentTransactionsSection with ${state.recentTransactions.size} items")
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
         LedgerSectionHeader(
             title = "RECENT ACTIVITY",
@@ -48,6 +49,7 @@ fun RecentTransactionsSection(
                         subtitle = txn.category,
                         amount = "$sign${txn.amount}",
                         amountColor = if (txn.isExpense) LedgerTheme.colors.expense else LedgerTheme.colors.income,
+                        onClick = onSeeAllClick // Dashboard rows currently just go to Activity
                     )
                     if (index != state.recentTransactions.lastIndex) {
                         LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))

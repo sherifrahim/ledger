@@ -20,8 +20,8 @@ interface AccountDao {
     suspend fun insertAccount(account: AccountEntity): Long
 
     @Update
-    suspend fun updateAccount(account: AccountEntity)
+    suspend fun updateAccount(account: AccountEntity): Int
 
     @Query("UPDATE accounts SET is_deleted = 1 WHERE id = :id")
-    suspend fun softDeleteAccount(id: Long)
+    suspend fun softDeleteAccount(id: Long): Int
 }

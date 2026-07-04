@@ -14,6 +14,11 @@ object LedgerLogger {
     private const val TAG = "LedgerPipeline"
     var isEnabled = true
     
+    // Diagnostic Trace Context (Transient)
+    private val currentTraceId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    fun setTraceId(id: String?) { currentTraceId.value = id }
+    fun getTraceId(): String? = currentTraceId.value
+
     // Bridge to structured diagnostics (Set by RealPipelineTracker in debug)
     var eventTracker: ((PipelineEvent) -> Unit)? = null
 
@@ -22,15 +27,19 @@ object LedgerLogger {
 
     fun d(message: String) {
         if (isEnabled) {
-            android.util.Log.d(TAG, message)
-            _logs.value = (listOf(message) + _logs.value).take(100)
+            val traceId = getTraceId()
+            val formattedMessage = if (traceId != null) "[$traceId] $message" else message
+            android.util.Log.d(TAG, formattedMessage)
+            _logs.value = (listOf(formattedMessage) + _logs.value).take(100)
         }
     }
 
     fun e(message: String, throwable: Throwable? = null) {
         if (isEnabled) {
-            android.util.Log.e(TAG, message, throwable)
-            _logs.value = (listOf("ERROR: $message") + _logs.value).take(100)
+            val traceId = getTraceId()
+            val prefix = if (traceId != null) "[$traceId] " else ""
+            android.util.Log.e(TAG, "$prefix$message", throwable)
+            _logs.value = (listOf("${prefix}ERROR: $message") + _logs.value).take(100)
         }
     }
 
@@ -45,6 +54,7 @@ object LedgerLogger {
             "Reconciliation" -> PipelineStage.RECONCILIATION
             "Persistence" -> PipelineStage.PERSISTENCE
             "Normalization" -> PipelineStage.NORMALIZATION
+            "UI" -> PipelineStage.UI_REFRESH
             else -> null
         }
         
@@ -57,7 +67,7 @@ object LedgerLogger {
                 else -> 
                     StageStatus.SuccessWithDetails(details)
             }
-            eventTracker?.invoke(PipelineEvent(it, status))
+            eventTracker?.invoke(PipelineEvent(it, status, traceId = getTraceId()))
         }
     }
 }

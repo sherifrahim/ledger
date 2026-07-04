@@ -27,7 +27,15 @@ class ProcessNotificationUseCase @Inject constructor(
     private val insertTransactionUseCase: InsertTransactionUseCase,
     private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase
 ) {
+    init {
+        com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
+    }
+
     suspend fun execute(envelope: NotificationEnvelope) {
+        val traceId = envelope.notificationKey
+        LedgerLogger.setTraceId(traceId)
+
+        LedgerLogger.d("ProcessNotificationUseCase.execute(envelope=$envelope)")
         LedgerLogger.pipeline("Capture", "Received notification from ${envelope.packageName}")
 
         // 1. Filter
@@ -41,6 +49,7 @@ class ProcessNotificationUseCase @Inject constructor(
         val parseResult = parserRegistry.parse(envelope)
         val candidate = when (parseResult) {
             is ParseResult.Success -> {
+                LedgerLogger.d("ProcessNotificationUseCase: PARSED candidate=${parseResult.candidate}")
                 LedgerLogger.pipeline("Parser", "Matched: ${parseResult.candidate.merchantName}")
                 parseResult.candidate
             }
@@ -82,6 +91,7 @@ class ProcessNotificationUseCase @Inject constructor(
                     source = candidate.source,
                     rawMerchantText = candidate.merchantName ?: "Unknown"
                 )
+                LedgerLogger.d("ProcessNotificationUseCase: PERSISTING params=$params")
                 val result = insertTransactionUseCase.execute(params)
                 if (result is LedgerResult.Success) {
                     LedgerLogger.pipeline("Persistence", "Transaction inserted successfully: ${result.data.id}")
@@ -99,5 +109,7 @@ class ProcessNotificationUseCase @Inject constructor(
                 LedgerLogger.pipeline("Reconciliation", "Ignored by engine")
             }
         }
+        
+        LedgerLogger.setTraceId(null)
     }
 }

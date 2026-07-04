@@ -26,5 +26,5 @@ interface TransactionDao {
     suspend fun insertTransaction(transaction: TransactionEntity): Long
 
     @Query("UPDATE transactions SET is_deleted = 1, deleted_at = :timestamp WHERE id = :id")
-    suspend fun softDeleteTransaction(id: Long, timestamp: Long = System.currentTimeMillis())
+    suspend fun softDeleteTransaction(id: Long, timestamp: Long = System.currentTimeMillis()): Int
 }

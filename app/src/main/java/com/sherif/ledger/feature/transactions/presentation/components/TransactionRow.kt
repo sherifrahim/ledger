@@ -17,6 +17,7 @@ fun TransactionRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: TransactionRow(id=${transaction.id}, merchant=${transaction.merchant}, amount=${transaction.amount})")
     val isIncome = transaction.category == MerchantCategory.Salary
     val amountColor = if (isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
     val status = when (transaction.state) {

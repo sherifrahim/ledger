@@ -30,5 +30,6 @@ data class PipelineEvent(
     val stage: PipelineStage,
     val status: StageStatus,
     val timestamp: Long = System.currentTimeMillis(),
+    val traceId: String? = null,
     val metadata: Map<String, String> = emptyMap()
 )

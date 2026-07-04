@@ -35,6 +35,7 @@ fun AccountRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: AccountRow(name=${account.name}, balance=${account.balance})")
     val balanceColor = if (account.isNegative) LedgerTheme.colors.expense else LedgerTheme.colors.label
 
     Row(

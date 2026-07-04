@@ -43,6 +43,7 @@ fun LedgerNavHost(
         composable(LedgerRoute.Home.route) {
             val viewModel: DashboardViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("NavHost: COLLECTED DashboardState=$state")
             
             DashboardScreen(
                 state = state,
@@ -58,6 +59,7 @@ fun LedgerNavHost(
         composable(LedgerRoute.Accounts.route) {
             val viewModel: AccountsViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("NavHost: COLLECTED AccountsState=$state")
 
             AccountsScreen(
                 state = state,
@@ -89,10 +91,12 @@ fun LedgerNavHost(
         composable(LedgerRoute.Transactions.route) {
             val viewModel: TransactionsViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("NavHost: COLLECTED TransactionsState. Groups=${state.groups.size}")
 
             TransactionsScreen(
                 state = state,
                 onTransactionClick = { id ->
+                    com.sherif.ledger.core.common.logging.LedgerLogger.d("NAVIGATING: TransactionDetails with ID=$id")
                     navController.navigate(LedgerRoute.TransactionDetails.create(id))
                 },
                 onSearchClick = {
@@ -118,9 +122,13 @@ fun LedgerNavHost(
         composable(
             route = LedgerRoute.TransactionDetails.route,
             arguments = listOf(navArgument("transactionId") { type = NavType.StringType }),
-        ) {
+        ) { backStackEntry ->
+            val transactionId = backStackEntry.arguments?.getString("transactionId")
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("NavHost: REACHED TransactionDetails route. ID in arguments: $transactionId")
+            
             val viewModel: TransactionDetailsViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("NavHost: COLLECTED TransactionDetailsState. Merchant=${state?.merchant}")
 
             state?.let {
                 TransactionDetailsScreen(

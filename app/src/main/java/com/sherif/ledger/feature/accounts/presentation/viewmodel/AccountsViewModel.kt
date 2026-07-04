@@ -22,6 +22,10 @@ class AccountsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
+    init {
+        com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: AccountsViewModel")
+    }
+
     val uiState: StateFlow<AccountsUiState> = combine(
         accountRepository.observeAllAccounts(),
         transactionRepository.observeRecentTransactions(10)
@@ -45,9 +49,9 @@ class AccountsViewModel @Inject constructor(
             val txnsCount = (txnsResult as? LedgerResult.Success)?.data?.size ?: 0
             val insight = if (txnsCount >= 5) {
                 InsightUiModel(
-                    title = "Monthly Spending",
-                    subtitle = "Spending is stable compared to last week",
-                    indicator = "→ 0%"
+                    title = "Recent spending",
+                    subtitle = "Analysis complete based on your recent activity.",
+                    indicator = ""
                 )
             } else null
 
@@ -60,9 +64,13 @@ class AccountsViewModel @Inject constructor(
                     AccountSectionUi("My Accounts", com.sherif.ledger.core.domain.util.MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(netWorthUnits, primaryCurrency), includeSymbol = false), accounts)
                 ) else emptyList(),
                 insight = insight
-            )
+            ).also {
+                com.sherif.ledger.core.common.logging.LedgerLogger.d("AccountsViewModel: EMITTING uiState. NetWorth=${it.netWorth}, AccountsCount=${it.sections.sumOf { s -> s.accounts.size }}")
+            }
         } else {
-            EMPTY_STATE
+            EMPTY_STATE.also {
+                com.sherif.ledger.core.common.logging.LedgerLogger.d("AccountsViewModel: EMITTING EMPTY_STATE")
+            }
         }
     }.stateIn(
         scope = viewModelScope,

@@ -77,8 +77,9 @@ private val previewState = run {
 @Composable
 fun TransactionDetailsScreen(
     onBackClick: () -> Unit = {},
-    state: TransactionDetailsUiState = previewState,
+    state: TransactionDetailsUiState,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: TransactionDetailsScreen(merchant=${state.merchant}, amount=${state.amount})")
     var showMenu by remember { mutableStateOf(false) }
     val haptics = LedgerHaptics.current
 

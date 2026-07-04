@@ -81,8 +81,9 @@ private object HeroSnap {
 fun DashboardScreen(
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
-    state: DashboardUiState = DashboardPreviewData.state,
+    state: DashboardUiState,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: DashboardScreen(totalSpent=${state.totalSpent}, balanceAmount=${state.balanceAmount}, recentTransactionsCount=${state.recentTransactions.size})")
     val expandedHeight = LedgerHeroDefaults.ExpandedHeight
     val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
     val maxOffsetPx = with(LocalDensity.current) {
@@ -190,6 +191,7 @@ Column(
                 color = Color.White.copy(alpha = 0.25f), // Refined contrast
             )
             
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING totalSpent=${state.totalSpent}")
             LedgerAmount(
                 amount = state.totalSpent.replace(state.balanceCurrency, "").trim(),
                 style = LedgerAmountStyle.Display,
@@ -290,6 +292,7 @@ private fun MetricItem(
     icon: ImageVector,
     color: Color,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: MetricItem(label=$label, value=$value)")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -360,6 +363,7 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
                 style = LedgerTextStyles.Caption,
                 color = LedgerTheme.colors.tertiaryLabel,
             )
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING balanceAmount=${state.balanceAmount}")
             LedgerAmount(
                 amount = "${state.balanceCurrency} ${state.balanceAmount}",
                 style = LedgerAmountStyle.Regular,

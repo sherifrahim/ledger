@@ -1,0 +1,1089 @@
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/core/database/dao/AccountDao.kt
+================================================================================
+package com.sherif.ledger.core.database.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.sherif.ledger.core.database.entity.AccountEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface AccountDao {
+    @Query("SELECT * FROM accounts WHERE is_deleted = 0")
+    fun observeAllAccounts(): Flow<List<AccountEntity>>
+
+    @Query("SELECT * FROM accounts WHERE id = :id AND is_deleted = 0")
+    suspend fun getAccountById(id: Long): AccountEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAccount(account: AccountEntity): Long
+
+    @Update
+    suspend fun updateAccount(account: AccountEntity)
+
+    @Query("UPDATE accounts SET is_deleted = 1 WHERE id = :id")
+    suspend fun softDeleteAccount(id: Long)
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/core/database/mapper/Mappers.kt
+================================================================================
+package com.sherif.ledger.core.database.mapper
+
+import com.sherif.ledger.core.database.entity.AccountEntity
+import com.sherif.ledger.core.database.entity.BrandEntity
+import com.sherif.ledger.core.database.entity.CategoryEntity
+import com.sherif.ledger.core.database.entity.TransactionEntity
+import com.sherif.ledger.core.domain.model.Account
+import com.sherif.ledger.core.domain.model.Brand
+import com.sherif.ledger.core.domain.model.Category
+import com.sherif.ledger.core.domain.model.CurrencyCode
+import com.sherif.ledger.core.domain.model.Money
+import com.sherif.ledger.core.domain.model.Transaction
+import java.time.Instant
+
+/**
+ * Data mappers for converting between Room Entities and Domain Models.
+ */
+
+fun AccountEntity.toDomain(): Account = Account(
+    id = id,
+    name = name,
+    type = type,
+    balance = Money(balanceMinor, currencyCode),
+    accountNumberTail = accountNumberTail,
+    bankBrandId = bankBrandId
+)
+
+fun Account.toEntity(): AccountEntity = AccountEntity(
+    id = id,
+    name = name,
+    type = type,
+    balanceMinor = balance.minorUnits,
+    currencyCode = balance.currencyCode,
+    accountNumberTail = accountNumberTail,
+    bankBrandId = bankBrandId
+)
+
+fun BrandEntity.toDomain(): Brand = Brand(
+    id = id,
+    name = name,
+    brandKey = brandKey,
+    defaultCategoryId = defaultCategoryId
+)
+
+fun Brand.toEntity(): BrandEntity = BrandEntity(
+    id = id,
+    name = name,
+    brandKey = brandKey,
+    defaultCategoryId = defaultCategoryId
+)
+
+fun CategoryEntity.toDomain(): Category = Category(
+    id = id,
+    name = name,
+    parentId = parentId,
+    iconKey = iconKey,
+    colorHue = colorHue
+)
+
+fun Category.toEntity(): CategoryEntity = CategoryEntity(
+    id = id,
+    name = name,
+    parentId = parentId,
+    iconKey = iconKey,
+    colorHue = colorHue
+)
+
+fun TransactionEntity.toDomain(): Transaction = Transaction(
+    id = id,
+    accountId = accountId,
+    brandId = brandId,
+    categoryId = categoryId,
+    amount = Money(amountMinor, currencyCode),
+    type = type,
+    timestamp = Instant.ofEpochMilli(timestampEpochMillis),
+    source = source,
+    rawText = rawText,
+    fingerprint = fingerprint
+)
+
+fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
+    id = id,
+    accountId = accountId,
+    brandId = brandId,
+    categoryId = categoryId,
+    amountMinor = amount.minorUnits,
+    currencyCode = amount.currencyCode,
+    type = type,
+    timestampEpochMillis = timestamp.toEpochMilli(),
+    source = source,
+    rawText = rawText,
+    fingerprint = fingerprint
+)
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/core/domain/model/Money.kt
+================================================================================
+package com.sherif.ledger.core.domain.model
+
+/**
+ * Immutable money value object stored in minor units (e.g. fils, cents).
+ * 
+ * Floating point math is strictly forbidden for financial calculations to 
+ * ensure absolute precision and prevent rounding errors.
+ */
+data class Money(
+    val minorUnits: Long,
+    val currencyCode: CurrencyCode,
+) : Comparable<Money> {
+
+    operator fun plus(other: Money): Money {
+        requireSameCurrency(other)
+        return copy(minorUnits = minorUnits + other.minorUnits)
+    }
+
+    operator fun minus(other: Money): Money {
+        requireSameCurrency(other)
+        return copy(minorUnits = minorUnits - other.minorUnits)
+    }
+
+    operator fun times(scalar: Int): Money = copy(minorUnits = minorUnits * scalar)
+    operator fun times(scalar: Long): Money = copy(minorUnits = minorUnits * scalar)
+    
+    operator fun div(scalar: Int): Money = copy(minorUnits = minorUnits / scalar)
+    operator fun div(scalar: Long): Money = copy(minorUnits = minorUnits / scalar)
+
+    operator fun unaryMinus(): Money = copy(minorUnits = -minorUnits)
+
+    override fun compareTo(other: Money): Int {
+        requireSameCurrency(other)
+        return minorUnits.compareTo(other.minorUnits)
+    }
+
+    private fun requireSameCurrency(other: Money) {
+        require(currencyCode == other.currencyCode) {
+            "Financial operations require matching currencies: $currencyCode vs ${other.currencyCode}"
+        }
+    }
+
+    companion object {
+        fun zero(code: CurrencyCode): Money = Money(0L, code)
+    }
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/core/domain/util/MoneyFormatter.kt
+================================================================================
+package com.sherif.ledger.core.domain.util
+
+import com.sherif.ledger.core.domain.model.CurrencyRegistry
+import com.sherif.ledger.core.domain.model.Money
+import kotlin.math.abs
+
+object MoneyFormatter {
+    fun format(money: Money, includeSymbol: Boolean = true): String {
+        val currency = CurrencyRegistry.get(money.currencyCode)
+        val absoluteMinorUnits = abs(money.minorUnits)
+        
+        val amountStr = if (currency.decimalDigits == 0) {
+            absoluteMinorUnits.toString()
+        } else {
+            val divisor = powerOfTen(currency.decimalDigits)
+            val major = absoluteMinorUnits / divisor
+            val minor = absoluteMinorUnits % divisor
+            val minorText = minor.toString().padStart(currency.decimalDigits, '0')
+            "$major.$minorText"
+        }
+
+        return if (includeSymbol) {
+            "${currency.symbol} $amountStr"
+        } else {
+            amountStr
+        }
+    }
+
+    private fun powerOfTen(exponent: Int): Long {
+        var value = 1L
+        repeat(exponent) { value *= 10L }
+        return value
+    }
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/core/model/Money.kt
+================================================================================
+package com.sherif.ledger.core.model
+
+import kotlin.math.abs
+
+/**
+ * Immutable money value stored in minor units, such as cents or fils.
+ *
+ * Ledger never stores money as floating point values. Arithmetic is only
+ * allowed between values that share the same strongly typed currency.
+ */
+data class Money(
+    val minorUnits: Long,
+    val currency: Currency,
+) : Comparable<Money> {
+    /** Adds two money values with the same currency. */
+    operator fun plus(other: Money): Money {
+        requireSameCurrency(other)
+        return copy(minorUnits = minorUnits + other.minorUnits)
+    }
+
+    /** Subtracts two money values with the same currency. */
+    operator fun minus(other: Money): Money {
+        requireSameCurrency(other)
+        return copy(minorUnits = minorUnits - other.minorUnits)
+    }
+
+    /** Returns this amount with the sign reversed. */
+    operator fun unaryMinus(): Money = copy(minorUnits = -minorUnits)
+
+    /** Compares two money values with the same currency. */
+    override fun compareTo(other: Money): Int {
+        requireSameCurrency(other)
+        return minorUnits.compareTo(other.minorUnits)
+    }
+
+    /** Formats this money value using its currency metadata. */
+    fun format(): String {
+        val sign = if (minorUnits < 0) "-" else ""
+        val absoluteMinorUnits = abs(minorUnits)
+
+        if (currency.fractionDigits == 0) {
+            return "$sign${currency.symbol}$absoluteMinorUnits"
+        }
+
+        val divisor = powerOfTen(currency.fractionDigits)
+        val major = absoluteMinorUnits / divisor
+        val minor = absoluteMinorUnits % divisor
+        val minorText = minor.toString().padStart(currency.fractionDigits, '0')
+
+        return "$sign${currency.symbol}$major.$minorText"
+    }
+
+    private fun requireSameCurrency(other: Money) {
+        require(currency == other.currency) {
+            "Money arithmetic requires matching currencies."
+        }
+    }
+
+    private fun powerOfTen(exponent: Int): Long {
+        var value = 1L
+        repeat(exponent) {
+            value *= 10L
+        }
+        return value
+    }
+
+    companion object {
+        /** Creates a zero amount for the given currency. */
+        fun zero(currency: Currency): Money = Money(
+            minorUnits = 0L,
+            currency = currency,
+        )
+    }
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/feature/accounts/presentation/AccountsScreen.kt
+================================================================================
+package com.sherif.ledger.feature.accounts.presentation
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
+import com.sherif.ledger.core.designsystem.component.LedgerAmount
+import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
+import com.sherif.ledger.core.designsystem.component.LedgerHairline
+import com.sherif.ledger.core.designsystem.component.LedgerHeader
+import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
+import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
+import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
+import com.sherif.ledger.core.designsystem.component.ledgerSurface
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+import com.sherif.ledger.feature.analytics.presentation.InsightsPreview
+import com.sherif.ledger.feature.accounts.presentation.components.AccountRow
+import com.sherif.ledger.feature.accounts.presentation.preview.AccountsPreviewData
+
+private object HeroTransitions {
+    const val ExpandedExit = 0.55f
+    const val CompactEnter = 0.60f
+}
+
+@Composable
+fun AccountsScreen(
+    onNavigateToInsights: () -> Unit = {},
+    state: AccountsUiState = AccountsPreviewData.state,
+) {
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val expandedHeight = 240.dp + statusBarPadding
+    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight + statusBarPadding
+    val maxOffsetPx = with(LocalDensity.current) { (expandedHeight - collapsedHeight).toPx() }
+    val listState = rememberLazyListState()
+    val collapseProgress by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 1f
+            else (listState.firstVisibleItemScrollOffset / maxOffsetPx).coerceIn(0f, 1f)
+        }
+    }
+
+    Box(Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0)) {
+        
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = LedgerSpacing.Screen,
+                end = LedgerSpacing.Screen,
+                bottom = LedgerSpacing.ScreenBottom + 100.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
+        ) {
+            item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
+
+            item(key = "insights") {
+                state.insight?.let { insight ->
+                    InsightsPreview(
+                        title = insight.title,
+                        subtitle = insight.subtitle,
+                        indicator = insight.indicator,
+                        onClick = onNavigateToInsights
+                    )
+                }
+            }
+
+            if (state.sections.isEmpty()) {
+                item(key = "empty_state") {
+                    LedgerEmptyState(
+                        title = "No accounts yet",
+                        subtitle = "Your accounts will appear here automatically as transactions are detected."
+                    )
+                }
+            } else {
+                state.sections.forEach { section ->
+                    item(key = "section_${section.title}") {
+                        Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group)) {
+                            LedgerSectionHeader(title = section.title.uppercase())
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                section.accounts.forEachIndexed { index, account ->
+                                    AccountRow(
+                                        account = account,
+                                        onClick = { /* TODO: Account Detail */ }
+                                    )
+                                    if (index != section.accounts.lastIndex) {
+                                        LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            item(key = "add_account") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .ledgerSurface(level = LedgerSurfaceLevel.Level1)
+                        .ledgerClickable { /* TODO */ }
+                        .padding(LedgerSpacing.Medium),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                        tint = LedgerTheme.colors.success,
+                        modifier = Modifier.size(LedgerTheme.iconSize.Medium)
+                    )
+                    Spacer(Modifier.width(LedgerSpacing.Medium))
+                    Text(
+                        text = "Add account",
+                        style = LedgerTextStyles.Label,
+                        color = LedgerTheme.colors.label
+                    )
+                }
+            }
+        }
+
+        LedgerCollapsingHero(
+            collapseProgress = collapseProgress,
+            expandedHeight = expandedHeight,
+            collapsedHeight = collapsedHeight,
+            background = SolidColor(Color.Transparent),
+            contentBackground = {
+                LedgerAtmosphereGlow(Modifier.fillMaxSize())
+            },
+            expandedContent = { progress ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = LedgerSpacing.Screen)
+                        .graphicsLayer {
+                            alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
+                        },
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                    Spacer(Modifier.height(LedgerSpacing.Large))
+
+                    LedgerHeader(
+                        title = "Accounts",
+                        modifier = Modifier.padding(horizontal = LedgerSpacing.XxSmall)
+                    )
+                    
+                    Spacer(Modifier.height(LedgerSpacing.Large))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(132.dp)
+                            .ledgerSurface(
+                                level = LedgerSurfaceLevel.Level1,
+                                shape = LedgerRadius.Large,
+                            ),
+                    ) {
+                        LedgerAtmosphereGlow(Modifier.fillMaxSize())
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(LedgerSpacing.Medium),
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text(
+                                text = "Total balance",
+                                style = LedgerTextStyles.Label,
+                                color = LedgerTheme.colors.tertiaryLabel,
+                            )
+                            Spacer(Modifier.height(LedgerSpacing.XxSmall))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = state.netWorthCurrency,
+                                    style = LedgerTextStyles.Section.copy(fontWeight = FontWeight.Bold),
+                                    color = LedgerTheme.colors.success,
+                                )
+                                Spacer(Modifier.width(LedgerSpacing.Small))
+                                LedgerAmount(
+                                    amount = state.netWorth,
+                                    style = LedgerAmountStyle.Large,
+                                    color = Color.White,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            compactContent = { progress ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .graphicsLayer { 
+                            alpha = ((progress - HeroTransitions.CompactEnter) * 4f).coerceIn(0f, 1f) 
+                        },
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "Accounts",
+                        style = LedgerTextStyles.Section,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = LedgerSpacing.Screen)
+                    )
+                }
+            }
+        )
+    }
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/feature/accounts/presentation/viewmodel/AccountsViewModel.kt
+================================================================================
+package com.sherif.ledger.feature.accounts.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.repository.AccountRepository
+import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.feature.accounts.presentation.AccountSectionUi
+import com.sherif.ledger.feature.accounts.presentation.AccountUi
+import com.sherif.ledger.feature.accounts.presentation.AccountsUiState
+import com.sherif.ledger.presentation.dashboard.InsightUiModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class AccountsViewModel @Inject constructor(
+    private val accountRepository: AccountRepository,
+    private val transactionRepository: TransactionRepository
+) : ViewModel() {
+
+    val uiState: StateFlow<AccountsUiState> = combine(
+        accountRepository.observeAllAccounts(),
+        transactionRepository.observeRecentTransactions(10)
+    ) { accountsResult, txnsResult ->
+        if (accountsResult is LedgerResult.Success) {
+            val accounts = accountsResult.data.map { account ->
+                AccountUi(
+                    id = account.id.toString(),
+                    name = account.name,
+                    subtitle = account.type.name,
+                    balance = com.sherif.ledger.core.domain.util.MoneyFormatter.format(account.balance, includeSymbol = false),
+                    isNegative = account.balance.minorUnits < 0
+                )
+            }
+            
+            val primaryCurrency = accountsResult.data.firstOrNull()?.balance?.currencyCode ?: com.sherif.ledger.core.domain.model.CurrencyCode.AED
+            val assetsUnits = accountsResult.data.filter { it.balance.minorUnits >= 0 }.sumOf { it.balance.minorUnits }
+            val liabilitiesUnits = accountsResult.data.filter { it.balance.minorUnits < 0 }.sumOf { it.balance.minorUnits }
+            val netWorthUnits = assetsUnits + liabilitiesUnits
+            
+            val txnsCount = (txnsResult as? LedgerResult.Success)?.data?.size ?: 0
+            val insight = if (txnsCount >= 5) {
+                InsightUiModel(
+                    title = "Monthly Spending",
+                    subtitle = "Spending is stable compared to last week",
+                    indicator = "→ 0%"
+                )
+            } else null
+
+            AccountsUiState(
+                netWorth = com.sherif.ledger.core.domain.util.MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(netWorthUnits, primaryCurrency), includeSymbol = false),
+                netWorthCurrency = primaryCurrency.name,
+                assetsTotal = com.sherif.ledger.core.domain.util.MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(assetsUnits, primaryCurrency), includeSymbol = false),
+                liabilitiesTotal = com.sherif.ledger.core.domain.util.MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(liabilitiesUnits, primaryCurrency), includeSymbol = false),
+                sections = if (accounts.isNotEmpty()) listOf(
+                    AccountSectionUi("My Accounts", com.sherif.ledger.core.domain.util.MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(netWorthUnits, primaryCurrency), includeSymbol = false), accounts)
+                ) else emptyList(),
+                insight = insight
+            )
+        } else {
+            EMPTY_STATE
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = EMPTY_STATE
+    )
+
+    companion object {
+        private val EMPTY_STATE = AccountsUiState(
+            netWorth = "0",
+            netWorthCurrency = "AED",
+            assetsTotal = "0",
+            liabilitiesTotal = "0",
+            sections = emptyList(),
+            insight = null
+        )
+    }
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/feature/transactions/presentation/detail/TransactionDetailsScreen.kt
+================================================================================
+package com.sherif.ledger.feature.transactions.presentation.detail
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.sherif.ledger.core.designsystem.component.LedgerAmount
+import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerTopBar
+import com.sherif.ledger.core.designsystem.component.MerchantHeader
+import com.sherif.ledger.core.designsystem.component.layout.LedgerMetadataRow
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
+import com.sherif.ledger.core.designsystem.component.ledgerSurface
+import com.sherif.ledger.core.designsystem.haptics.LedgerHaptics
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
+import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+import com.sherif.ledger.core.preview.PreviewTransactions
+
+private val previewState = run {
+    val t = PreviewTransactions.amazonToday
+    TransactionDetailsUiState(
+        merchant = t.merchant.name,
+        merchantCategory = t.merchant.category,
+        merchantAccentHue = t.merchant.accentHue,
+        amount = t.amount,
+        sign = if (t.isIncome) "+" else "-",
+        isIncome = t.isIncome,
+        date = t.date,
+        time = t.time,
+        status = t.status,
+        paymentMethod = t.paymentMethod,
+        accountName = t.account.name,
+        accountNumber = t.account.accountNumber,
+        reference = t.reference,
+        history = listOf(
+            MerchantHistoryItem("AED 89", "20 Jun"),
+            MerchantHistoryItem("AED 245", "14 Jun"),
+            MerchantHistoryItem("AED 32", "3 Jun"),
+        ),
+        notes = "Weekly groceries and home essentials from Amazon Fresh.",
+    )
+}
+
+@Composable
+fun TransactionDetailsScreen(
+    onBackClick: () -> Unit = {},
+    state: TransactionDetailsUiState = previewState,
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    val haptics = LedgerHaptics.current
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
+        contentPadding = PaddingValues(
+            start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
+            bottom = LedgerSpacing.ScreenBottom,
+        ),
+        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
+    ) {
+        item("nav") {
+            LedgerTopBar(
+                title = "Transaction",
+                modifier = Modifier.statusBarsPadding(),
+                navigationIcon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = LedgerTheme.colors.label,
+                        modifier = Modifier
+                            .size(LedgerTheme.iconSize.Medium)
+                            .ledgerClickable { 
+                                haptics.selection()
+                                onBackClick() 
+                            },
+                    )
+                },
+                actions = {
+                    Box {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "More",
+                            tint = LedgerTheme.colors.label,
+                            modifier = Modifier
+                                .size(LedgerTheme.iconSize.Medium)
+                                .ledgerClickable { 
+                                    haptics.selection()
+                                    showMenu = true 
+                                },
+                        )
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(LedgerTheme.colors.surfaceLevel1)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Export PDF", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
+                                onClick = { 
+                                    haptics.impact()
+                                    showMenu = false 
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Report Issue", style = LedgerTextStyles.Label, color = LedgerTheme.colors.label) },
+                                onClick = { 
+                                    haptics.impact()
+                                    showMenu = false 
+                                }
+                            )
+                        }
+                    }
+                }
+            )
+        }
+
+        item("header") {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
+            ) {
+                MerchantHeader(
+                    name = state.merchant,
+                    category = state.merchantCategory,
+                    avatarSize = LedgerTheme.iconSize.Huge,
+                )
+                
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    LedgerAmount(
+                        amount = "${state.sign}AED ${state.amount}",
+                        style = LedgerAmountStyle.Display,
+                        color = if (state.isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense,
+                    )
+                    Spacer(Modifier.height(LedgerSpacing.Small))
+                    // Payment Method Pill
+                    Box(
+                        modifier = Modifier
+                            .ledgerSurface(
+                                backgroundColor = LedgerTheme.colors.surfaceLevel1,
+                                borderColor = Color.Transparent,
+                                shape = LedgerRadius.Full,
+                            )
+                            .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.XxSmall),
+                    ) {
+                        Text(
+                            state.paymentMethod,
+                            style = LedgerTextStyles.Caption,
+                            color = LedgerTheme.colors.secondaryLabel,
+                        )
+                    }
+                }
+            }
+        }
+
+        item("details") {
+            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
+                LedgerMetadataRow(label = "Date", value = state.date)
+                LedgerMetadataRow(label = "Time", value = state.time)
+                LedgerMetadataRow(label = "Category", value = state.merchantCategory)
+                LedgerMetadataRow(label = "Status", value = state.status)
+                LedgerMetadataRow(label = "Payment method", value = state.paymentMethod)
+                LedgerMetadataRow(label = "Reference ID", value = state.reference)
+            }
+        }
+
+        item("actions") {
+            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
+                ActionRow(icon = Icons.AutoMirrored.Filled.Notes, label = "Add note")
+                ActionRow(icon = Icons.Filled.GridView, label = "Split expense")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(
+    icon: ImageVector,
+    label: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .ledgerSurface(level = LedgerSurfaceLevel.Level1)
+            .ledgerClickable { /* TODO */ }
+            .padding(LedgerSpacing.Medium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = LedgerTheme.colors.secondaryLabel,
+                modifier = Modifier.size(LedgerTheme.iconSize.Small)
+            )
+            Spacer(Modifier.width(LedgerSpacing.Small))
+            Text(label, style = LedgerTextStyles.Label, color = LedgerTheme.colors.label)
+        }
+        Icon(
+            imageVector = Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = LedgerTheme.colors.tertiaryLabel,
+            modifier = Modifier.size(LedgerTheme.iconSize.Small)
+        )
+    }
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/feature/transactions/presentation/detail/viewmodel/TransactionDetailsViewModel.kt
+================================================================================
+package com.sherif.ledger.feature.transactions.presentation.detail.viewmodel
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.repository.AccountRepository
+import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+
+@HiltViewModel
+class TransactionDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository
+) : ViewModel() {
+
+    private val transactionId: String? = savedStateHandle["transactionId"]
+
+    private val _uiState = MutableStateFlow<TransactionDetailsUiState?>(null)
+    val uiState: StateFlow<TransactionDetailsUiState?> = _uiState.asStateFlow()
+
+    init {
+        loadTransactionDetails()
+    }
+
+    private fun loadTransactionDetails() {
+        val id = transactionId?.toLongOrNull() ?: return
+        viewModelScope.launch {
+            val transactionResult = transactionRepository.getTransactionById(id)
+            if (transactionResult is LedgerResult.Success) {
+                val txn = transactionResult.data
+                val accountResult = accountRepository.getAccountById(txn.accountId)
+                val account = (accountResult as? LedgerResult.Success)?.data
+
+                val zonedDateTime = txn.timestamp.atZone(ZoneId.systemDefault())
+                val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+                val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+                _uiState.update {
+                    TransactionDetailsUiState(
+                        merchant = txn.rawText ?: "Unknown",
+                        merchantCategory = "Other",
+                        merchantAccentHue = 0xFF8A8A8A,
+                        amount = com.sherif.ledger.core.domain.util.MoneyFormatter.format(txn.amount, includeSymbol = false),
+                        sign = if (txn.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE) "-" else "+",
+                        isIncome = txn.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME,
+                        date = zonedDateTime.format(dateFormatter),
+                        time = zonedDateTime.format(timeFormatter),
+                        status = "Completed",
+                        paymentMethod = account?.name ?: "Unknown",
+                        accountName = account?.name ?: "Unknown",
+                        accountNumber = account?.accountNumberTail ?: "",
+                        reference = txn.fingerprint.take(8).uppercase(),
+                        history = emptyList(),
+                        notes = txn.rawText
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/presentation/dashboard/DashboardUiState.kt
+================================================================================
+package com.sherif.ledger.presentation.dashboard
+
+data class DashboardUiState(
+    val greeting: String,
+    val userName: String,
+    val currentMonth: String,
+    val totalSpent: String,
+    val balanceAmount: String = "",
+    val balanceCurrency: String = "AED",
+    val budgetProgress: Float,
+    val expense: String,
+    val expenseChange: String = "",
+    val income: String,
+    val incomeChange: String = "",
+    val savings: String,
+    val savingsChange: String = "",
+    val recentTransactions: List<TransactionUiModel>,
+    val insights: List<InsightUiModel>,
+)
+
+data class TransactionUiModel(
+    val merchant: String,
+    val category: String,
+    val amount: String,
+    val isExpense: Boolean = true,
+    val date: String = "Today",
+    val merchantAccentHue: Long = 0xFF8A8A8A,
+)
+
+data class InsightUiModel(
+    val title: String,
+    val subtitle: String,
+    val indicator: String = "",
+)
+
+
+================================================================================
+FILE: app/src/main/java/com/sherif/ledger/presentation/dashboard/viewmodel/DashboardViewModel.kt
+================================================================================
+package com.sherif.ledger.presentation.dashboard.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.repository.AccountRepository
+import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.presentation.dashboard.DashboardUiState
+import com.sherif.ledger.presentation.dashboard.TransactionUiModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
+import javax.inject.Inject
+
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
+    private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository
+) : ViewModel() {
+
+    val uiState: StateFlow<DashboardUiState> = combine(
+        transactionRepository.observeRecentTransactions(10),
+        accountRepository.observeAllAccounts()
+    ) { transactionsResult, accountsResult ->
+        
+        val recentTransactions = if (transactionsResult is LedgerResult.Success) {
+            transactionsResult.data.map { txn ->
+                TransactionUiModel(
+                    merchant = txn.rawText ?: "Unknown",
+                    category = "Other",
+                    amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
+                    isExpense = txn.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE
+                )
+            }
+        } else emptyList()
+
+        val accounts = (accountsResult as? LedgerResult.Success)?.data ?: emptyList()
+        val totalBalanceUnits = accounts.sumOf { it.balance.minorUnits }
+        val primaryCurrency = accounts.firstOrNull()?.balance?.currencyCode ?: com.sherif.ledger.core.domain.model.CurrencyCode.AED
+        
+        val transactions = (transactionsResult as? LedgerResult.Success)?.data ?: emptyList()
+        val incomeUnits = transactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME }.sumOf { it.amount.minorUnits }
+        val expenseUnits = transactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE }.sumOf { it.amount.minorUnits }
+        val savingsUnits = incomeUnits - expenseUnits
+
+        DashboardUiState(
+            greeting = "Good morning",
+            userName = "",
+            currentMonth = LocalDate.now().month.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase(),
+            totalSpent = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(expenseUnits, primaryCurrency), includeSymbol = false),
+            balanceAmount = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(totalBalanceUnits, primaryCurrency), includeSymbol = false),
+            balanceCurrency = primaryCurrency.name,
+            budgetProgress = 0f,
+            expense = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(expenseUnits, primaryCurrency), includeSymbol = true),
+            income = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(incomeUnits, primaryCurrency), includeSymbol = true),
+            savings = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(savingsUnits, primaryCurrency), includeSymbol = true),
+            recentTransactions = recentTransactions,
+            insights = emptyList()
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = EMPTY_STATE
+    )
+
+    companion object {
+        private val EMPTY_STATE = DashboardUiState(
+            greeting = "",
+            userName = "",
+            currentMonth = "",
+            totalSpent = "0.00",
+            budgetProgress = 0f,
+            expense = "0.00",
+            income = "0.00",
+            savings = "0.00",
+            recentTransactions = emptyList(),
+            insights = emptyList()
+        )
+    }
+}
+

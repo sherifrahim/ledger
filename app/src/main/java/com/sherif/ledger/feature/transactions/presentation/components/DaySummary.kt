@@ -32,6 +32,7 @@ fun DaySummary(
     summary: DaySummaryUi,
     modifier: Modifier = Modifier,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: DaySummary(spent=${summary.spent}, income=${summary.income})")
 
     Row(
         modifier = modifier

@@ -42,7 +42,7 @@ class RoomTransactionRepositoryTest {
         override fun observeTransactionsBetween(start: Long, end: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())
         override suspend fun getTransactionById(id: Long): TransactionEntity? = null
         override suspend fun insertTransaction(transaction: TransactionEntity): Long = 1L
-        override suspend fun softDeleteTransaction(id: Long, timestamp: Long) {}
+        override suspend fun softDeleteTransaction(id: Long, timestamp: Long): Int = 1
     }
 
     private val repository = RoomTransactionRepository(fakeDao)

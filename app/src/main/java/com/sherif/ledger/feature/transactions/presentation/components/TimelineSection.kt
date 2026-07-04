@@ -23,6 +23,7 @@ fun TimelineSection(
     modifier: Modifier = Modifier,
     onTransactionClick: ((String) -> Unit)? = null,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: TimelineSection(title=${group.title}, transactionsCount=${group.transactions.size})")
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),

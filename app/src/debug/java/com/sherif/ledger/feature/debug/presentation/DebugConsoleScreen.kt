@@ -37,6 +37,7 @@ fun DebugConsoleScreen(
     state: DebugUiState,
     dbSummary: DatabaseSummary,
     onAction: (DebugAction) -> Unit,
+    onNavigateToDiagnostics: () -> Unit,
     onBackClick: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -56,6 +57,15 @@ fun DebugConsoleScreen(
                                 .size(LedgerTheme.iconSize.Medium)
                                 .ledgerClickable { onBackClick() },
                         )
+                    },
+                    actions = {
+                        IconButton(onClick = onNavigateToDiagnostics) {
+                            Icon(
+                                imageVector = Icons.Filled.BugReport,
+                                contentDescription = "Diagnostics",
+                                tint = LedgerTheme.colors.tint
+                            )
+                        }
                     },
                     modifier = Modifier.padding(horizontal = LedgerSpacing.Screen)
                 )

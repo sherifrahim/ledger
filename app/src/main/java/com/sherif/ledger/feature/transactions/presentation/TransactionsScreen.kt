@@ -35,10 +35,11 @@ import com.sherif.ledger.feature.transactions.presentation.preview.TransactionsP
 
 @Composable
 fun TransactionsScreen(
-    state: TransactionsUiState = TransactionsPreviewData.state,
+    state: TransactionsUiState,
     onTransactionClick: ((String) -> Unit)? = null,
     onSearchClick: () -> Unit = {},
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: TransactionsScreen(groupCount=${state.groups.size})")
     var searchQuery by remember { mutableStateOf("") }
 
     LazyColumn(
@@ -82,6 +83,7 @@ fun TransactionsScreen(
                 )
             }
         } else {
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("Transactions: RENDERING groups=${state.groups.size}")
             items(state.groups, key = { it.id }) { group ->
                 TimelineSection(
                     group = group,

@@ -21,6 +21,7 @@ class AdcbParser @Inject constructor(
 
     private val patterns = listOf(
         AdcbPurchasePattern(merchantNormalizer),
+        AdcbSalaryCreditPattern(merchantNormalizer),
         AdcbCreditPattern(merchantNormalizer),
         AdcbTransferPattern(merchantNormalizer),
         AdcbRefundPattern(merchantNormalizer),
@@ -63,6 +64,31 @@ private class AdcbPurchasePattern(private val normalizer: MerchantNormalizer) : 
                 timestamp = envelope.timestamp,
                 accountHint = account,
                 transactionType = TransactionType.EXPENSE
+            )
+        )
+    }
+}
+
+private class AdcbSalaryCreditPattern(private val normalizer: MerchantNormalizer) : NotificationPattern {
+    override fun matches(text: String): Boolean {
+        return text.contains("salary", ignoreCase = true) && (text.contains("credited", ignoreCase = true) || text.contains("received", ignoreCase = true))
+    }
+
+    override fun extract(envelope: NotificationEnvelope, normalizedText: String): ParseResult {
+        val amount = ExtractionHelpers.extractAmountMinor(normalizedText)
+        val currency = ExtractionHelpers.extractCurrency(normalizedText)
+        val account = ExtractionHelpers.extractAccountHint(normalizedText)
+
+        return ParseResult.Success(
+            TransactionCandidate(
+                source = IngestionSource.SMS,
+                rawText = normalizedText,
+                merchantName = "Salary",
+                amountMinor = amount,
+                currencyCode = currency,
+                timestamp = envelope.timestamp,
+                accountHint = account,
+                transactionType = TransactionType.INCOME
             )
         )
     }

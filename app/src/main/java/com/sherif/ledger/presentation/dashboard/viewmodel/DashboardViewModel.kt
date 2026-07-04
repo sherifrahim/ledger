@@ -24,13 +24,25 @@ class DashboardViewModel @Inject constructor(
     private val accountRepository: AccountRepository
 ) : ViewModel() {
 
+    init {
+        com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: DashboardViewModel")
+    }
+
+    private val currentMonthRange = run {
+        val now = java.time.ZonedDateTime.now()
+        val start = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0).toInstant()
+        val end = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).withHour(23).withMinute(59).withSecond(59).withNano(999999999).toInstant()
+        start to end
+    }
+
     val uiState: StateFlow<DashboardUiState> = combine(
         transactionRepository.observeRecentTransactions(10),
+        transactionRepository.observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second),
         accountRepository.observeAllAccounts()
-    ) { transactionsResult, accountsResult ->
+    ) { recentResult, monthResult, accountsResult ->
         
-        val recentTransactions = if (transactionsResult is LedgerResult.Success) {
-            transactionsResult.data.map { txn ->
+        val recentTransactions = if (recentResult is LedgerResult.Success) {
+            recentResult.data.map { txn ->
                 TransactionUiModel(
                     merchant = txn.rawText ?: "Unknown",
                     category = "Other",
@@ -44,13 +56,13 @@ class DashboardViewModel @Inject constructor(
         val totalBalanceUnits = accounts.sumOf { it.balance.minorUnits }
         val primaryCurrency = accounts.firstOrNull()?.balance?.currencyCode ?: com.sherif.ledger.core.domain.model.CurrencyCode.AED
         
-        val transactions = (transactionsResult as? LedgerResult.Success)?.data ?: emptyList()
-        val incomeUnits = transactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME }.sumOf { it.amount.minorUnits }
-        val expenseUnits = transactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE }.sumOf { it.amount.minorUnits }
+        val monthTransactions = (monthResult as? LedgerResult.Success)?.data ?: emptyList()
+        val incomeUnits = monthTransactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME }.sumOf { it.amount.minorUnits }
+        val expenseUnits = monthTransactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE }.sumOf { it.amount.minorUnits }
         val savingsUnits = incomeUnits - expenseUnits
 
         DashboardUiState(
-            greeting = "Good morning",
+            greeting = "Welcome back",
             userName = "",
             currentMonth = LocalDate.now().month.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase(),
             totalSpent = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(expenseUnits, primaryCurrency), includeSymbol = false),
@@ -62,7 +74,9 @@ class DashboardViewModel @Inject constructor(
             savings = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(savingsUnits, primaryCurrency), includeSymbol = true),
             recentTransactions = recentTransactions,
             insights = emptyList()
-        )
+        ).also { 
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("DashboardViewModel: EMITTING uiState. TotalSpent=${it.totalSpent}, Balance=${it.balanceAmount}, RecentCount=${it.recentTransactions.size}")
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

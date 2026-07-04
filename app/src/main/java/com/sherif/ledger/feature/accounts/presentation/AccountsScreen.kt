@@ -65,8 +65,9 @@ private object HeroTransitions {
 @Composable
 fun AccountsScreen(
     onNavigateToInsights: () -> Unit = {},
-    state: AccountsUiState = AccountsPreviewData.state,
+    state: AccountsUiState,
 ) {
+    com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: AccountsScreen(netWorth=${state.netWorth}, sectionCount=${state.sections.size})")
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val expandedHeight = 240.dp + statusBarPadding
     val collapsedHeight = LedgerHeroDefaults.CollapsedHeight + statusBarPadding
@@ -215,6 +216,7 @@ fun AccountsScreen(
                                     color = LedgerTheme.colors.success,
                                 )
                                 Spacer(Modifier.width(LedgerSpacing.Small))
+                                com.sherif.ledger.core.common.logging.LedgerLogger.d("Accounts: RENDERING netWorth=${state.netWorth}")
                                 LedgerAmount(
                                     amount = state.netWorth,
                                     style = LedgerAmountStyle.Large,

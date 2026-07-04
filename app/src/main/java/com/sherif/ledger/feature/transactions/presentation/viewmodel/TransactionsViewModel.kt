@@ -21,6 +21,10 @@ class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
+    init {
+        com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: TransactionsViewModel")
+    }
+
     val uiState: StateFlow<TransactionsUiState> = transactionRepository.observeRecentTransactions(100)
         .map { result ->
             if (result is LedgerResult.Success) {
@@ -54,9 +58,17 @@ class TransactionsViewModel @Inject constructor(
                         transactions = transactionUiModels
                     )
                 }
-                TransactionsUiState(groups)
+                TransactionsUiState(groups).also {
+                    val count = it.groups.sumOf { g -> g.transactions.size }
+                    com.sherif.ledger.core.common.logging.LedgerLogger.d("TransactionsViewModel: EMITTING uiState with $count transactions in ${it.groups.size} groups")
+                    it.groups.firstOrNull()?.transactions?.firstOrNull()?.let { t ->
+                        com.sherif.ledger.core.common.logging.LedgerLogger.d("Latest Txn in emission: ID=${t.id}, Merchant=${t.merchant}, Amount=${t.amount}")
+                    }
+                }
             } else {
-                TransactionsUiState(emptyList())
+                TransactionsUiState(emptyList()).also {
+                    com.sherif.ledger.core.common.logging.LedgerLogger.d("TransactionsViewModel: EMITTING EMPTY_STATE")
+                }
             }
         }.stateIn(
             scope = viewModelScope,

@@ -1,5 +1,6 @@
 package com.sherif.ledger.core.database.repository
 
+import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.core.database.dao.AccountDao
 import com.sherif.ledger.core.database.mapper.toDomain
 import com.sherif.ledger.core.database.mapper.toEntity
@@ -10,11 +11,16 @@ import com.sherif.ledger.core.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 class RoomAccountRepository @Inject constructor(
     private val accountDao: AccountDao
 ) : AccountRepository {
+
+    init {
+        LedgerLogger.d("EXECUTING: RoomAccountRepository")
+    }
 
     override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> =
         accountDao.observeAllAccounts()
@@ -22,7 +28,13 @@ class RoomAccountRepository @Inject constructor(
                 val result: LedgerResult<List<Account>> = LedgerResult.Success(entities.map { it.toDomain() })
                 result
             }
+            .onEach { result ->
+                if (result is LedgerResult.Success) {
+                    LedgerLogger.d("Repository: observeAllAccounts emission. Count: ${result.data.size}")
+                }
+            }
             .catch { e -> 
+                LedgerLogger.e("Repository: observeAllAccounts error", e)
                 emit(LedgerResult.Failure(LedgerError.Unknown(e.message ?: "Database error"))) 
             }
 
@@ -39,22 +51,66 @@ class RoomAccountRepository @Inject constructor(
 
     override suspend fun insertAccount(account: Account): LedgerResult<Long> = try {
         val id = accountDao.insertAccount(account.toEntity())
-        LedgerResult.Success(id)
+        
+        LedgerLogger.d("Repository: insertAccount SUCCESS. ID: $id, Rows Inserted: 1")
+        
+        // Integrity Check: Reload and Verify
+        val reloaded = accountDao.getAccountById(id)
+        if (reloaded != null && reloaded.id == id) {
+            LedgerResult.Success(id)
+        } else {
+            LedgerLogger.e("Repository: insertAccount Integrity Failure. ID mismatch or not found after insert.")
+            LedgerResult.Failure(LedgerError.DatabaseFailure)
+        }
     } catch (e: Exception) {
+        LedgerLogger.e("Repository: insertAccount Failure", e)
         LedgerResult.Failure(LedgerError.DatabaseFailure)
     }
 
     override suspend fun updateAccount(account: Account): LedgerResult<Unit> = try {
-        accountDao.updateAccount(account.toEntity())
-        LedgerResult.Success(Unit)
+        val balanceBefore = accountDao.getAccountById(account.id)?.balanceMinor
+        
+        val rowsUpdated = accountDao.updateAccount(account.toEntity())
+        
+        LedgerLogger.d("Repository: updateAccount PK: ${account.id}, Rows Updated: $rowsUpdated")
+        LedgerLogger.pipeline("Persistence", "Account update: PK=${account.id}, NewBal=${account.balance.minorUnits}")
+        
+        if (rowsUpdated != 1) {
+            LedgerLogger.e("Repository: updateAccount FAILED. Affected rows: $rowsUpdated (Expected: 1)")
+            LedgerResult.Failure(LedgerError.DatabaseFailure)
+        } else {
+            // Integrity Check: Reload and Verify
+            val reloaded = accountDao.getAccountById(account.id)
+            val balancePersisted = account.balance.minorUnits
+            val balanceReloaded = reloaded?.balanceMinor
+            
+            LedgerLogger.d("Repository: updateAccount Balance Audit - Before: $balanceBefore, Persisted: $balancePersisted, Reloaded: $balanceReloaded")
+            
+            if (balanceReloaded == balancePersisted) {
+                LedgerResult.Success(Unit)
+            } else {
+                LedgerLogger.e("Repository: updateAccount Integrity Failure. Persisted value mismatch.")
+                LedgerResult.Failure(LedgerError.DatabaseFailure)
+            }
+        }
     } catch (e: Exception) {
+        LedgerLogger.e("Repository: updateAccount Failure", e)
         LedgerResult.Failure(LedgerError.DatabaseFailure)
     }
 
     override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = try {
-        accountDao.softDeleteAccount(id)
-        LedgerResult.Success(Unit)
+        val rowsUpdated = accountDao.softDeleteAccount(id)
+        
+        LedgerLogger.d("Repository: softDeleteAccount PK: $id, Rows Updated: $rowsUpdated")
+        
+        if (rowsUpdated == 1) {
+            LedgerResult.Success(Unit)
+        } else {
+            LedgerLogger.e("Repository: softDeleteAccount FAILED. Affected rows: $rowsUpdated (Expected: 1)")
+            LedgerResult.Failure(LedgerError.AccountNotFound)
+        }
     } catch (e: Exception) {
+        LedgerLogger.e("Repository: softDeleteAccount Failure", e)
         LedgerResult.Failure(LedgerError.DatabaseFailure)
     }
 }
