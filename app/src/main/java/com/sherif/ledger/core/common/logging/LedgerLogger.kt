@@ -29,7 +29,12 @@ object LedgerLogger {
         if (isEnabled) {
             val traceId = getTraceId()
             val formattedMessage = if (traceId != null) "[$traceId] $message" else message
-            android.util.Log.d(TAG, formattedMessage)
+            try {
+                android.util.Log.d(TAG, formattedMessage)
+            } catch (e: Exception) {
+                // Handle unit tests where android.util.Log is not available
+                println("$TAG: $formattedMessage")
+            }
             _logs.value = (listOf(formattedMessage) + _logs.value).take(100)
         }
     }
@@ -38,7 +43,11 @@ object LedgerLogger {
         if (isEnabled) {
             val traceId = getTraceId()
             val prefix = if (traceId != null) "[$traceId] " else ""
-            android.util.Log.e(TAG, "$prefix$message", throwable)
+            try {
+                android.util.Log.e(TAG, "$prefix$message", throwable)
+            } catch (e: Exception) {
+                println("ERROR $TAG: $prefix$message")
+            }
             _logs.value = (listOf("${prefix}ERROR: $message") + _logs.value).take(100)
         }
     }

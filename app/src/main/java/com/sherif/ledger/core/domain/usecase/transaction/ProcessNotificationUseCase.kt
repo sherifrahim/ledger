@@ -1,6 +1,7 @@
 package com.sherif.ledger.core.domain.usecase.transaction
 
 import com.sherif.ledger.core.common.logging.LedgerLogger
+import com.sherif.ledger.feature.capture.source.SourceChannel
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.TransactionType
@@ -31,30 +32,27 @@ class ProcessNotificationUseCase @Inject constructor(
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
     }
 
-    suspend fun execute(envelope: NotificationEnvelope) {
+    suspend fun execute(
+        envelope: NotificationEnvelope,
+        channel: SourceChannel = SourceChannel.NOTIFICATION,
+    ) {
         val traceId = envelope.notificationKey
         LedgerLogger.setTraceId(traceId)
 
         LedgerLogger.d("ProcessNotificationUseCase.execute(envelope=$envelope)")
-        LedgerLogger.pipeline("Capture", "Received notification from ${envelope.packageName}")
+        LedgerLogger.pipeline("Capture", "channel=$channel source=${envelope.packageName}")
 
         // 1. Filter
         if (!filter.shouldProcess(envelope)) {
+            LedgerLogger.d("ProcessNotificationUseCase: REJECTED by Filter (Sender=${envelope.packageName}, Source=${envelope.source})")
             LedgerLogger.pipeline("Filter", "Ignored: ${envelope.packageName}")
             return
         }
+        LedgerLogger.d("ProcessNotificationUseCase: ACCEPTED by Filter")
         LedgerLogger.pipeline("Filter", "Accepted: ${envelope.packageName}")
 
         // 2. Parse
         val parseResult = parserRegistry.parse(envelope)
-LedgerLogger.pipeline(
-    "Parser",
-    "RESULT=${parseResult::class.simpleName}"
-)
-LedgerLogger.pipeline(
-    "Parser",
-    "RESULT=${parseResult::class.simpleName}"
-)
         val candidate = when (parseResult) {
             is ParseResult.Success -> {
                 LedgerLogger.d("ProcessNotificationUseCase: PARSED candidate=${parseResult.candidate}")
@@ -62,10 +60,12 @@ LedgerLogger.pipeline(
                 parseResult.candidate
             }
             ParseResult.Ignore -> {
+                LedgerLogger.d("ProcessNotificationUseCase: IGNORED (OTP/Statement)")
                 LedgerLogger.pipeline("Parser", "Intentionally ignored (OTP/Statement)")
                 return
             }
             is ParseResult.Failed -> {
+                LedgerLogger.d("ProcessNotificationUseCase: PARSE FAILED reason=${parseResult.reason}")
                 LedgerLogger.pipeline("Parser", "Failed: ${parseResult.reason}")
                 return
             }
@@ -81,6 +81,7 @@ LedgerLogger.pipeline(
         } else emptyList()
 
         val reconciliationResult = reconciliationEngine.reconcile(candidate, existingTransactions)
+        LedgerLogger.d("ProcessNotificationUseCase: RECONCILIATION RESULT=${reconciliationResult::class.simpleName}")
 
         // 4. Persistence
         when (reconciliationResult) {
@@ -96,7 +97,10 @@ LedgerLogger.pipeline(
                     currencyCode = candidate.currencyCode ?: CurrencyCode.AED,
                     type = candidate.transactionType ?: TransactionType.EXPENSE,
                     timestamp = candidate.timestamp,
-                    source = candidate.source,
+                    source = when(envelope.source) {
+                        com.sherif.ledger.feature.capture.notification.IngestionSource.SMS -> com.sherif.ledger.core.domain.model.IngestionSource.SMS
+                        else -> com.sherif.ledger.core.domain.model.IngestionSource.NOTIFICATION
+                    },
                     rawMerchantText = candidate.merchantName ?: "Unknown"
                 )
                 LedgerLogger.d("ProcessNotificationUseCase: PERSISTING params=$params")

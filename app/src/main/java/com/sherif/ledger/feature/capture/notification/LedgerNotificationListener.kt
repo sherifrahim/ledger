@@ -4,6 +4,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.core.domain.usecase.transaction.ProcessNotificationUseCase
+import com.sherif.ledger.feature.capture.source.NotificationSourceAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,9 @@ class LedgerNotificationListener : NotificationListenerService() {
 
     @Inject
     lateinit var processNotificationUseCase: ProcessNotificationUseCase
+
+    @Inject
+    lateinit var notificationSourceAdapter: NotificationSourceAdapter
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -59,7 +63,7 @@ class LedgerNotificationListener : NotificationListenerService() {
         }
         LedgerLogger.d(forensics)
 
-        val envelope = sbn.toEnvelope()
+        val envelope = notificationSourceAdapter.toEnvelope(sbn)
 
         serviceScope.launch {
             try {
@@ -78,25 +82,5 @@ class LedgerNotificationListener : NotificationListenerService() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
-    }
-
-    private fun StatusBarNotification.toEnvelope(): NotificationEnvelope {
-        val extras = notification.extras
-        val mappedExtras = mutableMapOf<String, String>()
-        
-        extras.keySet().forEach { key ->
-            @Suppress("DEPRECATION")
-            extras.get(key)?.toString()?.let { mappedExtras[key] = it }
-        }
-
-        return NotificationEnvelope(
-            packageName = packageName ?: "unknown",
-            title = extras.getCharSequence("android.title")?.toString() ?: "",
-            text = extras.getCharSequence("android.text")?.toString() ?: "",
-            subText = extras.getCharSequence("android.subText")?.toString(),
-            timestamp = Instant.ofEpochMilli(postTime),
-            notificationKey = key ?: "",
-            extras = mappedExtras
-        )
     }
 }

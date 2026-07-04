@@ -22,7 +22,11 @@ class NotificationFilter @Inject constructor() {
     )
 
     fun shouldProcess(envelope: NotificationEnvelope): Boolean {
-        if (envelope.packageName !in financialPackages) return false
+        // SMS is handled via the system provider, so we only filter based on content
+        // unless it's a notification from a messaging app.
+        val isSms = envelope.source == IngestionSource.SMS
+        
+        if (!isSms && envelope.packageName !in financialPackages) return false
         if (envelope.text.isBlank() && envelope.title.isBlank()) return false
         
         // Broad keyword check to ignore non-transactional alerts (e.g. general marketing)

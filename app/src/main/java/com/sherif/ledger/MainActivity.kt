@@ -15,7 +15,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.collectAsState
 import androidx.core.view.WindowCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -23,9 +25,11 @@ import androidx.navigation.compose.rememberNavController
 import com.sherif.ledger.core.common.util.PermissionUtils
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.onboarding.presentation.NotificationAccessScreen
+import com.sherif.ledger.feature.onboarding.presentation.SmsOnboardingScreen
 import com.sherif.ledger.presentation.navigation.LedgerBottomBar
 import com.sherif.ledger.presentation.navigation.LedgerNavHost
 import com.sherif.ledger.presentation.navigation.LedgerRoute
+import com.sherif.ledger.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -43,6 +47,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             LedgerTheme {
                 val context = LocalContext.current
+                val mainViewModel: MainViewModel = hiltViewModel()
+                val isSmsImported by mainViewModel.isSmsImported.collectAsState()
+
                 var isPermissionGranted by remember { 
                     mutableStateOf(PermissionUtils.isNotificationServiceEnabled(context)) 
                 }
@@ -57,8 +64,17 @@ class MainActivity : ComponentActivity() {
                     color = LedgerTheme.colors.surfaceLevel0
                 ) {
                     if (isPermissionGranted) {
-                        LedgerApp()
+                        if (isSmsImported) {
+                            com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=true. Launching Dashboard.")
+                            LedgerApp()
+                        } else {
+                            com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=false. Launching SMS Onboarding.")
+                            SmsOnboardingScreen(onComplete = {
+                                // No-op, isSmsImported will update automatically
+                            })
+                        }
                     } else {
+                        com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: Notification Access=false. Launching Onboarding.")
                         NotificationAccessScreen()
                     }
                 }

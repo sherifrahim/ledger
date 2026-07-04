@@ -19,6 +19,7 @@ class AdcbParser @Inject constructor(
 ) : BankParser {
 
     private val adcbPackage = "com.adcb.mobileapp"
+    private val adcbSmsSender = "ADCB"
 
     private val patterns = listOf(
         AdcbPurchasePattern(merchantNormalizer),
@@ -32,7 +33,7 @@ class AdcbParser @Inject constructor(
     )
 
     override fun supports(envelope: NotificationEnvelope): Boolean {
-        return envelope.packageName == adcbPackage
+        return envelope.packageName == adcbPackage || envelope.packageName == adcbSmsSender
     }
 
     override fun parse(envelope: NotificationEnvelope): ParseResult {
@@ -56,7 +57,7 @@ private class AdcbPurchasePattern(private val normalizer: MerchantNormalizer) : 
 
         return ParseResult.Success(
             TransactionCandidate(
-                source = IngestionSource.SMS,
+                source = IngestionSource.NOTIFICATION,
                 rawText = normalizedText,
                 merchantName = merchantCanonical,
                 amountMinor = amount,
@@ -100,7 +101,7 @@ LedgerLogger.pipeline(
 
         return ParseResult.Success(
             TransactionCandidate(
-                source = IngestionSource.SMS,
+                source = IngestionSource.NOTIFICATION,
                 rawText = normalizedText,
                 merchantName = "Salary",
                 amountMinor = amount,
@@ -127,7 +128,7 @@ private class AdcbCreditPattern(private val normalizer: MerchantNormalizer) : No
 
         return ParseResult.Success(
             TransactionCandidate(
-                source = IngestionSource.SMS,
+                source = IngestionSource.NOTIFICATION,
                 rawText = normalizedText,
                 merchantName = merchantCanonical,
                 amountMinor = amount,
@@ -152,7 +153,7 @@ private class AdcbTransferPattern(private val normalizer: MerchantNormalizer) : 
 
         return ParseResult.Success(
             TransactionCandidate(
-                source = IngestionSource.SMS,
+                source = IngestionSource.NOTIFICATION,
                 rawText = normalizedText,
                 merchantName = "Internal Transfer",
                 amountMinor = amount,
@@ -179,7 +180,7 @@ private class AdcbRefundPattern(private val normalizer: MerchantNormalizer) : No
 
         return ParseResult.Success(
             TransactionCandidate(
-                source = IngestionSource.SMS,
+                source = IngestionSource.NOTIFICATION,
                 rawText = normalizedText,
                 merchantName = merchantCanonical,
                 amountMinor = amount,

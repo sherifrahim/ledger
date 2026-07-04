@@ -15,6 +15,7 @@ import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
 import com.sherif.ledger.feature.accounts.presentation.viewmodel.AccountsViewModel
 import com.sherif.ledger.feature.analytics.presentation.InsightsScreen
 import com.sherif.ledger.feature.analytics.presentation.viewmodel.InsightsViewModel
+import com.sherif.ledger.feature.onboarding.presentation.SmsOnboardingScreen
 import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
 import com.sherif.ledger.feature.settings.presentation.ProfileScreen
 import com.sherif.ledger.feature.settings.presentation.SettingsScreen
@@ -116,6 +117,16 @@ fun LedgerNavHost(
                 onReviewItemClick = { id ->
                     navController.navigate(LedgerRoute.TransactionDetails.create(id))
                 },
+            )
+        }
+
+        composable(LedgerRoute.SmsOnboarding.route) {
+            SmsOnboardingScreen(
+                onComplete = {
+                    navController.navigate(LedgerRoute.Home.route) {
+                        popUpTo(LedgerRoute.SmsOnboarding.route) { inclusive = true }
+                    }
+                }
             )
         }
 
