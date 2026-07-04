@@ -71,11 +71,15 @@ private class AdcbPurchasePattern(private val normalizer: MerchantNormalizer) : 
 
 private class AdcbSalaryCreditPattern(private val normalizer: MerchantNormalizer) : NotificationPattern {
     override fun matches(text: String): Boolean {
-        return text.contains("salary", ignoreCase = true) && (text.contains("credited", ignoreCase = true) || text.contains("received", ignoreCase = true))
+        return text.contains("salary", ignoreCase = true) && 
+               (text.contains("credited", ignoreCase = true) || text.contains("received", ignoreCase = true))
     }
 
     override fun extract(envelope: NotificationEnvelope, normalizedText: String): ParseResult {
-        val amount = ExtractionHelpers.extractAmountMinor(normalizedText)
+        // Strip the balance part to ensure we only look at the salary amount
+        val textForAmount = normalizedText.substringBefore("balance is").substringBefore("available")
+        
+        val amount = ExtractionHelpers.extractAmountMinor(textForAmount)
         val currency = ExtractionHelpers.extractCurrency(normalizedText)
         val account = ExtractionHelpers.extractAccountHint(normalizedText)
 
