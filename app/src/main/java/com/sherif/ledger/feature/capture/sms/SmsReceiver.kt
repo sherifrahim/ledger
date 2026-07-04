@@ -5,25 +5,26 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import com.sherif.ledger.core.domain.usecase.transaction.ProcessNotificationUseCase
-import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
-import com.sherif.ledger.feature.capture.notification.IngestionSource
+import com.sherif.ledger.feature.capture.source.SmsSourceAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import java.time.Instant
 import javax.inject.Inject
 
 /**
- * Receiver for incoming SMS messages.
- * Converts Telephony SMS into NotificationEnvelope and triggers the ingestion pipeline.
+ * Receiver for incoming SMS messages. Delegates envelope construction to
+ * [SmsSourceAdapter] (the single translation boundary) and triggers the pipeline.
  */
 @AndroidEntryPoint
 class SmsReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var processNotificationUseCase: ProcessNotificationUseCase
+
+    @Inject
+    lateinit var smsSourceAdapter: SmsSourceAdapter
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -32,26 +33,9 @@ class SmsReceiver : BroadcastReceiver() {
 
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         for (sms in messages) {
-            val sender = sms.originatingAddress ?: "Unknown"
-            val body = sms.messageBody ?: ""
-            val timestamp = Instant.ofEpochMilli(sms.timestampMillis)
-            
-            val envelope = NotificationEnvelope(
-                packageName = sender,
-                title = "SMS",
-                text = body,
-                subText = null,
-                timestamp = timestamp,
-                notificationKey = "sms_${sms.timestampMillis}_$sender",
-                source = IngestionSource.SMS,
-                extras = mapOf(
-                    "address" to sender,
-                    "timestamp" to sms.timestampMillis.toString()
-                )
-            )
-
+            val envelope = smsSourceAdapter.toEnvelope(sms) ?: continue
             scope.launch {
-                processNotificationUseCase.execute(envelope)
+                processNotificationUseCase.execute(envelope, smsSourceAdapter.channel)
             }
         }
     }

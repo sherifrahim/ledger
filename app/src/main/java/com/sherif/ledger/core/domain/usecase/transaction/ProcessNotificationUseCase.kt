@@ -97,10 +97,7 @@ class ProcessNotificationUseCase @Inject constructor(
                     currencyCode = candidate.currencyCode ?: CurrencyCode.AED,
                     type = candidate.transactionType ?: TransactionType.EXPENSE,
                     timestamp = candidate.timestamp,
-                    source = when(envelope.source) {
-                        com.sherif.ledger.feature.capture.notification.IngestionSource.SMS -> com.sherif.ledger.core.domain.model.IngestionSource.SMS
-                        else -> com.sherif.ledger.core.domain.model.IngestionSource.NOTIFICATION
-                    },
+                    source = envelope.source,
                     rawMerchantText = candidate.merchantName ?: "Unknown"
                 )
                 LedgerLogger.d("ProcessNotificationUseCase: PERSISTING params=$params")

@@ -1,5 +1,6 @@
 package com.sherif.ledger.feature.capture.notification
 
+import com.sherif.ledger.core.domain.model.IngestionSource
 import java.time.Instant
 
 /**
@@ -16,8 +17,3 @@ data class NotificationEnvelope(
     val extras: Map<String, String> = emptyMap(),
     val source: IngestionSource = IngestionSource.NOTIFICATION
 )
-
-enum class IngestionSource {
-    NOTIFICATION,
-    SMS
-}

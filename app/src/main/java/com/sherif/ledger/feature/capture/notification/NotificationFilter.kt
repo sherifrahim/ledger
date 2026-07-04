@@ -1,5 +1,7 @@
 package com.sherif.ledger.feature.capture.notification
 
+import com.sherif.ledger.core.domain.model.IngestionSource
+
 import javax.inject.Inject
 
 /**

@@ -1,17 +1,17 @@
 package com.sherif.ledger.feature.capture.source
 
 import android.telephony.SmsMessage
+import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import java.time.Instant
 import javax.inject.Inject
 
 /**
- * PUSH adapter for live incoming SMS.
+ * PUSH adapter for live incoming SMS. Single translation boundary between an
+ * Android [SmsMessage] and the canonical [NotificationEnvelope]. SmsReceiver
+ * invokes this instead of constructing envelopes itself.
  *
- * Maps an [SmsMessage] to an envelope. The sender address becomes packageName-like
- * routing context; NotificationFilter and the parser identify the bank from the
- * message body (content), not the sender, so no per-sender whitelist is required
- * here. A future SmsReceiver (BroadcastReceiver) invokes this adapter.
+ * The bank is identified downstream from message CONTENT, not the sender.
  */
 class SmsSourceAdapter @Inject constructor() : PushSourceAdapter<SmsMessage> {
 
@@ -19,16 +19,19 @@ class SmsSourceAdapter @Inject constructor() : PushSourceAdapter<SmsMessage> {
 
     override fun toEnvelope(raw: SmsMessage): NotificationEnvelope? {
         val body = raw.messageBody ?: return null
-        if (body.isBlank()) return null
-        val sender = raw.originatingAddress ?: "sms"
+        val sender = raw.originatingAddress ?: "Unknown"
         return NotificationEnvelope(
-            packageName = "sms:$sender",
-            title = sender,
+            packageName = sender,
+            title = "SMS",
             text = body,
             subText = null,
             timestamp = Instant.ofEpochMilli(raw.timestampMillis),
-            notificationKey = "sms:$sender:${raw.timestampMillis}",
-            extras = emptyMap(),
+            notificationKey = "sms_${raw.timestampMillis}_$sender",
+            source = IngestionSource.SMS,
+            extras = mapOf(
+                "address" to sender,
+                "timestamp" to raw.timestampMillis.toString(),
+            ),
         )
     }
 }
