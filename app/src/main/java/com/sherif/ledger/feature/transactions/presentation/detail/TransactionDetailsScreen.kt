@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.sherif.ledger.core.designsystem.component.LedgerAmount
@@ -160,9 +161,11 @@ fun TransactionDetailsScreen(
                 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     LedgerAmount(
-                        amount = "${state.sign}AED ${state.amount.ifBlank { "0.00" }}",
+                        amount = "${state.sign}AED ${state.amount}",
+                        modifier = Modifier.fillMaxWidth(),
                         style = LedgerAmountStyle.Display,
                         color = if (state.isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense,
+                        textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(LedgerSpacing.Small))
                     // Payment Method Pill
