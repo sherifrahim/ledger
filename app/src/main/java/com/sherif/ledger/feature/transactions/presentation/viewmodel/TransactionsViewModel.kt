@@ -91,16 +91,4 @@ class TransactionsViewModel @Inject constructor(
         }
     }
 
-
-    private fun categoryFor(txn: com.sherif.ledger.core.domain.model.Transaction): MerchantCategory {
-        val name = (txn.rawText ?: "").uppercase()
-        return when {
-            txn.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME -> MerchantCategory.Salary
-            "COSTA" in name -> MerchantCategory.Coffee
-            "CARREFOUR" in name -> MerchantCategory.Grocery
-            "AMAZON" in name -> MerchantCategory.Shopping
-            else -> MerchantCategory.Shopping
-        }
-    }
-
 }

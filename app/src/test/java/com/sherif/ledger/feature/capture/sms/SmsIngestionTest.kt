@@ -91,7 +91,7 @@ class SmsIngestionTest {
             subText = null,
             timestamp = Instant.now(),
             notificationKey = "sms_1",
-            source = com.sherif.ledger.feature.capture.notification.IngestionSource.SMS
+            source = IngestionSource.SMS
         )
 
         useCase.execute(sms)
@@ -111,7 +111,7 @@ class SmsIngestionTest {
             subText = null,
             timestamp = Instant.now(),
             notificationKey = "sms_2",
-            source = com.sherif.ledger.feature.capture.notification.IngestionSource.SMS
+            source = IngestionSource.SMS
         )
 
         useCase.execute(sms)
@@ -130,7 +130,7 @@ class SmsIngestionTest {
             subText = null,
             timestamp = timestamp,
             notificationKey = "notif_1",
-            source = com.sherif.ledger.feature.capture.notification.IngestionSource.NOTIFICATION
+            source = IngestionSource.NOTIFICATION
         )
         val sms = NotificationEnvelope(
             packageName = "ADCB",
@@ -139,7 +139,7 @@ class SmsIngestionTest {
             subText = null,
             timestamp = timestamp,
             notificationKey = "sms_4",
-            source = com.sherif.ledger.feature.capture.notification.IngestionSource.SMS
+            source = IngestionSource.SMS
         )
 
         useCase.execute(notification)
