@@ -25,7 +25,7 @@ class SmsImporter @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
 ) {
 
-    suspend fun importHistoricalSms() = withContext(Dispatchers.IO) {
+    suspend fun importHistoricalSms(): ImportResult = withContext(Dispatchers.IO) {
         val lastImportDate = userPreferencesRepository.lastSmsImportDate.first()
         var maxDate = lastImportDate
         LedgerLogger.d("SmsImporter: Historical Import Started. LastImportDate=$lastImportDate")
@@ -71,11 +71,18 @@ class SmsImporter @Inject constructor(
                 val envelope = smsImportSourceAdapter.convert(row)
 
                 LedgerLogger.d("SmsImporter: Processing Envelope $processedCount/$count (Sender=${row.sender})")
-                processNotificationUseCase.execute(envelope, smsImportSourceAdapter.channel)
+                try {
+                    processNotificationUseCase.execute(envelope, smsImportSourceAdapter.channel)
+                } catch (e: Exception) {
+                    LedgerLogger.e("SmsImporter: Failed to process SMS from ${row.sender}", e)
+                }
             }
         }
 
         LedgerLogger.d("SmsImporter: Import Cycle Finished. MaxDate=$maxDate")
         userPreferencesRepository.setLastSmsImportDate(maxDate)
+        ImportResult(found = count)
     }
+
+    data class ImportResult(val found: Int)
 }

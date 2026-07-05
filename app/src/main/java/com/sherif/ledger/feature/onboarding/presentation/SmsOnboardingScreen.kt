@@ -27,12 +27,13 @@ fun SmsOnboardingScreen(
     viewModel: SmsOnboardingViewModel = hiltViewModel()
 ) {
     val isImporting by viewModel.isImporting.collectAsState()
+    val importResult by viewModel.importResult.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            viewModel.startImport(onComplete)
+            viewModel.startImport()
         } else {
             onComplete()
         }
@@ -74,24 +75,47 @@ fun SmsOnboardingScreen(
         
         Spacer(Modifier.height(LedgerSpacing.Massive))
 
-        if (isImporting) {
-            CircularProgressIndicator(color = LedgerTheme.colors.tint)
-            Spacer(Modifier.height(LedgerSpacing.Medium))
-            Text("Scanning inbox...", color = LedgerTheme.colors.secondaryLabel)
-        } else {
-            Button(
-                onClick = { launcher.launch(android.Manifest.permission.READ_SMS) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = LedgerTheme.colors.tint)
-            ) {
-                Text("Scan Inbox")
+        when {
+            isImporting -> {
+                CircularProgressIndicator(color = LedgerTheme.colors.tint)
+                Spacer(Modifier.height(LedgerSpacing.Medium))
+                Text("Scanning inbox...", color = LedgerTheme.colors.secondaryLabel)
             }
-            
-            TextButton(
-                onClick = { viewModel.skipImport(onComplete) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Skip for now", color = LedgerTheme.colors.tertiaryLabel)
+            importResult != null -> {
+                val message = when (importResult) {
+                    -1 -> "Import failed. You can try again later from settings."
+                    0 -> "No transaction SMS found in your inbox."
+                    else -> "Imported $importResult message(s) from your inbox."
+                }
+                Text(
+                    text = message,
+                    color = LedgerTheme.colors.label,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(LedgerSpacing.Medium))
+                Button(
+                    onClick = { onComplete() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = LedgerTheme.colors.tint)
+                ) {
+                    Text("Continue")
+                }
+            }
+            else -> {
+                Button(
+                    onClick = { launcher.launch(android.Manifest.permission.READ_SMS) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = LedgerTheme.colors.tint)
+                ) {
+                    Text("Scan Inbox")
+                }
+
+                TextButton(
+                    onClick = { viewModel.skipImport(onComplete) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Skip for now", color = LedgerTheme.colors.tertiaryLabel)
+                }
             }
         }
     }
