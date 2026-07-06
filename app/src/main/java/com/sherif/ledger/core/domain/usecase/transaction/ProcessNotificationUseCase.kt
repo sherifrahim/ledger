@@ -99,7 +99,8 @@ class ProcessNotificationUseCase @Inject constructor(
                     type = candidate.transactionType ?: TransactionType.EXPENSE,
                     timestamp = candidate.timestamp,
                     source = envelope.source,
-                    rawMerchantText = candidate.merchantName ?: "Unknown"
+                    rawMerchantText = candidate.merchantName ?: "Unknown",
+                    cardTail = candidate.accountHint
                 )
                 LedgerLogger.d("ProcessNotificationUseCase: PERSISTING params=$params")
                 val result = insertTransactionUseCase.execute(params)

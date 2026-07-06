@@ -15,5 +15,6 @@ data class Transaction(
     val timestamp: Instant,
     val source: IngestionSource,
     val rawText: String?,
+    val cardTail: String? = null,
     val fingerprint: String
 )

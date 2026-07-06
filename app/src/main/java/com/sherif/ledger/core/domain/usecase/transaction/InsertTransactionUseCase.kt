@@ -73,6 +73,7 @@ class InsertTransactionUseCase @Inject constructor(
                 timestamp = params.timestamp,
                 source = params.source,
                 rawText = params.rawMerchantText,
+                cardTail = params.cardTail,
                 fingerprint = fingerprint
             )
             
@@ -112,6 +113,7 @@ class InsertTransactionUseCase @Inject constructor(
         val type: TransactionType,
         val timestamp: Instant,
         val source: IngestionSource,
-        val rawMerchantText: String
+        val rawMerchantText: String,
+        val cardTail: String? = null
     )
 }

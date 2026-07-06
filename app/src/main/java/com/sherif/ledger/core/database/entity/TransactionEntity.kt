@@ -67,7 +67,10 @@ data class TransactionEntity(
     
     @ColumnInfo(name = "raw_text")
     val rawText: String?,
-    
+
+    @ColumnInfo(name = "card_tail")
+    val cardTail: String? = null,
+
     val fingerprint: String, // account_id + amount + brand_id + timestamp_bucket + raw_text_hash
 
     @ColumnInfo(name = "is_deleted")

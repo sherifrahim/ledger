@@ -75,6 +75,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     timestamp = Instant.ofEpochMilli(timestampEpochMillis),
     source = source,
     rawText = rawText,
+    cardTail = cardTail,
     fingerprint = fingerprint
 )
 
@@ -89,5 +90,6 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     timestampEpochMillis = timestamp.toEpochMilli(),
     source = source,
     rawText = rawText,
+    cardTail = cardTail,
     fingerprint = fingerprint
 )

@@ -57,6 +57,14 @@ class TransactionDetailsViewModel @Inject constructor(
                     } else null
                 } ?: txn.rawText ?: "Unknown"
 
+                // Prefer the transaction's own captured card tail as the payment mode.
+                // Falls back to the account name when no tail was captured (older rows / non-card sources).
+                val cardTail = txn.cardTail?.takeIf { it.isNotBlank() }
+                val resolvedPaymentMethod = when {
+                    cardTail != null -> "•••• $cardTail"
+                    else -> account?.name ?: "Unknown"
+                }
+
                 val zonedDateTime = txn.timestamp.atZone(ZoneId.systemDefault())
                 val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
                 val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -72,9 +80,9 @@ class TransactionDetailsViewModel @Inject constructor(
                         date = zonedDateTime.format(dateFormatter),
                         time = zonedDateTime.format(timeFormatter),
                         status = "Completed",
-                        paymentMethod = account?.name ?: "Unknown",
+                        paymentMethod = resolvedPaymentMethod,
                         accountName = account?.name ?: "Unknown",
-                        accountNumber = account?.accountNumberTail ?: "",
+                        accountNumber = cardTail ?: account?.accountNumberTail ?: "",
                         reference = txn.fingerprint.take(8).uppercase(),
                         history = emptyList(),
                         notes = txn.rawText
