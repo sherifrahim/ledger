@@ -1,6 +1,7 @@
 package com.sherif.ledger.core.di
 
 import com.sherif.ledger.feature.capture.parsing.AdcbParser
+import com.sherif.ledger.feature.capture.parsing.GenericBankParser
 import com.sherif.ledger.feature.capture.parsing.BankParser
 import dagger.Binds
 import dagger.Module
@@ -15,4 +16,8 @@ abstract class ParsingModule {
     @Binds
     @IntoSet
     abstract fun bindAdcbParser(parser: AdcbParser): BankParser
+
+    @Binds
+    @IntoSet
+    abstract fun bindGenericBankParser(parser: GenericBankParser): BankParser
 }

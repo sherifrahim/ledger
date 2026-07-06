@@ -7,6 +7,12 @@ import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
  */
 interface BankParser {
     /**
+     * Ordering hint: parsers are tried from lowest priority value to highest.
+     * Specific bank parsers use a low value; the generic fallback uses a high one.
+     */
+    val priority: Int get() = 0
+
+    /**
      * Determines if this parser can handle the given notification.
      */
     fun supports(envelope: NotificationEnvelope): Boolean

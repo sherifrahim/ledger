@@ -7,14 +7,22 @@ import java.util.regex.Pattern
  * Reusable regex-based extraction units to avoid monolithic patterns.
  */
 object ExtractionHelpers {
-    private val AMOUNT_PATTERN = Pattern.compile("(\\d+\\.\\d{1,2}|\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d+)")
-    private val CARD_PATTERN = Pattern.compile("(?:[Xx*]{1,4}|(?:card |account |a\\/c )?ending(?: in)? |account(?: no)?\\.?\\s*[Xx*]*|a\\/c\\s*[Xx*]*)(\\d{4,})", Pattern.CASE_INSENSITIVE)
+    // Currency-anchored: the amount must follow a currency token. Prevents card/account
+    // numbers (which often precede the amount) from being mis-read as the amount.
+    private val AMOUNT_ANCHORED_PATTERN = Pattern.compile("(?:AED|USD|INR|Rs\\.?|DIRHAM)\\s*(\\d[\\d,]*(?:\\.\\d{1,2})?)", Pattern.CASE_INSENSITIVE)
+    // Fallback for texts with no currency token: first number-like token.
+    private val AMOUNT_FALLBACK_PATTERN = Pattern.compile("(\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d+\\.\\d{1,2}|\\d+)")
+    private val CARD_PATTERN = Pattern.compile("(?:card no\\.?\\s*[Xx*]*|[Xx*]{2,4}|(?:card |account |a\\/c )?ending(?: in)? |account(?: no)?\\.?\\s*[Xx*]*|a\\/c\\s*[Xx*]*)(\\d{4,})", Pattern.CASE_INSENSITIVE)
 
     fun extractAmountMinor(text: String): Long? {
-        val matcher = AMOUNT_PATTERN.matcher(text)
-        if (!matcher.find()) return null
-        
-        val matchedValue = matcher.group(1) ?: return null
+        val anchored = AMOUNT_ANCHORED_PATTERN.matcher(text)
+        val matchedValue = if (anchored.find()) {
+            anchored.group(1)
+        } else {
+            val fallback = AMOUNT_FALLBACK_PATTERN.matcher(text)
+            if (fallback.find()) fallback.group(1) else null
+        } ?: return null
+
         val cleaned = matchedValue.replace(",", "")
         return if (cleaned.contains(".")) {
             val parts = cleaned.split(".")

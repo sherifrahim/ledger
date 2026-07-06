@@ -18,6 +18,8 @@ class AdcbParser @Inject constructor(
     private val merchantNormalizer: MerchantNormalizer
 ) : BankParser {
 
+    override val priority: Int = 0
+
     private val adcbPackage = "com.adcb.mobileapp"
     private val adcbSmsSender = "ADCB"
 
