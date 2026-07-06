@@ -8,7 +8,7 @@ import java.util.regex.Pattern
  */
 object ExtractionHelpers {
     private val AMOUNT_PATTERN = Pattern.compile("(\\d+\\.\\d{1,2}|\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d+)")
-    private val CARD_PATTERN = Pattern.compile("(?:[Xx*]{1,4}|ending in |account no. )(\\d{4,})")
+    private val CARD_PATTERN = Pattern.compile("(?:[Xx*]{1,4}|ending(?: in)? |account no\\.?\\s*[Xx*]*)(\\d{4,})", Pattern.CASE_INSENSITIVE)
 
     fun extractAmountMinor(text: String): Long? {
         val matcher = AMOUNT_PATTERN.matcher(text)
