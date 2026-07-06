@@ -60,7 +60,9 @@ class TransactionDetailsViewModel @Inject constructor(
                 // Prefer the transaction's own captured card tail as the payment mode.
                 // Falls back to the account name when no tail was captured (older rows / non-card sources).
                 val cardTail = txn.cardTail?.takeIf { it.isNotBlank() }
+                val isCredit = txn.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME
                 val resolvedPaymentMethod = when {
+                    cardTail != null && isCredit -> "Account •••• $cardTail"
                     cardTail != null -> "•••• $cardTail"
                     else -> account?.name ?: "Unknown"
                 }
