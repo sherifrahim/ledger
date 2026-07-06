@@ -10,8 +10,7 @@ import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
-import com.sherif.ledger.feature.capture.parsing.ParseResult
-import com.sherif.ledger.feature.capture.parsing.ParserRegistry
+import com.sherif.ledger.feature.capture.extraction.ExtractionRegistry
 import com.sherif.ledger.feature.capture.reconciliation.ReconciliationEngine
 import com.sherif.ledger.feature.capture.reconciliation.ReconciliationResult
 import kotlinx.coroutines.flow.first
@@ -23,7 +22,7 @@ import javax.inject.Inject
  */
 class ProcessNotificationUseCase @Inject constructor(
     private val filter: NotificationFilter,
-    private val parserRegistry: ParserRegistry,
+    private val extractionRegistry: ExtractionRegistry,
     private val reconciliationEngine: ReconciliationEngine,
     private val transactionRepository: TransactionRepository,
     private val insertTransactionUseCase: InsertTransactionUseCase,
@@ -52,22 +51,23 @@ class ProcessNotificationUseCase @Inject constructor(
         LedgerLogger.d("ProcessNotificationUseCase: ACCEPTED by Filter")
         LedgerLogger.pipeline("Filter", "Accepted: ${envelope.packageName}")
 
-        // 2. Parse
-        val parseResult = parserRegistry.parse(envelope)
-        val candidate = when (parseResult) {
-            is ParseResult.Success -> {
-                LedgerLogger.d("ProcessNotificationUseCase: PARSED candidate=${parseResult.candidate}")
-                LedgerLogger.pipeline("Parser", "Matched: ${parseResult.candidate.merchantName}")
-                parseResult.candidate
+        // 2. Extract (deterministic + intent-aware heuristic extractors, ranked and
+        // validated behind one registry). Everything from the candidate onward is unchanged.
+        val extractionOutcome = extractionRegistry.extract(envelope)
+        val candidate = when (extractionOutcome) {
+            is ExtractionRegistry.ExtractionOutcome.Success -> {
+                LedgerLogger.d("ProcessNotificationUseCase: EXTRACTED candidate=${extractionOutcome.candidate}")
+                LedgerLogger.pipeline("Parser", "Matched: ${extractionOutcome.candidate.merchantName}")
+                extractionOutcome.candidate
             }
-            ParseResult.Ignore -> {
-                LedgerLogger.d("ProcessNotificationUseCase: IGNORED (OTP/Statement)")
-                LedgerLogger.pipeline("Parser", "Intentionally ignored (OTP/Statement)")
+            is ExtractionRegistry.ExtractionOutcome.Ignored -> {
+                LedgerLogger.d("ProcessNotificationUseCase: IGNORED (${extractionOutcome.reason})")
+                LedgerLogger.pipeline("Parser", "Intentionally ignored: ${extractionOutcome.reason}")
                 return
             }
-            is ParseResult.Failed -> {
-                LedgerLogger.d("ProcessNotificationUseCase: PARSE FAILED reason=${parseResult.reason}")
-                LedgerLogger.pipeline("Parser", "Failed: ${parseResult.reason}")
+            is ExtractionRegistry.ExtractionOutcome.Failed -> {
+                LedgerLogger.d("ProcessNotificationUseCase: EXTRACTION FAILED reason=${extractionOutcome.reason}")
+                LedgerLogger.pipeline("Parser", "Failed: ${extractionOutcome.reason}")
                 return
             }
         }

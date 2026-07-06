@@ -1,5 +1,8 @@
 package com.sherif.ledger.core.domain.usecase.transaction
 
+import com.sherif.ledger.feature.capture.extraction.KnownBankExtractor
+import com.sherif.ledger.feature.capture.extraction.ExtractionValidator
+import com.sherif.ledger.feature.capture.extraction.ExtractionRegistry
 import com.sherif.ledger.core.domain.model.*
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
@@ -73,7 +76,7 @@ class ProcessNotificationUseCaseTest {
 
         val useCase = ProcessNotificationUseCase(
             NotificationFilter(),
-            parserRegistry,
+            ExtractionRegistry(setOf(KnownBankExtractor(parserRegistry)), ExtractionValidator()),
             reconciliationEngine,
             transactionRepository,
             insertTransactionUseCase,

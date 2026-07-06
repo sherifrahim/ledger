@@ -1,5 +1,8 @@
 package com.sherif.ledger.feature.capture
 
+import com.sherif.ledger.feature.capture.extraction.KnownBankExtractor
+import com.sherif.ledger.feature.capture.extraction.ExtractionValidator
+import com.sherif.ledger.feature.capture.extraction.ExtractionRegistry
 import com.sherif.ledger.core.domain.model.*
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
@@ -74,7 +77,7 @@ class LiveCaptureIntegrationTest {
 
     private val useCase = ProcessNotificationUseCase(
         NotificationFilter(),
-        parserRegistry,
+        ExtractionRegistry(setOf(KnownBankExtractor(parserRegistry)), ExtractionValidator()),
         ReconciliationEngine(FingerprintGenerator()),
         transactionRepository,
         insertTransactionUseCase,
