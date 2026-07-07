@@ -60,6 +60,24 @@ class ExtractionRegistry @Inject constructor(
             return ExtractionOutcome.Ignored(ig.reason, diagnostics)
         }
 
+        timed.firstOrNull { it.first is ExtractionResult.Confirmation }?.let { (res, ms) ->
+            val cf = res as ExtractionResult.Confirmation
+            diagnostics += ExtractionDiagnostics(
+                extractor = cf.extractorName,
+                decision = "Confirmation",
+                category = "Confirmation",
+                durationMs = ms,
+                confidence = cf.confidence,
+                validationPassed = true,
+                negativeEvidence = cf.matchedPhrases,
+                reasoning = listOf("Confirmation of an existing payment"),
+                detectedIntent = "Confirmation",
+                matchedLibraryEntries = cf.matchedPhrases,
+            )
+            emit(diagnostics)
+            return ExtractionOutcome.Confirmation(cf.amountMinor, cf.accountTail, cf.matchedPhrases, diagnostics)
+        }
+
         data class Ranked(val result: ExtractionResult.Extracted, val valid: Boolean)
         val ranked = mutableListOf<Ranked>()
 
@@ -80,6 +98,9 @@ class ExtractionRegistry @Inject constructor(
                         rejectedReason = rejected,
                         positiveEvidence = res.positiveEvidence,
                         reasoning = res.reasoning,
+                        detectedIntent = if (valid) "Transaction" else "Rejected",
+                        detectedType = res.candidate.transactionType?.name ?: "",
+                        confidenceBreakdown = "score=${res.confidence.value}",
                     )
                     ranked += Ranked(res, valid)
                 }
@@ -95,6 +116,7 @@ class ExtractionRegistry @Inject constructor(
                     )
                 }
                 is ExtractionResult.Ignore -> Unit
+                is ExtractionResult.Confirmation -> Unit
             }
         }
 
@@ -151,5 +173,12 @@ class ExtractionRegistry @Inject constructor(
         data class Success(val candidate: TransactionCandidate, override val diagnostics: List<ExtractionDiagnostics>) : ExtractionOutcome
         data class Ignored(val reason: String, override val diagnostics: List<ExtractionDiagnostics>) : ExtractionOutcome
         data class Failed(val reason: String, override val diagnostics: List<ExtractionDiagnostics>) : ExtractionOutcome
+
+        data class Confirmation(
+            val amountMinor: Long?,
+            val accountTail: String?,
+            val matchedPhrases: List<String>,
+            override val diagnostics: List<ExtractionDiagnostics>,
+        ) : ExtractionOutcome
     }
 }

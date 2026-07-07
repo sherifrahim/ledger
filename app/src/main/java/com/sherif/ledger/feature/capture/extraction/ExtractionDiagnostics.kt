@@ -18,6 +18,10 @@ data class ExtractionDiagnostics(
     val positiveEvidence: List<String> = emptyList(),
     val negativeEvidence: List<String> = emptyList(),
     val reasoning: List<String> = emptyList(),
+    val detectedIntent: String = "",
+    val detectedType: String = "",
+    val matchedLibraryEntries: List<String> = emptyList(),
+    val confidenceBreakdown: String = "",
 ) {
     companion object {
         const val DECISION_EXTRACTED = "Extracted"

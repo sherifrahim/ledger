@@ -75,29 +75,29 @@ class HeuristicIntentTest {
     // ---- MUST IGNORE ----
 
     @Test fun `emi offer ignored`() {
-        assertIgnored("Convert your purchase into easy EMI.", "Promotion")
+        assertIgnored("Convert your purchase into easy EMI.", "EMI Offer")
     }
 
     @Test fun `loan offer ignored`() {
-        val ig = assertIgnored("You're eligible for a personal loan of AED 50,000. Apply now.", "Promotion")
+        val ig = assertIgnored("You're eligible for a personal loan of AED 50,000. Apply now.", "Loan Offer")
         assertTrue(ig.matchedPhrases.isNotEmpty())
     }
 
     @Test fun `cashback ignored`() {
-        assertIgnored("Get 10% cashback on your next purchase.", "Promotion")
+        assertIgnored("Get 10% cashback on your next purchase.", "Offer")
     }
 
     @Test fun `credit limit offer ignored`() {
-        assertIgnored("Increase your credit limit instantly. You are pre-approved.", "Promotion")
+        assertIgnored("Increase your credit limit instantly. You are pre-approved.", "Credit Limit Offer")
     }
 
     @Test fun `marketing ignored`() {
-        assertIgnored("Exclusive offer! Upgrade your card and win rewards. Limited time.", "Promotion")
+        assertIgnored("Exclusive offer! Upgrade your card and win rewards. Limited time.", "Offer")
     }
 
     @Test fun `promotion with amount still ignored`() {
         // Has a real currency amount but promotional intent must win.
-        assertIgnored("You are eligible for AED 100000 loan. Apply now for instant approval.", "Promotion")
+        assertIgnored("You are eligible for AED 100000 loan. Apply now for instant approval.", "Loan Offer")
     }
 
     @Test fun `otp ignored`() {
@@ -109,7 +109,7 @@ class HeuristicIntentTest {
     }
 
     @Test fun `ignore carries diagnostics phrases`() {
-        val ig = assertIgnored("Get 10% cashback now, limited time offer.", "Promotion")
+        val ig = assertIgnored("Get 10% cashback now, limited time offer.", "Offer")
         assertTrue("cashback" in ig.matchedPhrases || ig.matchedPhrases.any { it.contains("cashback") })
     }
 }

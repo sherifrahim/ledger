@@ -59,4 +59,17 @@ sealed interface ExtractionResult {
     ) : ExtractionResult
 
     data class NotApplicable(val reason: String, val extractorName: String) : ExtractionResult
+
+    /**
+     * Acknowledges an EXISTING financial event rather than a new one. Not ignored,
+     * not a candidate: matched against nearby persisted transactions; on no match
+     * logged and dropped.
+     */
+    data class Confirmation(
+        val amountMinor: Long?,
+        val accountTail: String?,
+        val matchedPhrases: List<String>,
+        val extractorName: String,
+        val confidence: Int,
+    ) : ExtractionResult
 }

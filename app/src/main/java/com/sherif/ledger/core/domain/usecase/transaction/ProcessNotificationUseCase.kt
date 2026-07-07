@@ -10,6 +10,7 @@ import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
+import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.ExtractionRegistry
 import com.sherif.ledger.feature.capture.reconciliation.ReconciliationEngine
 import com.sherif.ledger.feature.capture.reconciliation.ReconciliationResult
@@ -23,6 +24,7 @@ import javax.inject.Inject
 class ProcessNotificationUseCase @Inject constructor(
     private val filter: NotificationFilter,
     private val extractionRegistry: ExtractionRegistry,
+    private val confirmationMatcher: ConfirmationMatcher,
     private val reconciliationEngine: ReconciliationEngine,
     private val transactionRepository: TransactionRepository,
     private val insertTransactionUseCase: InsertTransactionUseCase,
@@ -68,6 +70,24 @@ class ProcessNotificationUseCase @Inject constructor(
             is ExtractionRegistry.ExtractionOutcome.Failed -> {
                 LedgerLogger.d("ProcessNotificationUseCase: EXTRACTION FAILED reason=${extractionOutcome.reason}")
                 LedgerLogger.pipeline("Parser", "Failed: ${extractionOutcome.reason}")
+                return
+            }
+            is ExtractionRegistry.ExtractionOutcome.Confirmation -> {
+                val cStart = envelope.timestamp.minus(24, ChronoUnit.HOURS)
+                val cEnd = envelope.timestamp.plus(24, ChronoUnit.HOURS)
+                val nearbyResult = transactionRepository.observeTransactionsBetween(cStart, cEnd).first()
+                val nearby = if (nearbyResult is LedgerResult.Success) nearbyResult.data else emptyList()
+                when (val match = confirmationMatcher.match(
+                    amountMinor = extractionOutcome.amountMinor,
+                    accountTail = extractionOutcome.accountTail,
+                    confirmationTime = envelope.timestamp,
+                    existingTransactions = nearby,
+                )) {
+                    is ConfirmationMatcher.MatchResult.Matched ->
+                        LedgerLogger.pipeline("Confirmation", "Confirmed existing txn #${match.transaction.id}; no insert")
+                    is ConfirmationMatcher.MatchResult.Unmatched ->
+                        LedgerLogger.pipeline("Confirmation", "Unmatched: ${match.reason}; dropped")
+                }
                 return
             }
         }

@@ -1,5 +1,6 @@
 package com.sherif.ledger.feature.capture.sms
 
+import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.KnownBankExtractor
 import com.sherif.ledger.feature.capture.extraction.ExtractionValidator
 import com.sherif.ledger.feature.capture.extraction.ExtractionRegistry
@@ -79,6 +80,7 @@ class SmsIngestionTest {
     private val useCase = ProcessNotificationUseCase(
         NotificationFilter(),
         ExtractionRegistry(setOf(KnownBankExtractor(parserRegistry)), ExtractionValidator()),
+        ConfirmationMatcher(),
         ReconciliationEngine(FingerprintGenerator()),
         transactionRepository,
         insertTransactionUseCase,
