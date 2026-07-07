@@ -36,6 +36,7 @@ class FinancialPhraseLibrary @Inject constructor() {
         "payment of", "debit of", "credit of", "transaction of", "disbursed",
         "refunded", "reversed", "posted to", "sent to", "fund transfer",
         "transfer of", "transfer to", "remittance", "received from",
+        "using your card", "using card",
     )
 
     /** Kept for backward compatibility (Phase 4B). Alias of the broad verbs. */
@@ -89,6 +90,34 @@ class FinancialPhraseLibrary @Inject constructor() {
         "receipt of your payment", "successfully processed your payment",
     )
 
+    /**
+     * STRONG confirmation phrases: unambiguous acknowledgements of an existing
+     * payment or balance-state updates. Unlike the full [confirmationPhrases]
+     * list, this excludes weak signals like "thank you" that also appear in
+     * ordinary purchase receipts. A confirmation is only classified when a strong
+     * phrase is present, preventing purchase receipts ("Thank you for using your
+     * card ... at MERCHANT") from being mistaken for confirmations.
+     */
+    val strongConfirmationPhrases: List<String> = listOf(
+        "payment received", "payment posted", "payment credited",
+        "payment successfully received", "payment acknowledged",
+        "payment has been posted", "we have received your payment",
+        "outstanding balance", "minimum amount due",
+        "available credit restored", "receipt of your payment",
+        "successfully processed your payment", "balance restored",
+        "outstanding updated", "credit card outstanding",
+    )
+
+    /**
+     * Credit indicators: bank shorthand for a credit to the account that the
+     * verb list misses (e.g. "Cr. transaction"). Signals Income. Bank-agnostic;
+     * many banks abbreviate credit/debit as Cr./Dr.
+     */
+    val creditIndicatorPhrases: List<String> = listOf(
+        "cr. transaction", "cr transaction", "a/c credited", "acct credited",
+        "amount credited", "credit transaction",
+    )
+
     // ---- Concept vocabularies for TYPE inference (bank-agnostic) ----
     val salaryPhrases: List<String> = listOf(
         "salary", "payroll", "wps", "end of service", "gratuity",
@@ -140,3 +169,4 @@ class FinancialPhraseLibrary @Inject constructor() {
     fun containsAny(group: List<String>, text: String): Boolean =
         matches(group, text).isNotEmpty()
 }
+

@@ -1,0 +1,8 @@
+[
+  {"rawMessage": "Rs 250.00 debited via NEFT to RAVI from account XXXX5678.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 250.0}},
+  {"rawMessage": "You are pre-approved for an SBI personal loan. Apply now!", "expected": {"decision": "Ignored", "category": "Loan Offer"}},
+  {"rawMessage": "Dear Customer, Rs 300.00 debited from A/c XXXX5678 via UPI/GPay to grocery@oksbi on 05Jul26.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 300.0}},
+  {"rawMessage": "Rs 75 paid to Auto Driver via BHIM UPI. UPI Ref No 998877665544.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 75.0}},
+  {"rawMessage": "Win Rs 50 cashback on your first Paytm UPI payment this week. Apply now.", "expected": {"decision": "Ignored", "category": "Offer"}}
+]
+

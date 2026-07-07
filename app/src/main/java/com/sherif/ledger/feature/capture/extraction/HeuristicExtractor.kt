@@ -69,7 +69,10 @@ class HeuristicExtractor @Inject constructor(
 
         // 2. Confirmation: acknowledges an EXISTING payment. Requires confirmation
         // phrases AND absence of a STRONG (money-leaving) event verb.
-        val confirmPhrases = phrases.matches(phrases.confirmationPhrases, text)
+        // A confirmation needs a STRONG acknowledgement phrase (payment received /
+        // outstanding balance / balance restored). Weak signals like "thank you"
+        // alone appear in ordinary purchase receipts and must not classify here.
+        val confirmPhrases = phrases.matches(phrases.strongConfirmationPhrases, text)
         val strongEvent = phrases.containsAny(phrases.strongEventVerbs, text)
         if (confirmPhrases.isNotEmpty() && !strongEvent) {
             return ExtractionResult.Confirmation(
@@ -89,6 +92,20 @@ class HeuristicExtractor @Inject constructor(
         val offers = phrases.matches(phrases.promotionPhrases, text)
         val type = inferType(lower)
         val merchant = extractMerchant(text, type)
+
+        // A promotional message whose only "amount" is a percentage (e.g. "10%
+        // cashback") has no anchored currency amount. Reject it as an offer even
+        // when a spend verb like "purchase" is present, so the bare number cannot
+        // score as a transaction amount.
+        if (offers.isNotEmpty() && !hasAnchoredAmount(text)) {
+            return ExtractionResult.Ignore(
+                reason = "Promotion/offer detected (no anchored amount)",
+                extractorName = name,
+                category = classifyOffer(lower),
+                matchedPhrases = offers,
+                confidence = 92,
+            )
+        }
 
         val positive = mutableListOf<String>()
         var score = 0
@@ -165,8 +182,17 @@ class HeuristicExtractor @Inject constructor(
     }
 
     /** Bank-agnostic type inference from concept vocabularies (order matters). */
+    private val anchoredAmount = Pattern.compile(
+        "(?:AED|USD|INR|Rs\\.?|DIRHAM)\\s*(\\d[\\d,]*(?:\\.\\d{1,2})?)",
+        Pattern.CASE_INSENSITIVE,
+    )
+
+    /** True only when a currency-anchored amount is present (not a bare percentage). */
+    private fun hasAnchoredAmount(text: String): Boolean = anchoredAmount.matcher(text).find()
+
     private fun inferType(lower: String): TransactionType = when {
         phrases.containsAny(phrases.salaryPhrases, lower) -> TransactionType.INCOME
+        phrases.containsAny(phrases.creditIndicatorPhrases, lower) -> TransactionType.INCOME
         phrases.containsAny(phrases.loanDisbursePhrases, lower) -> TransactionType.INCOME
         phrases.containsAny(phrases.refundPhrases, lower) -> TransactionType.REFUND
         phrases.containsAny(phrases.cardPaymentPhrases, lower) && lower.contains("card") -> TransactionType.TRANSFER
@@ -211,3 +237,4 @@ class HeuristicExtractor @Inject constructor(
         }
     }
 }
+

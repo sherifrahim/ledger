@@ -1,0 +1,7 @@
+[
+  {"rawMessage": "Rs 1500.00 spent at BIG BAZAAR using card ending 4321.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 1500.0, "cardTail": "4321"}},
+  {"rawMessage": "Interest of Rs 320.00 credited to your ICICI savings account XXXX7788.", "expected": {"decision": "Extracted", "transactionType": "Income", "amount": 320.0}},
+  {"rawMessage": "INR 450.00 debited via UPI to swiggy@icici through Google Pay. Ref 445566778899.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 450.0}},
+  {"rawMessage": "Rs 2000 transferred to PRIYA via PhonePe UPI from your ICICI account XXXX9012.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 2000.0}}
+]
+

@@ -1,0 +1,6 @@
+[
+  {"rawMessage": "AED 75.00 sent to AHMED via fund transfer from A/C XXXX2233.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 75.0}},
+  {"rawMessage": "Profit of AED 45.20 credited to your DIB savings account XXXX9012.", "expected": {"decision": "Extracted", "transactionType": "Income", "amount": 45.2}}
+]
+
+

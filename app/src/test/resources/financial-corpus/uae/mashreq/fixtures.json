@@ -1,0 +1,6 @@
+[
+  {"rawMessage": "Mashreq Credit Card ending 1959 was used for a transaction of AED 3.00 at FRESH WAY BAQALA on Sunday, 5 July 2026, 3:51 pm. Available limit: AED 7,869.08", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 3.0, "cardTail": "1959"}},
+  {"rawMessage": "Thank you for using your card ending 1959 for AED 30.50 at SEA SHELL CORNICHE on 04-JUL-2026 01:22 AM. Avl.Limit: AED 7,980.08", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 30.5, "cardTail": "1959"}},
+  {"rawMessage": "Increase your Mashreq credit limit instantly. You are pre-approved.", "expected": {"decision": "Ignored", "category": "Credit Limit Offer"}}
+]
+

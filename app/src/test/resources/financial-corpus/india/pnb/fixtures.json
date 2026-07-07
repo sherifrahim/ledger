@@ -1,0 +1,6 @@
+[
+  {"rawMessage": "Rs 750.00 debited from your pnb account XXXX9090 at DMART.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 750.0}},
+  {"rawMessage": "Get 5% cashback on your pnb card. Limited time offer.", "expected": {"decision": "Ignored", "category": "Offer"}}
+]
+
+

@@ -1,0 +1,6 @@
+[
+  {"rawMessage": "AED 250.00 spent at STARBUCKS using card ending 9999.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 250.0, "cardTail": "9999"}},
+  {"rawMessage": "Your loan of AED 50,000 has been disbursed and credited to account XXXX1234.", "expected": {"decision": "Extracted", "transactionType": "Income", "amount": 50000.0}}
+]
+
+

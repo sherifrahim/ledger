@@ -1,0 +1,6 @@
+[
+  {"rawMessage": "AED 120.50 debited from your ADIB account XXXX4455 at CARREFOUR.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 120.5}},
+  {"rawMessage": "Annual fee of AED 100.00 debited from card ending 5566.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 100.0, "cardTail": "5566"}}
+]
+
+

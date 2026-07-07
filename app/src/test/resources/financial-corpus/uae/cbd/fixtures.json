@@ -1,0 +1,6 @@
+[
+  {"rawMessage": "Cheque of AED 3000.00 deposited to your CBD account XXXX1122.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 3000.0}},
+  {"rawMessage": "EMI of AED 1,200 debited from your account XXXX1234 towards loan.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 1200.0}}
+]
+
+
