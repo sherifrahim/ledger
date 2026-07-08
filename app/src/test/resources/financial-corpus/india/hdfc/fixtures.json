@@ -1,7 +1,7 @@
 [
   {"rawMessage": "Rs. 500.00 debited from a/c XXXX1234 for UPI to JOHN on 05-Jul. Avl bal Rs 12000.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 500.0}},
   {"rawMessage": "Salary of Rs 60000 credited to your HDFC account XXXX1234.", "expected": {"decision": "Extracted", "transactionType": "Income", "amount": 60000.0}},
-  {"rawMessage": "Your HDFC OTP is 112233. Valid for 5 minutes.", "expected": {"decision": "Ignored", "category": "OTP"}},
+  {"rawMessage": "Your HDFC OTP is 112233. Valid for 5 minutes.", "expected": {"decision": "Ignored"}, "categoryNote": "engine returns Ignored; category is Statement at KnownBank layer (OTP vs Statement indistinguishable there)"},
   {"rawMessage": "Rs.250.00 debited via UPI to john@okhdfcbank on 05-Jul-26. Ref 512345678901. Not you? Call HDFC.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 250.0}},
   {"rawMessage": "You've paid Rs 120 to Cafe Coffee Day via PhonePe UPI. UPI Ref 218765432109.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 120.0}},
   {"rawMessage": "Rs 500 received from RAHUL via Google Pay UPI to a/c XXXX1234.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 500.0}},

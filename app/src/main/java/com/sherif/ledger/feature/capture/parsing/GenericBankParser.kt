@@ -89,10 +89,20 @@ class GenericBankParser @Inject constructor(
         )
     }
 
+    // Transfer signals shared with the semantic language library so the parser
+    // and the heuristic agree: UPI/NEFT/IMPS/RTGS/"sent to"/remittance are all
+    // transfers regardless of bank. Corpus-driven (Phase 4F): UPI SMS carry an
+    // amount and an account tail, so this parser claims them at high confidence
+    // and its type must match the transfer semantics.
+    private val transferSignals = listOf(
+        "transferred", "transfer to", "transfer of", " neft", " imps", " rtgs",
+        " upi", "via upi", "via neft", "sent to", "remittance", "fund transfer",
+    )
+
     private fun detectType(lower: String): TransactionType = when {
         lower.contains("salary") -> TransactionType.INCOME
         lower.contains("refund") || lower.contains("reversed") -> TransactionType.REFUND
-        lower.contains("transferred") || lower.contains("transfer") -> TransactionType.TRANSFER
+        transferSignals.any { lower.contains(it) } -> TransactionType.TRANSFER
         lower.contains("withdrawn") || lower.contains("withdrawal") -> TransactionType.EXPENSE
         lower.contains("cr. transaction") || lower.contains("cr transaction") -> TransactionType.INCOME
         lower.contains("credited") -> TransactionType.INCOME
@@ -120,3 +130,4 @@ class GenericBankParser @Inject constructor(
         }
     }
 }
+

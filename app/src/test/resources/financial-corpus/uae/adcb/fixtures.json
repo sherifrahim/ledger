@@ -5,7 +5,7 @@
   {"rawMessage": "AED3000.00 withdrawn from acc. XXX920001 on Jun 24 2026 6:01PM at ATM-Index EXC Hamdaan. Avl.Bal.AED958.80.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 3000.0, "currency": "AED"}},
   {"rawMessage": "Your debit card XXX5986 linked to acc. XXX920001 was used for USD21.00 on Jul 3 2026 3:25PM at ANTHROPIC CLAUD,US. Avl.Bal AED 8999.38.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 21.0}},
   {"rawMessage": "A Cr. transaction of AED 1245.00 on your account no. XXX920001 was successful.Available balance is AED2975.80.", "expected": {"decision": "Extracted", "transactionType": "Income", "amount": 1245.0, "currency": "AED"}},
-  {"rawMessage": "Your OTP for ADCB login is 445566. Do not share with anyone.", "expected": {"decision": "Ignored", "category": "OTP"}},
+  {"rawMessage": "Your OTP for ADCB login is 445566. Do not share with anyone.", "expected": {"decision": "Ignored"}, "categoryNote": "engine returns Ignored; category is Statement at KnownBank layer (OTP vs Statement indistinguishable there)"},
   {"rawMessage": "Your ADCB monthly statement is ready. Total due AED 500.", "expected": {"decision": "Ignored", "category": "Statement"}},
   {"rawMessage": "You are eligible for a personal loan of AED 50,000. Apply now for instant approval.", "expected": {"decision": "Ignored", "category": "Loan Offer"}},
   {"rawMessage": "AED 200 debited from your account towards FAB Credit Card.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 200.0}}

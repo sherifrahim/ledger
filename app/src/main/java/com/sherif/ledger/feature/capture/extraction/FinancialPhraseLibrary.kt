@@ -57,9 +57,10 @@ class FinancialPhraseLibrary @Inject constructor() {
         "pre-qualified", "instant approval", "limited time", "offer", "avail",
         "upgrade your", "increase your credit", "special offer", "exclusive",
         "hurry", "don't miss", "book now", "redeem your", "win ", "voucher",
-        "discount", "% off", "% cashback on", "reward points", "promotion",
-        "promo", "activate now", "claim your", "interest-free for",
-        "convert to easy emi", "convert to emi", "easy emi", "lucky draw",
+        "discount", "% off", "% cashback on", "cashback", "reward points",
+        "reward", "promotion", "promo", "activate now", "claim your",
+        "interest-free for", "convert to easy emi", "convert to emi",
+        "easy emi", "lucky draw",
     )
 
     /** Offer phrases so strongly promotional they outweigh a transaction verb. */

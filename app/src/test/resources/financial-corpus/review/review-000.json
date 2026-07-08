@@ -1,0 +1,17 @@
+{
+  "rawMessage": "Your HDFC OTP is 112233. Valid for 5 minutes.",
+  "observed": {
+    "decision": "ignored",
+    "category": "Statement",
+    "transactionType": null,
+    "amountMinor": null,
+    "cardTail": null,
+    "confidence": 0,
+    "extractor": "known-bank"
+  },
+  "expectedFromCorpus": {
+    "decision": "Ignored"
+  },
+  "failureReason": "category Statement != OTP",
+  "TODO": "classify and move into the correct bank fixtures.json"
+}

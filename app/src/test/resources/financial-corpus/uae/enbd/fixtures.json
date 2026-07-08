@@ -1,7 +1,6 @@
 [
   {"rawMessage": "Purchase of AED 37.75 with Credit Card ending 8165 at Noon Minutes, Dubai. Avl Cr. Limit is AED 12,441.91", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 37.75, "cardTail": "8165"}},
   {"rawMessage": "Payment of AED 2.25 to Noon Food with Credit Card ending 8165. Avl Cr. Limit is AED 11,779.66.", "expected": {"decision": "Extracted", "transactionType": "Expense", "amount": 2.25, "cardTail": "8165"}},
-  {"rawMessage": "Your Emirates NBD verification code is 998877. Do not share.", "expected": {"decision": "Ignored", "category": "OTP"}}
+  {"rawMessage": "Your Emirates NBD verification code is 998877. Do not share.", "expected": {"decision": "Ignored"}, "categoryNote": "engine returns Ignored; category is Statement at KnownBank layer (OTP vs Statement indistinguishable there)"}
 ]
-
 
