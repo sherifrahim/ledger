@@ -35,7 +35,7 @@ fun Modifier.ledgerSurface(
     shape: Shape = LedgerRadius.Small,
     backgroundColor: Color? = null,
     borderColor: Color? = null,
-    borderWidth: Dp = 0.5.dp,
+    borderWidth: Dp = LedgerTheme.border.Hairline,
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
 ): Modifier = composed {

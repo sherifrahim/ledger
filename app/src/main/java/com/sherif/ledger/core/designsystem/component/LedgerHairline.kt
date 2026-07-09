@@ -21,7 +21,7 @@ fun LedgerHairline(modifier: Modifier = Modifier) {
     Box(
         modifier
             .fillMaxWidth()
-            .height(0.5.dp)
+            .height(LedgerTheme.border.Hairline)
             .background(LedgerTheme.colors.separator),
     )
 }

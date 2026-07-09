@@ -77,7 +77,7 @@ fun LedgerTransactionRow(
                 Text(
                     text = supportingText,
                     style = LedgerTextStyles.Caption,
-                    color = LedgerTheme.colors.tertiaryLabel.copy(alpha = 0.50f), // Sharper hierarchy
+                    color = LedgerTheme.colors.tertiaryLabel.copy(alpha = LedgerTheme.opacity.Secondary), // Sharper hierarchy
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

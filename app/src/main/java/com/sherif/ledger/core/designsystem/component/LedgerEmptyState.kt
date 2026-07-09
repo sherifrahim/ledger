@@ -47,7 +47,7 @@ fun LedgerEmptyState(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = colors.tertiaryLabel.copy(alpha = 0.20f),
+            tint = colors.tertiaryLabel.copy(alpha = LedgerTheme.opacity.Muted),
             modifier = Modifier.size(MassiveIcon)
         )
         
@@ -59,7 +59,7 @@ fun LedgerEmptyState(
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             ),
-            color = colors.label.copy(alpha = 0.80f),
+            color = colors.label.copy(alpha = LedgerTheme.opacity.Emphasis),
             textAlign = TextAlign.Center
         )
         
@@ -70,7 +70,7 @@ fun LedgerEmptyState(
             style = LedgerTextStyles.Caption.copy(
                 lineHeight = 18.sp
             ),
-            color = colors.secondaryLabel.copy(alpha = 0.60f),
+            color = colors.secondaryLabel.copy(alpha = LedgerTheme.opacity.Overlay),
             textAlign = TextAlign.Center
         )
     }

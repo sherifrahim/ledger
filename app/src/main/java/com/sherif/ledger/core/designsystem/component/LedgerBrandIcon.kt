@@ -34,7 +34,7 @@ fun LedgerBrandIcon(
 ) {
     val identity = remember(name, type) { LedgerBrandRegistry.resolve(name, type) }
     val accent = identity.color ?: LedgerTheme.colors.tint
-    val bg = identity.backgroundColor ?: accent.copy(alpha = 0.12f)
+    val bg = identity.backgroundColor ?: accent.copy(alpha = LedgerTheme.opacity.Fill)
     val contentColor = if (identity.backgroundColor != null) accent else accent
 
     Box(

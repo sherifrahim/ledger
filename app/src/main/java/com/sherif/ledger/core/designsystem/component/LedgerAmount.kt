@@ -37,20 +37,17 @@ fun LedgerAmount(
     com.sherif.ledger.core.common.logging.LedgerLogger.d("LDS: Rendering Amount: $amount")
     val textStyle: TextStyle = when (style) {
         LedgerAmountStyle.Small -> LedgerTextStyles.Mono.copy(
-            fontSize = 13.sp,
-            lineHeight = 16.sp,
+            fontSize = LedgerTextStyles.Label.fontSize,
+            lineHeight = LedgerTextStyles.Label.lineHeight,
             fontWeight = FontWeight.Bold,
         )
 
-        LedgerAmountStyle.Regular -> LedgerTextStyles.Mono.copy(
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
-        )
+        LedgerAmountStyle.Regular -> LedgerTextStyles.Mono
         
         LedgerAmountStyle.Large -> LedgerTextStyles.Amount.copy(
             fontFamily = FontFamily.Monospace,
-            fontSize = 24.sp,
-            lineHeight = 32.sp,
+            fontSize = LedgerTextStyles.Section.fontSize,
+            lineHeight = LedgerTextStyles.Section.lineHeight,
         )
         
         LedgerAmountStyle.Display -> LedgerTextStyles.Display.copy(

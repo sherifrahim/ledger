@@ -19,6 +19,8 @@ object LedgerOpacity {
     const val Secondary = 0.45f
     /** Scrim or overlay behind modals. */
     const val Overlay = 0.60f
+    /** High emphasis content (mostly opaque). */
+    const val Emphasis = 0.85f
 
     // ── Glass Ecosystem ──
     

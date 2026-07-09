@@ -38,18 +38,18 @@ fun LedgerButton(
 
     val (backgroundColor, contentColor, borderColor) = when (style) {
         LedgerButtonStyle.Primary -> Triple(
-            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
+            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
             colors.onTint,
             Color.Transparent,
         )
         LedgerButtonStyle.Secondary -> Triple(
             Color.Transparent,
-            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
-            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
+            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
+            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
         )
         LedgerButtonStyle.Text -> Triple(
             Color.Transparent,
-            if (enabled) colors.tint else colors.tint.copy(alpha = 0.4f),
+            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
             Color.Transparent,
         )
     }
@@ -60,7 +60,7 @@ fun LedgerButton(
                 shape = shape,
                 backgroundColor = backgroundColor,
                 borderColor = borderColor,
-                borderWidth = if (borderColor == Color.Transparent) 0.dp else 0.5.dp,
+                borderWidth = if (borderColor == Color.Transparent) 0.dp else LedgerTheme.border.Hairline,
                 onClick = onClick,
                 enabled = enabled,
             )

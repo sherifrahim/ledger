@@ -84,6 +84,14 @@ fun DashboardScreen(
     state: DashboardUiState,
 ) {
     com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: DashboardScreen(totalSpent=${state.totalSpent}, balanceAmount=${state.balanceAmount}, recentTransactionsCount=${state.recentTransactions.size})")
+    
+    val formattedTotalSpent = remember(state.totalSpent, state.balanceCurrency) {
+        state.totalSpent.replace(state.balanceCurrency, "").trim()
+    }
+    val formattedBalance = remember(state.balanceCurrency, state.balanceAmount) {
+        "${state.balanceCurrency} ${state.balanceAmount}"
+    }
+
     val expandedHeight = LedgerHeroDefaults.ExpandedHeight
     val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
     val maxOffsetPx = with(LocalDensity.current) {
@@ -155,14 +163,30 @@ fun DashboardScreen(
             contentBackground = {
                 LedgerAtmosphereGlow(Modifier.fillMaxSize())
             },
-            expandedContent = { progress -> ExpandedHero(progress, state) },
-            compactContent = { progress -> CompactHero(progress, state) },
+            expandedContent = { progress -> 
+                ExpandedHero(
+                    progress = progress, 
+                    state = state,
+                    formattedTotalSpent = formattedTotalSpent
+                ) 
+            },
+            compactContent = { progress -> 
+                CompactHero(
+                    progress = progress, 
+                    state = state,
+                    formattedBalance = formattedBalance
+                ) 
+            },
         )
     }
 }
 
 @Composable
-private fun ExpandedHero(progress: Float, state: DashboardUiState) {
+private fun ExpandedHero(
+    progress: Float, 
+    state: DashboardUiState,
+    formattedTotalSpent: String
+) {
 Column(
     modifier = Modifier
         .fillMaxSize()
@@ -188,12 +212,12 @@ Column(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.4.sp, // Refined identity
                 ),
-                color = LedgerTheme.colors.label.copy(alpha = 0.25f), // Refined contrast
+                color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted), // Refined contrast
             )
             
-            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING totalSpent=${state.totalSpent}")
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING totalSpent=$formattedTotalSpent")
             LedgerAmount(
-                amount = state.totalSpent.replace(state.balanceCurrency, "").trim(),
+                amount = formattedTotalSpent,
                 style = LedgerAmountStyle.Display,
                 color = LedgerTheme.colors.label,
                 modifier = Modifier.graphicsLayer {
@@ -211,7 +235,7 @@ Column(
                     fontSize = 11.sp,
                     letterSpacing = 0.5.sp
                 ),
-                color = LedgerTheme.colors.label.copy(alpha = 0.30f), // Refined contrast
+                color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted), // Refined contrast
             )
             
             Spacer(Modifier.height(LedgerSpacing.XSmall)) // Stronger visual grouping
@@ -220,8 +244,8 @@ Column(
             Box(
                 modifier = Modifier
                     .ledgerSurface(
-                        backgroundColor = LedgerTheme.colors.label.copy(alpha = 0.04f),
-                        borderColor = LedgerTheme.colors.label.copy(alpha = 0.08f),
+                        backgroundColor = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Subtle),
+                        borderColor = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Subtle),
                         shape = LedgerRadius.Full,
                     )
                     .ledgerClickable { /* TODO */ }
@@ -235,13 +259,13 @@ Column(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.8.sp
                         ),
-                        color = LedgerTheme.colors.label.copy(alpha = 0.60f),
+                        color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Overlay),
                     )
                     Spacer(Modifier.width(LedgerSpacing.XxSmall))
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = LedgerTheme.colors.label.copy(alpha = 0.40f),
+                        tint = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted),
                         modifier = Modifier.size(10.dp),
                     )
                 }
@@ -278,7 +302,7 @@ Column(
                 value = state.savings,
                 change = state.savingsChange,
                 icon = Icons.Filled.Star,
-                color = LedgerTheme.colors.label.copy(alpha = 0.70f),
+                color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Secondary),
             )
         }
     }
@@ -300,7 +324,7 @@ private fun MetricItem(
             modifier = Modifier
                 .size(LedgerTheme.iconSize.Medium)
                 .clip(CircleShape)
-                .background(color.copy(alpha = 0.12f)),
+                .background(color.copy(alpha = LedgerTheme.opacity.Fill)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -319,7 +343,7 @@ private fun MetricItem(
                 letterSpacing = 1.6.sp, // Stronger identity
                 lineHeight = 12.sp,
             ),
-            color = LedgerTheme.colors.label.copy(alpha = 0.50f), // Softened for hierarchy
+            color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Secondary), // Softened for hierarchy
         )
         LedgerAmount(
             amount = value,
@@ -334,18 +358,22 @@ private fun MetricItem(
                 fontWeight = FontWeight.Bold,
                 lineHeight = 14.sp,
             ),
-            color = color.copy(alpha = 0.85f), // Subordinate to amount
+            color = color.copy(alpha = LedgerTheme.opacity.Emphasis), // Subordinate to amount
         )
         Text(
             text = "vs last month",
             style = LedgerTextStyles.Caption.copy(fontSize = 8.sp, lineHeight = 10.sp),
-            color = LedgerTheme.colors.label.copy(alpha = 0.25f),
+            color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted),
         )
     }
 }
 
 @Composable
-private fun CompactHero(progress: Float, state: DashboardUiState) {
+private fun CompactHero(
+    progress: Float, 
+    state: DashboardUiState,
+    formattedBalance: String
+) {
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -363,9 +391,9 @@ private fun CompactHero(progress: Float, state: DashboardUiState) {
                 style = LedgerTextStyles.Caption,
                 color = LedgerTheme.colors.tertiaryLabel,
             )
-            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING balanceAmount=${state.balanceAmount}")
+            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING balanceAmount=$formattedBalance")
             LedgerAmount(
-                amount = "${state.balanceCurrency} ${state.balanceAmount}",
+                amount = formattedBalance,
                 style = LedgerAmountStyle.Regular,
                 color = LedgerTheme.colors.label,
             )
