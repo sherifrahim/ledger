@@ -220,7 +220,7 @@ fun AccountsScreen(
                                 LedgerAmount(
                                     amount = state.netWorth,
                                     style = LedgerAmountStyle.Large,
-                                    color = Color.White,
+                                    color = LedgerTheme.colors.label,
                                 )
                             }
                         }
@@ -240,7 +240,7 @@ fun AccountsScreen(
                     Text(
                         text = "Accounts",
                         style = LedgerTextStyles.Section,
-                        color = Color.White,
+                        color = LedgerTheme.colors.label,
                         modifier = Modifier.padding(horizontal = LedgerSpacing.Screen)
                     )
                 }

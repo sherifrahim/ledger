@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -18,13 +19,16 @@ import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 /**
  * LDL foundation for surfaces.
  *
- * Applies the canonical "Carved" aesthetic: clip, tonal background,
- * hairline border, and optional micro-spring interaction.
+ * Implements the atomic visual expression for Classic and Glass themes.
+ *
+ * Classic: The original "Carved" aesthetic with tonal backgrounds and hairlines.
+ * Glass: Diffusion-first aesthetic with translucency and vertical edge-lighting.
  */
 fun Modifier.ledgerSurface(
     level: LedgerSurfaceLevel = LedgerSurfaceLevel.Level1,
@@ -36,14 +40,37 @@ fun Modifier.ledgerSurface(
     enabled: Boolean = true,
 ): Modifier = composed {
     val colors = LedgerTheme.colors
-    val resolvedBackground = backgroundColor ?: colors.surface(level)
-    val resolvedBorderColor = borderColor ?: colors.separator.copy(
-        alpha = LedgerTheme.motion.SurfaceBorderAlpha,
-    )
+    val isGlass = colors.themeType != LedgerThemeType.Classic
+
+    val resolvedBackground = when {
+        backgroundColor != null -> backgroundColor
+        isGlass -> colors.glassSurface
+        else -> colors.surface(level)
+    }
+
+    val resolvedBorderColor = when {
+        borderColor != null -> borderColor
+        isGlass -> colors.glassBorder
+        else -> colors.separator.copy(alpha = LedgerTheme.motion.SurfaceBorderAlpha)
+    }
+
+    // Edge Lighting (Glass only): High-intensity top-edge highlight
+    val edgeLightModifier = if (isGlass) {
+        Modifier.border(
+            width = 1.dp,
+            brush = Brush.verticalGradient(
+                0.0f to colors.edgeLight,
+                0.1f to colors.edgeLight.copy(alpha = 0.1f),
+                1.0f to Color.Transparent
+            ),
+            shape = shape
+        )
+    } else Modifier
 
     this
         .clip(shape)
         .background(resolvedBackground)
+        .then(edgeLightModifier)
         .border(width = borderWidth, color = resolvedBorderColor, shape = shape)
         .then(
             if (onClick != null) {
@@ -56,18 +83,12 @@ fun Modifier.ledgerSurface(
  * LDL grouped content surface.
  *
  * Replaces Material [androidx.compose.material3.Surface] entirely.
- * Depth comes from three signals:
- * 1. Tonal shift (background color via [level])
- * 2. Hairline border (separator at low opacity)
- * 3. Press compression (when [onClick] is provided)
- *
- * No Material elevation, no Material shadow, no Material ripple.
- * The surface feels carved into the page rather than floating above it.
  */
 @Composable
 fun LedgerSurface(
     modifier: Modifier = Modifier,
     level: LedgerSurfaceLevel = LedgerSurfaceLevel.Level1,
+    shape: Shape = LedgerRadius.Small,
     contentPadding: PaddingValues = PaddingValues(LedgerSpacing.Group),
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -75,7 +96,7 @@ fun LedgerSurface(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .ledgerSurface(level = level, onClick = onClick)
+            .ledgerSurface(level = level, shape = shape, onClick = onClick)
             .padding(contentPadding),
         content = content,
     )

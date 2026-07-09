@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
+import com.sherif.ledger.core.designsystem.component.ledgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerShapes
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
@@ -103,11 +105,15 @@ private fun SummaryCount(label: String, count: Int, color: androidx.compose.ui.g
 
 @Composable
 private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val bg = if (selected) LedgerTheme.colors.tint else LedgerTheme.colors.surfaceLevel1
     val fg = if (selected) LedgerTheme.colors.onTint else LedgerTheme.colors.secondaryLabel
-    LedgerSurface(
-        modifier = Modifier.clip(LedgerShapes.small).clickable(onClick = onClick),
-        level = if (selected) LedgerSurfaceLevel.Level2 else LedgerSurfaceLevel.Level1,
-        contentPadding = PaddingValues(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.Inline),
+    
+    Box(
+        modifier = Modifier
+            .clip(LedgerShapes.small)
+            .ledgerSurface(backgroundColor = bg)
+            .clickable(onClick = onClick)
+            .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.Inline),
     ) {
         Text(label, style = LedgerTextStyles.Caption, color = fg)
     }

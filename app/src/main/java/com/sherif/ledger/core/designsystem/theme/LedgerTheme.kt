@@ -26,6 +26,7 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
  */
 @Composable
 fun LedgerTheme(
+    themeType: LedgerThemeType = LedgerThemeType.Classic,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
@@ -38,7 +39,12 @@ fun LedgerTheme(
         darkTheme -> LedgerDarkColorScheme
         else -> LedgerLightColorScheme
     }
-    val ledgerColors = if (darkTheme) LedgerDarkColors else LedgerLightColors
+
+    val ledgerColors = when (themeType) {
+        LedgerThemeType.Classic -> if (darkTheme) LedgerClassicDarkColors else LedgerClassicLightColors
+        LedgerThemeType.Glass -> if (darkTheme) LedgerMidnightGlassColors else LedgerGlassLightColors
+        LedgerThemeType.MidnightGlass -> LedgerMidnightGlassColors
+    }
 
     CompositionLocalProvider(LocalLedgerColors provides ledgerColors) {
         LedgerAtmosphereProvider {

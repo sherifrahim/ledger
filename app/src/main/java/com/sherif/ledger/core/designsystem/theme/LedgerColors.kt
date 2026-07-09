@@ -77,6 +77,7 @@ enum class LedgerSurfaceLevel { Level0, Level1, Level2, Level3 }
  * shadow edge. Composables apply alpha per layer to build depth.
  */
 data class LedgerColors(
+    val themeType: LedgerThemeType,
     val isDark: Boolean,
     val surfaceLevel0: Color,
     val surfaceLevel1: Color,
@@ -99,6 +100,10 @@ data class LedgerColors(
     val heroGlowSecondary: Color,
     val heroGlowCool: Color,
     val heroGlowWarm: Color,
+    // ── Glass Tokens ──
+    val glassSurface: Color,
+    val glassBorder: Color,
+    val edgeLight: Color,
 ) {
     fun surface(level: LedgerSurfaceLevel): Color = when (level) {
         LedgerSurfaceLevel.Level0 -> surfaceLevel0
@@ -108,7 +113,8 @@ data class LedgerColors(
     }
 }
 
-val LedgerLightColors = LedgerColors(
+val LedgerClassicLightColors = LedgerColors(
+    themeType = LedgerThemeType.Classic,
     isDark = false,
     surfaceLevel0 = Color(0xFFF3F3F3), surfaceLevel1 = Color(0xFFFFFFFF),
     surfaceLevel2 = Color(0xFFF7F7F7), surfaceLevel3 = Color(0xFFFFFFFF),
@@ -121,9 +127,13 @@ val LedgerLightColors = LedgerColors(
     neutral = Color(0xFF737373),
     heroGlowPrimary = Color(0xFFB8E0D8), heroGlowSecondary = Color(0xFFA0D4CA),
     heroGlowCool = Color(0xFFBCC8D4), heroGlowWarm = Color(0xFFE8E0C8),
+    glassSurface = Color.White,
+    glassBorder = Color(0xFFE0E0E0),
+    edgeLight = Color.White,
 )
 
-val LedgerDarkColors = LedgerColors(
+val LedgerClassicDarkColors = LedgerColors(
+    themeType = LedgerThemeType.Classic,
     isDark = true,
     surfaceLevel0 = Color(0xFF0A0A0A), surfaceLevel1 = Color(0xFF111111),
     surfaceLevel2 = Color(0xFF191919), surfaceLevel3 = Color(0xFF212121),
@@ -138,6 +148,27 @@ val LedgerDarkColors = LedgerColors(
     heroGlowSecondary = Color(0xFF0F7D74),
     heroGlowCool = Color(0xFF3A5068),
     heroGlowWarm = Color(0xFF4A4830),
+    glassSurface = Color(0xFF111111),
+    glassBorder = Color(0xFF222222),
+    edgeLight = Color.White.copy(alpha = 0.1f),
 )
 
-val LocalLedgerColors = staticCompositionLocalOf { LedgerLightColors }
+val LedgerGlassLightColors = LedgerClassicLightColors.copy(
+    themeType = LedgerThemeType.Glass,
+    surfaceLevel0 = Color(0xFFFFFFFF),
+    glassSurface = Color.White.copy(alpha = 0.65f),
+    glassBorder = Color.Black.copy(alpha = 0.05f),
+    edgeLight = Color.White,
+)
+
+val LedgerMidnightGlassColors = LedgerClassicDarkColors.copy(
+    themeType = LedgerThemeType.MidnightGlass,
+    surfaceLevel0 = Color(0xFF000000), // Pure black background
+    glassSurface = Color(0xFF111111).copy(alpha = 0.70f),
+    glassBorder = Color.White.copy(alpha = 0.10f),
+    edgeLight = Color.White.copy(alpha = 0.15f),
+    heroGlowPrimary = Color(0xFF0A3D36), // Subdued glows
+    heroGlowSecondary = Color(0xFF082D28),
+)
+
+val LocalLedgerColors = staticCompositionLocalOf { LedgerClassicLightColors }

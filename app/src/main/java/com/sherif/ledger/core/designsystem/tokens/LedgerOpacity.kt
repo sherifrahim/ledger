@@ -19,4 +19,15 @@ object LedgerOpacity {
     const val Secondary = 0.45f
     /** Scrim or overlay behind modals. */
     const val Overlay = 0.60f
+
+    // ── Glass Ecosystem ──
+    
+    /** Translucent container surface. */
+    const val Glass = 0.65f
+    /** Very soft diffusion (Atmosphere). */
+    const val Diffusion = 0.12f
+    /** Thin edge lighting highlight. */
+    const val EdgeLight = 0.25f
+    /** Subtle shadow depth in glass mode. */
+    const val SoftShadow = 0.08f
 }

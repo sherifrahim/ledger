@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 /**
  * Standardized empty state for Ledger screens.
@@ -34,6 +35,8 @@ fun LedgerEmptyState(
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Default.Info,
 ) {
+    val colors = LedgerTheme.colors
+    
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -44,7 +47,7 @@ fun LedgerEmptyState(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.15f),
+            tint = colors.tertiaryLabel.copy(alpha = 0.20f),
             modifier = Modifier.size(MassiveIcon)
         )
         
@@ -56,7 +59,7 @@ fun LedgerEmptyState(
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             ),
-            color = Color.White.copy(alpha = 0.80f),
+            color = colors.label.copy(alpha = 0.80f),
             textAlign = TextAlign.Center
         )
         
@@ -67,7 +70,7 @@ fun LedgerEmptyState(
             style = LedgerTextStyles.Caption.copy(
                 lineHeight = 18.sp
             ),
-            color = Color.White.copy(alpha = 0.40f),
+            color = colors.secondaryLabel.copy(alpha = 0.60f),
             textAlign = TextAlign.Center
         )
     }

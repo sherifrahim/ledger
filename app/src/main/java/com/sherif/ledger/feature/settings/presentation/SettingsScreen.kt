@@ -1,30 +1,21 @@
 package com.sherif.ledger.feature.settings.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sherif.ledger.core.designsystem.component.LedgerHairline
 import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
 import com.sherif.ledger.core.designsystem.component.LedgerTopBar
@@ -34,11 +25,16 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
+import com.sherif.ledger.feature.settings.presentation.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val themeType by viewModel.themeType.collectAsState()
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
         contentPadding = PaddingValues(
@@ -66,12 +62,17 @@ fun SettingsScreen(
 
         item("appearance") {
             SettingsGroup(title = "Appearance") {
+                ThemeSelectionRow(
+                    selectedTheme = themeType,
+                    onThemeSelected = { viewModel.setThemeType(it) }
+                )
+                LedgerHairline()
                 SettingsRow(label = "Dark mode", trailing = {
                     Switch(
                         checked = true,
                         onCheckedChange = {},
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
+                            checkedThumbColor = LedgerTheme.colors.onTint,
                             checkedTrackColor = LedgerTheme.colors.success
                         )
                     )
@@ -98,6 +99,51 @@ fun SettingsScreen(
                 SettingsRow(label = "Export data")
                 LedgerHairline()
                 SettingsRow(label = "Delete account", labelColor = LedgerTheme.colors.expense)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeSelectionRow(
+    selectedTheme: LedgerThemeType,
+    onThemeSelected: (LedgerThemeType) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(LedgerSpacing.Medium)
+    ) {
+        Text(
+            text = "Theme",
+            style = LedgerTextStyles.Label,
+            color = LedgerTheme.colors.label
+        )
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
+        ) {
+            LedgerThemeType.entries.forEach { theme ->
+                val isSelected = theme == selectedTheme
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .ledgerSurface(
+                            level = if (isSelected) LedgerSurfaceLevel.Level2 else LedgerSurfaceLevel.Level1,
+                            backgroundColor = if (isSelected) LedgerTheme.colors.tint else LedgerTheme.colors.surfaceLevel1,
+                            borderColor = if (isSelected) Color.Transparent else LedgerTheme.colors.separator.copy(alpha = 0.1f),
+                            onClick = { onThemeSelected(theme) }
+                        )
+                        .padding(vertical = LedgerSpacing.Small),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = theme.name,
+                        style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+                        color = if (isSelected) LedgerTheme.colors.onTint else LedgerTheme.colors.secondaryLabel
+                    )
+                }
             }
         }
     }

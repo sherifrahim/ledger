@@ -99,8 +99,8 @@ fun InsightsPreview(
                 Box(
                     modifier = Modifier
                         .ledgerSurface(
-                            backgroundColor = Color.White.copy(alpha = 0.05f),
-                            borderColor = Color.White.copy(alpha = 0.12f),
+                            backgroundColor = LedgerTheme.colors.label.copy(alpha = 0.05f),
+                            borderColor = LedgerTheme.colors.label.copy(alpha = 0.12f),
                             shape = LedgerTheme.radius.Full,
                         )
                         .ledgerClickable(onClick = onClick)
@@ -113,13 +113,13 @@ fun InsightsPreview(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 10.sp,
                             ),
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = LedgerTheme.colors.label.copy(alpha = 0.7f),
                         )
                         Spacer(Modifier.width(LedgerSpacing.XxSmall))
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.4f),
+                            tint = LedgerTheme.colors.label.copy(alpha = 0.4f),
                             modifier = Modifier.size(10.dp),
                         )
                     }

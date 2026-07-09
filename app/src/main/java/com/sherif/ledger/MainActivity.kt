@@ -45,9 +45,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         setContent {
-            LedgerTheme {
+            val mainViewModel: MainViewModel = hiltViewModel()
+            val themeType by mainViewModel.themeType.collectAsState()
+            
+            LedgerTheme(themeType = themeType) {
                 val context = LocalContext.current
-                val mainViewModel: MainViewModel = hiltViewModel()
                 val isSmsImported by mainViewModel.isSmsImported.collectAsState()
 
                 var isPermissionGranted by remember { 

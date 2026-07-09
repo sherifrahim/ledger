@@ -75,7 +75,7 @@ fun LedgerBottomBar(navController: NavHostController) {
                 .ledgerSurface(
                     level = LedgerSurfaceLevel.Level1,
                     shape = LedgerRadius.Full,
-                    borderColor = Color.White.copy(alpha = 0.08f) // Refined depth
+                    borderColor = LedgerTheme.colors.label.copy(alpha = 0.08f) // Refined depth
                 )
                 .padding(horizontal = LedgerSpacing.Small, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,

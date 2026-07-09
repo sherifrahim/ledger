@@ -97,6 +97,10 @@ class GenericBankParser @Inject constructor(
     private val transferSignals = listOf(
         "transferred", "transfer to", "transfer of", " neft", " imps", " rtgs",
         " upi", "via upi", "via neft", "sent to", "remittance", "fund transfer",
+        // Generalized transfer channels (bank-agnostic): a transfer described by
+        // the channel it went through rather than a plain "transferred" verb.
+        "transferred via", "transferred using", "via internet banking",
+        "via mobile app", "personal internet banking",
     )
 
     private fun detectType(lower: String): TransactionType = when {
@@ -130,4 +134,5 @@ class GenericBankParser @Inject constructor(
         }
     }
 }
+
 

@@ -8,6 +8,7 @@
   {"rawMessage": "Your OTP for ADCB login is 445566. Do not share with anyone.", "expected": {"decision": "Ignored"}, "categoryNote": "engine returns Ignored; category is Statement at KnownBank layer (OTP vs Statement indistinguishable there)"},
   {"rawMessage": "Your ADCB monthly statement is ready. Total due AED 500.", "expected": {"decision": "Ignored", "category": "Statement"}},
   {"rawMessage": "You are eligible for a personal loan of AED 50,000. Apply now for instant approval.", "expected": {"decision": "Ignored", "category": "Loan Offer"}},
-  {"rawMessage": "AED 200 debited from your account towards FAB Credit Card.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 200.0}}
+  {"rawMessage": "AED 200 debited from your account towards FAB Credit Card.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 200.0}},
+  {"rawMessage": "AED978.00 transferred via ADCB Personal Internet Banking / Mobile App from acc. no. XXX920001 on Jul 8 2026 10:04AM. Avl. bal. AED7955.36.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 978.0, "currency": "AED"}}
 ]
 

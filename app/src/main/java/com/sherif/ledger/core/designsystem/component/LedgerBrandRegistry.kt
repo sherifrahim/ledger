@@ -42,36 +42,35 @@ object LedgerBrandRegistry {
 
     init {
         // --- 1. MERCHANTS ---
-        register("amazon", BrandIdentity(icon = Icons.Filled.ShoppingBag, color = Color(0xFFFF9900), monogram = "a", backgroundColor = Color.Black))
-        register("apple", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color.White, backgroundColor = Color.Black))
+        register("amazon", BrandIdentity(icon = Icons.Filled.ShoppingBag, color = Color(0xFFFF9900), monogram = "a"))
+        register("apple", BrandIdentity(icon = Icons.Filled.Smartphone))
         register("google", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color(0xFF4285F4)))
-        register("netflix", BrandIdentity(monogram = "N", color = Color(0xFFE50914), backgroundColor = Color.Black))
-        register("spotify", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color(0xFF1DB954), backgroundColor = Color.Black))
-        register("carrefour", BrandIdentity(icon = Icons.Filled.LocalGroceryStore, color = Color(0xFF0066BE), backgroundColor = Color.White))
-        register("costa", BrandIdentity(icon = Icons.Filled.Coffee, color = Color.White, backgroundColor = Color(0xFF630821)))
-        register("starbucks", BrandIdentity(icon = Icons.Filled.Coffee, color = Color(0xFF00704A), backgroundColor = Color.White))
-        register("uber", BrandIdentity(monogram = "U", color = Color.White, backgroundColor = Color.Black))
-        register("careem", BrandIdentity(monogram = "C", color = Color(0xFF47D366), backgroundColor = Color.White))
+        register("netflix", BrandIdentity(monogram = "N", color = Color(0xFFE50914)))
+        register("spotify", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color(0xFF1DB954)))
+        register("carrefour", BrandIdentity(icon = Icons.Filled.LocalGroceryStore, color = Color(0xFF0066BE)))
+        register("costa", BrandIdentity(icon = Icons.Filled.Coffee, backgroundColor = Color(0xFF630821)))
+        register("starbucks", BrandIdentity(icon = Icons.Filled.Coffee, color = Color(0xFF00704A)))
+        register("uber", BrandIdentity(monogram = "U"))
+        register("careem", BrandIdentity(monogram = "C", color = Color(0xFF47D366)))
 
         // --- 2. BANKS ---
-        register("adcb", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFE21E26), backgroundColor = Color.White))
-        register("fab", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF003865), backgroundColor = Color.White))
-        register("wio", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFCCFF00), backgroundColor = Color.Black))
-        register("hsbc", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFDB0011), backgroundColor = Color.White))
+        register("adcb", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFE21E26)))
+        register("fab", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF003865)))
+        register("wio", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFCCFF00)))
+        register("hsbc", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFDB0011)))
 
         // --- 3. CARDS ---
-        register("visa", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFF1A1F71), backgroundColor = Color.White))
-        register("mastercard", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFFEB001B), backgroundColor = Color.White))
-        register("amex", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFF016FD0), backgroundColor = Color.White))
+        register("visa", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFF1A1F71)))
+        register("mastercard", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFFEB001B)))
+        register("amex", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFF016FD0)))
 
         // --- 4. CATEGORIES ---
-        register("salary", BrandIdentity(icon = Icons.Filled.Payments, color = Color(0xFF10B981)))
+        register("salary", BrandIdentity(icon = Icons.Filled.Payments))
         register("groceries", BrandIdentity(icon = Icons.Filled.LocalGroceryStore))
         register("dining", BrandIdentity(icon = Icons.Filled.Restaurant))
         register("shopping", BrandIdentity(icon = Icons.Filled.ShoppingBag))
         register("transfer", BrandIdentity(icon = Icons.AutoMirrored.Filled.Send))
         register("cash", BrandIdentity(icon = Icons.Filled.Wallet))
-        register("cash", BrandIdentity(icon = Icons.Filled.Wallet, color = Color(0xFF10B981), backgroundColor = Color.White))
     }
 
     fun register(key: String, identity: BrandIdentity) {
@@ -101,7 +100,7 @@ object LedgerBrandRegistry {
         if (name.contains("food") || name.contains("dining")) return BrandIdentity(icon = Icons.Filled.Restaurant)
         if (name.contains("grocer")) return BrandIdentity(icon = Icons.Filled.LocalGroceryStore)
         if (name.contains("shop")) return BrandIdentity(icon = Icons.Filled.ShoppingBag)
-        if (name.contains("salary")) return BrandIdentity(icon = Icons.Filled.Payments, color = Color(0xFF10B981))
+        if (name.contains("salary")) return BrandIdentity(icon = Icons.Filled.Payments)
         return BrandIdentity()
     }
 }

@@ -70,7 +70,7 @@ fun NotificationAccessScreen() {
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
             ),
-            color = Color.White,
+            color = LedgerTheme.colors.label,
             textAlign = TextAlign.Center
         )
 
@@ -122,17 +122,17 @@ private fun DiagnosticSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White.copy(alpha = 0.05f), shape = LedgerTheme.radius.Medium)
+            .background(LedgerTheme.colors.label.copy(alpha = 0.05f), shape = LedgerTheme.radius.Medium)
             .padding(LedgerSpacing.Medium),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.BugReport, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.BugReport, contentDescription = null, tint = LedgerTheme.colors.tertiaryLabel, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(LedgerSpacing.Small))
-            Text("PIPELINE DIAGNOSTICS", style = LedgerTextStyles.Caption, color = Color.Gray)
+            Text("PIPELINE DIAGNOSTICS", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel)
         }
 
-        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+        HorizontalDivider(color = LedgerTheme.colors.label.copy(alpha = 0.1f))
 
         DiagnosticRow("Package", diagnostics.packageName)
         DiagnosticRow("Component", diagnostics.listenerComponentName)
@@ -143,7 +143,7 @@ private fun DiagnosticSection(
         Text(
             "Enabled Packages: ${diagnostics.enabledListeners.joinToString(", ").ifEmpty { "NONE" }}",
             style = LedgerTextStyles.Caption.copy(fontSize = 10.sp),
-            color = Color.White.copy(alpha = 0.3f)
+            color = LedgerTheme.colors.label.copy(alpha = 0.3f)
         )
 
         Spacer(Modifier.height(LedgerSpacing.Small))
@@ -151,18 +151,18 @@ private fun DiagnosticSection(
         Button(
             onClick = onRequestRebind,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+            colors = ButtonDefaults.buttonColors(containerColor = LedgerTheme.colors.label.copy(alpha = 0.12f)),
             shape = LedgerTheme.radius.Small
         ) {
-            Text("Request Rebind", style = LedgerTextStyles.Caption)
+            Text("Request Rebind", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.label)
         }
     }
 }
 
 @Composable
-private fun DiagnosticRow(label: String, value: String, valueColor: Color = Color.White.copy(alpha = 0.7f)) {
+private fun DiagnosticRow(label: String, value: String, valueColor: Color = LedgerTheme.colors.label.copy(alpha = 0.7f)) {
     Column {
-        Text(label, style = LedgerTextStyles.Caption.copy(fontSize = 10.sp), color = Color.Gray)
+        Text(label, style = LedgerTextStyles.Caption.copy(fontSize = 10.sp), color = LedgerTheme.colors.tertiaryLabel)
         Text(value, style = LedgerTextStyles.Caption, color = valueColor)
     }
 }

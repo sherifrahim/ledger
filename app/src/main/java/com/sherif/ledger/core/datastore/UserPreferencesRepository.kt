@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -20,6 +21,7 @@ class UserPreferencesRepository @Inject constructor(
 ) {
     private val smsImportedKey = booleanPreferencesKey("sms_imported")
     private val lastSmsImportDateKey = longPreferencesKey("last_sms_import_date")
+    private val themeTypeKey = stringPreferencesKey("theme_type")
 
     val isSmsImported: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
@@ -35,6 +37,22 @@ class UserPreferencesRepository @Inject constructor(
 
     val lastSmsImportDate: Flow<Long> = context.dataStore.data
         .map { it[lastSmsImportDateKey] ?: 0L }
+
+    val themeType: Flow<LedgerThemeType> = context.dataStore.data
+        .map { preferences ->
+            val name = preferences[themeTypeKey] ?: LedgerThemeType.Classic.name
+            try {
+                LedgerThemeType.valueOf(name)
+            } catch (e: Exception) {
+                LedgerThemeType.Classic
+            }
+        }
+
+    suspend fun setThemeType(themeType: LedgerThemeType) {
+        context.dataStore.edit { preferences ->
+            preferences[themeTypeKey] = themeType.name
+        }
+    }
 
     suspend fun setSmsImported(imported: Boolean) {
         context.dataStore.edit { preferences ->

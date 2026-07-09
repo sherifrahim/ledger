@@ -1,4 +1,4 @@
-package com.sherif.ledger.viewmodel
+package com.sherif.ledger.feature.settings.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,19 +8,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
-    userPreferencesRepository: UserPreferencesRepository
+class SettingsViewModel @Inject constructor(
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
-
-    val isSmsImported: StateFlow<Boolean> = userPreferencesRepository.isSmsImported
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = true
-        )
 
     val themeType: StateFlow<LedgerThemeType> = userPreferencesRepository.themeType
         .stateIn(
@@ -28,4 +22,10 @@ class MainViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = LedgerThemeType.Classic
         )
+
+    fun setThemeType(themeType: LedgerThemeType) {
+        viewModelScope.launch {
+            userPreferencesRepository.setThemeType(themeType)
+        }
+    }
 }
