@@ -1,8 +1,6 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -71,6 +69,39 @@ fun LedgerButton(
             text = text,
             style = LedgerTheme.typography.labelLarge,
             color = contentColor,
+        )
+    }
+}
+
+/**
+ * LDL icon button.
+ */
+@Composable
+fun LedgerIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    tint: Color = LedgerTheme.colors.label,
+    backgroundColor: Color = Color.Transparent
+) {
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .ledgerSurface(
+                shape = LedgerRadius.Full,
+                backgroundColor = backgroundColor,
+                borderColor = Color.Transparent,
+                onClick = onClick,
+                enabled = enabled
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.material3.Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = tint
         )
     }
 }

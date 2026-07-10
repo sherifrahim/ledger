@@ -35,7 +35,7 @@ class AdcbParser @Inject constructor(
     )
 
     override fun supports(envelope: NotificationEnvelope): Boolean {
-        return envelope.packageName == adcbPackage || envelope.packageName == adcbSmsSender
+        return envelope.packageName == adcbPackage git || envelope.packageName == adcbSmsSender
     }
 
     override fun parse(envelope: NotificationEnvelope): ParseResult {

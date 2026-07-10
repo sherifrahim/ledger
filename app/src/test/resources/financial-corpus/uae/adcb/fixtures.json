@@ -9,6 +9,9 @@
   {"rawMessage": "Your ADCB monthly statement is ready. Total due AED 500.", "expected": {"decision": "Ignored", "category": "Statement"}},
   {"rawMessage": "You are eligible for a personal loan of AED 50,000. Apply now for instant approval.", "expected": {"decision": "Ignored", "category": "Loan Offer"}},
   {"rawMessage": "AED 200 debited from your account towards FAB Credit Card.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 200.0}},
-  {"rawMessage": "AED978.00 transferred via ADCB Personal Internet Banking / Mobile App from acc. no. XXX920001 on Jul 8 2026 10:04AM. Avl. bal. AED7955.36.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 978.0, "currency": "AED"}}
+  {"rawMessage": "A Cr. transaction of AED 1200.00 on your account no. XXX920001 was successful.Available balance is AED9155.36.", "expected": {"decision": "Extracted", "transactionType": "Income", "amount": 1200.0, "currency": "AED"}},
+  {"rawMessage": "AED1200.00 transferred via ADCB Personal Internet Banking / Mobile App from acc. no. XXX920001 on Jul  8 2026  9:07PM. Avl. bal. AED 7955.36.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 1200.0, "currency": "AED"}},
+  {"rawMessage": "AED660.00 transferred via ADCB Personal Internet Banking / Mobile App from acc. no. XXX920001 on Jul  8 2026  9:13PM. Avl. bal. AED 7294.86.", "expected": {"decision": "Extracted", "transactionType": "Transfer", "amount": 660.0, "currency": "AED"}}
 ]
+
 
