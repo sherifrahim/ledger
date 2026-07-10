@@ -1,0 +1,21 @@
+[
+  {"text": "Dear Customer, Your Payment of AED 150.00 for card 5492XXXXXXXX6989 has been processed on 09/07/2026", "expected": "FINANCIAL_CONFIRMATION", "note": "The real FAB double-count bug"},
+  {"text": "Your payment of AED 1200 has been received against your Mashreq Cashback card ending 1959 on 08/07/2026", "expected": "FINANCIAL_CONFIRMATION", "note": "UAE credit card payment received"},
+  {"text": "Payment received. Outstanding balance updated to AED 3450.00. Thank you.", "expected": "FINANCIAL_CONFIRMATION", "note": "payment received + outstanding updated"},
+  {"text": "Bill payment successful. Available credit restored on your card.", "expected": "FINANCIAL_CONFIRMATION", "note": "bill payment successful + available credit restored"},
+  {"text": "Thank you for your payment. Your credit limit has been restored.", "expected": "FINANCIAL_CONFIRMATION", "note": "thank you for payment + credit limit restored"},
+  {"text": "We have received your payment of Rs 5000 towards your HDFC Bank credit card.", "expected": "FINANCIAL_CONFIRMATION", "note": "India: we have received your payment"},
+  {"text": "Payment of Rs 2500 processed successfully for your SBI Card. Thank you.", "expected": "FINANCIAL_CONFIRMATION", "note": "India: processed successfully"},
+  {"text": "Your card payment has been acknowledged. Available credit updated.", "expected": "FINANCIAL_CONFIRMATION", "note": "acknowledged + available credit updated"},
+  {"text": "Payment posted to your ICICI credit card account. Minimum amount due cleared.", "expected": "FINANCIAL_CONFIRMATION", "note": "India: payment posted"},
+  {"text": "AED 200 debited from ADCB account XXX920001. Avl. bal. AED 7955.36.", "expected": "FINANCIAL_EVENT", "note": "The real ADCB debit that must persist"},
+  {"text": "AED660.00 transferred via ADCB Personal Internet Banking from acc. no. XXX920001", "expected": "FINANCIAL_EVENT", "note": "outgoing transfer"},
+  {"text": "AED 37.00 spent at CARREFOUR with card ending 1959", "expected": "FINANCIAL_EVENT", "note": "genuine purchase"},
+  {"text": "Purchase of AED 50.00 at COSTA COFFEE processed on 08/07/2026", "expected": "FINANCIAL_EVENT", "note": "purchase with processed-on must stay EVENT"},
+  {"text": "Rs 250 debited via UPI to john@okhdfcbank", "expected": "FINANCIAL_EVENT", "note": "India UPI debit"},
+  {"text": "Your available balance is AED 9155.36 as of 09/07/2026.", "expected": "FINANCIAL_INFORMATION", "note": "balance information"},
+  {"text": "Your monthly statement is ready. Total amount due AED 500.00.", "expected": "FINANCIAL_INFORMATION", "note": "statement notice"},
+  {"text": "Reminder: your credit card payment is due on 15/07/2026.", "expected": "FINANCIAL_INFORMATION", "note": "payment reminder"},
+  {"text": "Your available credit limit is AED 12000.00.", "expected": "FINANCIAL_INFORMATION", "note": "credit limit information"}
+]
+

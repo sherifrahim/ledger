@@ -18,6 +18,8 @@ import com.sherif.ledger.feature.diagnostics.PipelineResult
 import com.sherif.ledger.feature.diagnostics.PipelineStage
 import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
 import com.sherif.ledger.feature.diagnostics.PipelineTracer
+import com.sherif.ledger.feature.semantic.SemanticClass
+import com.sherif.ledger.feature.semantic.SemanticEventClassifier
 import kotlinx.coroutines.flow.first
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -34,6 +36,7 @@ class ProcessNotificationUseCase @Inject constructor(
     private val insertTransactionUseCase: InsertTransactionUseCase,
     private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase,
     private val pipelineTraceSink: PipelineTraceSink,
+    private val semanticEventClassifier: SemanticEventClassifier,
 ) {
     init {
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
@@ -110,6 +113,48 @@ class ProcessNotificationUseCase @Inject constructor(
                 }
                 emitTrace(tracer, PipelineResult.CONFIRMED)
                 return
+            }
+        }
+
+        // 2b. Semantic Event Resolution (Phase 7). The extractor said "transaction",
+        // but a message can be an acknowledgement of an EARLIER event (a bank saying
+        // "payment received/processed") rather than new money movement. Classify the
+        // real-world meaning; a future local model replaces only this classifier.
+        val semantic = semanticEventClassifier.classify(envelope, candidate)
+        when (semantic.semanticClass) {
+            SemanticClass.FINANCIAL_CONFIRMATION -> {
+                // Not a new event. Route to confirmation matching against an existing
+                // transaction; never persist. Reconstructs one financial action from
+                // multiple notifications (ADCB debit + FAB "payment received").
+                LedgerLogger.pipeline("Semantic", "Confirmation (conf=${semantic.confidence}): ${semantic.reasoning.firstOrNull()}")
+                val cStart = envelope.timestamp.minus(24, ChronoUnit.HOURS)
+                val cEnd = envelope.timestamp.plus(24, ChronoUnit.HOURS)
+                val nearbyResult = transactionRepository.observeTransactionsBetween(cStart, cEnd).first()
+                val nearby = if (nearbyResult is LedgerResult.Success) nearbyResult.data else emptyList()
+                when (val match = confirmationMatcher.match(
+                    amountMinor = candidate.amountMinor,
+                    accountTail = candidate.accountHint,
+                    confirmationTime = envelope.timestamp,
+                    existingTransactions = nearby,
+                )) {
+                    is ConfirmationMatcher.MatchResult.Matched ->
+                        LedgerLogger.pipeline("Semantic", "Confirmation attached to txn #${match.transaction.id}; no insert")
+                    is ConfirmationMatcher.MatchResult.Unmatched ->
+                        // Do NOT invent an expense. Record as unmatched confirmation.
+                        LedgerLogger.pipeline("Semantic", "Unmatched confirmation: ${match.reason}; no insert")
+                }
+                emitTrace(tracer, PipelineResult.CONFIRMED)
+                return
+            }
+            SemanticClass.FINANCIAL_INFORMATION -> {
+                // Statement / balance / limit notice. Non-transactional.
+                LedgerLogger.pipeline("Semantic", "Information (conf=${semantic.confidence}); no insert")
+                emitTrace(tracer, PipelineResult.IGNORED)
+                return
+            }
+            SemanticClass.FINANCIAL_EVENT, SemanticClass.UNKNOWN -> {
+                // Money moved (or no reason to reclassify). Proceed to reconcile + persist.
+                LedgerLogger.pipeline("Semantic", "Event (conf=${semantic.confidence}); proceeding")
             }
         }
 
@@ -191,4 +236,5 @@ class ProcessNotificationUseCase @Inject constructor(
         runCatching { pipelineTraceSink.record(tracer.build(result)) }
     }
 }
+
 
