@@ -172,6 +172,33 @@ class PipelineTracer(private val notificationKey: String) {
         )
     }
 
+    /**
+     * Records a stage that exists in the model but is not part of this execution
+     * path (e.g. Merchant Resolver / Relationship Engine during live ingestion).
+     * Emitted so the timeline faithfully shows the full pipeline shape with these
+     * stages marked NOT_EXECUTED rather than silently absent.
+     */
+    fun recordStageNotExecuted(stage: PipelineStage, reason: String): PipelineTracer = apply {
+        events += PipelineEvent(
+            stage = stage,
+            status = PipelineStatus.NOT_EXECUTED,
+            durationMs = 0,
+            reason = PipelineReason(reason, "not_executed"),
+            confidence = null,
+        )
+    }
+
+    /** Records a persistence stage that did not run because the pipeline exited earlier. */
+    fun recordPersistenceNotReached(reason: String): PipelineTracer = apply {
+        events += PipelineEvent(
+            stage = PipelineStage.PERSISTENCE,
+            status = PipelineStatus.NOT_EXECUTED,
+            durationMs = 0,
+            reason = PipelineReason(reason, "not_reached"),
+            confidence = null,
+        )
+    }
+
     /** Assemble the immutable trace. [result] is the terminal classification. */
     fun build(result: PipelineResult): PipelineTrace = PipelineTrace(
         notificationKey = notificationKey,
@@ -181,4 +208,5 @@ class PipelineTracer(private val notificationKey: String) {
         finishedAt = Instant.now(),
     )
 }
+
 

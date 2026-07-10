@@ -1,5 +1,6 @@
 package com.sherif.ledger.feature.capture.sms
 
+import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
 import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.KnownBankExtractor
 import com.sherif.ledger.feature.capture.extraction.ExtractionValidator
@@ -84,7 +85,8 @@ class SmsIngestionTest {
         ReconciliationEngine(FingerprintGenerator()),
         transactionRepository,
         insertTransactionUseCase,
-        EnsureDefaultAccountUseCase(accountRepository)
+        EnsureDefaultAccountUseCase(accountRepository),
+            PipelineTraceSink()
     )
 
     @Test
@@ -153,3 +155,4 @@ class SmsIngestionTest {
         assertEquals(1, transactionRepository.insertedTransactions.size)
     }
 }
+

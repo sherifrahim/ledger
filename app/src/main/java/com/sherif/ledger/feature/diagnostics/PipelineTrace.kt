@@ -28,7 +28,7 @@ enum class PipelineStage {
 
 /** The outcome of a single stage. */
 enum class PipelineStatus {
-    /** Stage ran and passed the message onward. */
+    /** Stage ran and passed the message onward (success). */
     PASSED,
 
     /** Stage produced a positive match (e.g. confirmation, merchant resolved). */
@@ -40,8 +40,21 @@ enum class PipelineStatus {
     /** Stage rejected the message (e.g. validator failed, duplicate). */
     REJECTED,
 
-    /** Stage did not apply to this message. */
+    /** Stage ran but errored (distinct from a deliberate rejection). */
+    FAILED,
+
+    /** Stage did not apply to this particular message. */
     SKIPPED,
+
+    /**
+     * Stage exists in the model but is not wired into this execution path (e.g.
+     * Merchant Resolver / Relationship Engine are not invoked during live
+     * ingestion). The console shows these as present-but-inactive, not failures.
+     */
+    NOT_EXECUTED,
+
+    /** Stage is not applicable to this pipeline configuration. */
+    NOT_APPLICABLE,
 }
 
 /**
@@ -133,4 +146,5 @@ data class DiagnosticSnapshot(
         }
     }
 }
+
 

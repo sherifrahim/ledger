@@ -1,5 +1,6 @@
 package com.sherif.ledger.feature.capture
 
+import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
 import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.KnownBankExtractor
 import com.sherif.ledger.feature.capture.extraction.ExtractionValidator
@@ -83,7 +84,8 @@ class LiveCaptureIntegrationTest {
         ReconciliationEngine(FingerprintGenerator()),
         transactionRepository,
         insertTransactionUseCase,
-        EnsureDefaultAccountUseCase(accountRepository)
+        EnsureDefaultAccountUseCase(accountRepository),
+            PipelineTraceSink()
     )
 
     @Test
@@ -102,3 +104,4 @@ class LiveCaptureIntegrationTest {
         assertEquals(1, transactionRepository.insertedCount)
     }
 }
+

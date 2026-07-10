@@ -14,6 +14,10 @@ import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.ExtractionRegistry
 import com.sherif.ledger.feature.capture.reconciliation.ReconciliationEngine
 import com.sherif.ledger.feature.capture.reconciliation.ReconciliationResult
+import com.sherif.ledger.feature.diagnostics.PipelineResult
+import com.sherif.ledger.feature.diagnostics.PipelineStage
+import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
+import com.sherif.ledger.feature.diagnostics.PipelineTracer
 import kotlinx.coroutines.flow.first
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -28,7 +32,8 @@ class ProcessNotificationUseCase @Inject constructor(
     private val reconciliationEngine: ReconciliationEngine,
     private val transactionRepository: TransactionRepository,
     private val insertTransactionUseCase: InsertTransactionUseCase,
-    private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase
+    private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase,
+    private val pipelineTraceSink: PipelineTraceSink,
 ) {
     init {
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
@@ -44,18 +49,31 @@ class ProcessNotificationUseCase @Inject constructor(
         LedgerLogger.d("ProcessNotificationUseCase.execute(envelope=$envelope)")
         LedgerLogger.pipeline("Capture", "channel=$channel source=${envelope.packageName}")
 
+        // Passive observability (Phase 6B). Emits a PipelineTrace of the real
+        // execution. Records values the pipeline already computes; never alters
+        // control flow, decisions, or timing-sensitive behavior.
+        val tracer = PipelineTracer(traceId)
+        tracer.recordReceived(envelope.packageName)
+
         // 1. Filter
-        if (!filter.shouldProcess(envelope)) {
+        val filterResult = filter.evaluate(envelope)
+        if (!filterResult.isAccepted) {
             LedgerLogger.d("ProcessNotificationUseCase: REJECTED by Filter (Sender=${envelope.packageName}, Source=${envelope.source})")
             LedgerLogger.pipeline("Filter", "Ignored: ${envelope.packageName}")
+            tracer.recordFilter(filterResult, 0)
+            emitTrace(tracer, PipelineResult.REJECTED)
             return
         }
         LedgerLogger.d("ProcessNotificationUseCase: ACCEPTED by Filter")
         LedgerLogger.pipeline("Filter", "Accepted: ${envelope.packageName}")
+        tracer.recordFilter(filterResult, 0)
 
         // 2. Extract (deterministic + intent-aware heuristic extractors, ranked and
         // validated behind one registry). Everything from the candidate onward is unchanged.
         val extractionOutcome = extractionRegistry.extract(envelope)
+        // Extractor + Registry + Validator stages, derived from the outcome's
+        // per-extractor diagnostics (no instrumentation inside the registry).
+        tracer.recordExtraction(extractionOutcome, 0)
         val candidate = when (extractionOutcome) {
             is ExtractionRegistry.ExtractionOutcome.Success -> {
                 LedgerLogger.d("ProcessNotificationUseCase: EXTRACTED candidate=${extractionOutcome.candidate}")
@@ -65,11 +83,13 @@ class ProcessNotificationUseCase @Inject constructor(
             is ExtractionRegistry.ExtractionOutcome.Ignored -> {
                 LedgerLogger.d("ProcessNotificationUseCase: IGNORED (${extractionOutcome.reason})")
                 LedgerLogger.pipeline("Parser", "Intentionally ignored: ${extractionOutcome.reason}")
+                emitTrace(tracer, PipelineResult.IGNORED)
                 return
             }
             is ExtractionRegistry.ExtractionOutcome.Failed -> {
                 LedgerLogger.d("ProcessNotificationUseCase: EXTRACTION FAILED reason=${extractionOutcome.reason}")
                 LedgerLogger.pipeline("Parser", "Failed: ${extractionOutcome.reason}")
+                emitTrace(tracer, PipelineResult.REJECTED)
                 return
             }
             is ExtractionRegistry.ExtractionOutcome.Confirmation -> {
@@ -88,6 +108,7 @@ class ProcessNotificationUseCase @Inject constructor(
                     is ConfirmationMatcher.MatchResult.Unmatched ->
                         LedgerLogger.pipeline("Confirmation", "Unmatched: ${match.reason}; dropped")
                 }
+                emitTrace(tracer, PipelineResult.CONFIRMED)
                 return
             }
         }
@@ -104,7 +125,14 @@ class ProcessNotificationUseCase @Inject constructor(
         val reconciliationResult = reconciliationEngine.reconcile(candidate, existingTransactions)
         LedgerLogger.d("ProcessNotificationUseCase: RECONCILIATION RESULT=${reconciliationResult::class.simpleName}")
 
+        // Merchant Resolver and Relationship Engine are part of the diagnostics
+        // model but are NOT invoked during live ingestion (they are downstream
+        // layers). Emit them as present-but-inactive so the timeline is faithful.
+        tracer.recordStageNotExecuted(PipelineStage.MERCHANT_RESOLVER, "Not invoked during live ingestion")
+        tracer.recordStageNotExecuted(PipelineStage.RELATIONSHIP_ENGINE, "Not invoked during live ingestion")
+
         // 4. Persistence
+        var pipelineResult = PipelineResult.NOT_APPLICABLE
         when (reconciliationResult) {
             is ReconciliationResult.New -> {
                 LedgerLogger.pipeline("Reconciliation", "Classified as NEW transaction")
@@ -126,21 +154,41 @@ class ProcessNotificationUseCase @Inject constructor(
                 val result = insertTransactionUseCase.execute(params)
                 if (result is LedgerResult.Success) {
                     LedgerLogger.pipeline("Persistence", "Transaction inserted successfully: ${result.data.id}")
+                    tracer.recordPersistence(true, "Transaction inserted: ${result.data.id}", 0)
+                    pipelineResult = PipelineResult.PERSISTED
                 } else if (result is LedgerResult.Failure) {
                     LedgerLogger.e("Persistence failed: ${result.error}")
+                    tracer.recordPersistence(false, "Persistence failed: ${result.error}", 0)
+                    pipelineResult = PipelineResult.REJECTED
                 }
             }
             is ReconciliationResult.Updated -> {
                 LedgerLogger.pipeline("Reconciliation", "Classified as UPDATE for ${reconciliationResult.existingTransactionId}")
+                tracer.recordPersistence(true, "Updated existing #${reconciliationResult.existingTransactionId}", 0)
+                pipelineResult = PipelineResult.PERSISTED
             }
             is ReconciliationResult.Duplicate -> {
                 LedgerLogger.pipeline("Reconciliation", "Ignored: Duplicate of ${reconciliationResult.existingTransactionId}")
+                tracer.recordPersistenceNotReached("Duplicate of #${reconciliationResult.existingTransactionId}")
+                pipelineResult = PipelineResult.IGNORED
             }
             ReconciliationResult.Ignored -> {
                 LedgerLogger.pipeline("Reconciliation", "Ignored by engine")
+                tracer.recordPersistenceNotReached("Ignored by reconciliation engine")
+                pipelineResult = PipelineResult.IGNORED
             }
         }
-        
+
+        emitTrace(tracer, pipelineResult)
         LedgerLogger.setTraceId(null)
     }
+
+    /**
+     * Passive: hands the completed trace to the sink. Wrapped so any diagnostics
+     * error can never affect ingestion (telemetry must not break the pipeline).
+     */
+    private fun emitTrace(tracer: PipelineTracer, result: PipelineResult) {
+        runCatching { pipelineTraceSink.record(tracer.build(result)) }
+    }
 }
+
