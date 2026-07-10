@@ -25,3 +25,4 @@ object FinancialContentHeuristics {
         CURRENCY_AMOUNT.matcher(text).find()
 }
 
+
