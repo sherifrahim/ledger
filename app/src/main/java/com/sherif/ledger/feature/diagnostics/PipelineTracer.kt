@@ -173,6 +173,27 @@ class PipelineTracer(private val notificationKey: String) {
     }
 
     /**
+     * Intent Classifier stage. Records the [FinancialIntentClassifier]'s decision —
+     * the sole routing authority. Independent of whether extraction succeeded.
+     */
+    fun recordIntent(intent: String, confidence: Int, reason: String?): PipelineTracer = apply {
+        val status = when (intent) {
+            "FINANCIAL_EVENT" -> PipelineStatus.PASSED
+            "FINANCIAL_CONFIRMATION" -> PipelineStatus.MATCHED
+            "FINANCIAL_INFORMATION" -> PipelineStatus.IGNORED
+            else -> PipelineStatus.SKIPPED
+        }
+        events += PipelineEvent(
+            stage = PipelineStage.INTENT_CLASSIFIER,
+            status = status,
+            durationMs = 0,
+            reason = PipelineReason(reason ?: intent, "intent_${intent.lowercase()}"),
+            confidence = confidence,
+            metadata = mapOf("intent" to intent),
+        )
+    }
+
+    /**
      * Records a stage that exists in the model but is not part of this execution
      * path (e.g. Merchant Resolver / Relationship Engine during live ingestion).
      * Emitted so the timeline faithfully shows the full pipeline shape with these
@@ -208,5 +229,7 @@ class PipelineTracer(private val notificationKey: String) {
         finishedAt = Instant.now(),
     )
 }
+
+
 
 

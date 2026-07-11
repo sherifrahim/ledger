@@ -4,6 +4,7 @@ import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.feature.capture.source.SourceChannel
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.model.TransactionCandidate
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.repository.TransactionRepository
@@ -18,12 +19,26 @@ import com.sherif.ledger.feature.diagnostics.PipelineResult
 import com.sherif.ledger.feature.diagnostics.PipelineStage
 import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
 import com.sherif.ledger.feature.diagnostics.PipelineTracer
+import com.sherif.ledger.feature.semantic.ConfirmationInterpreter
+import com.sherif.ledger.feature.semantic.ConfirmationOutcome
+import com.sherif.ledger.feature.semantic.FinancialIntent
+import com.sherif.ledger.feature.semantic.FinancialIntentClassifier
 import kotlinx.coroutines.flow.first
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 /**
  * Orchestrates the end-to-end ingestion flow from a raw notification to a persisted transaction.
+ *
+ * Phase 7 (refined) shape:
+ *   Notification -> Filter -> ExtractionRegistry (ALWAYS runs, produces data only)
+ *                -> FinancialIntentClassifier (consumes the full ExtractionOutcome,
+ *                   sole routing authority) -> Router (the only place a behavioral
+ *                   decision is made).
+ *
+ * The extractor never decides routing, including when it ignores or fails a
+ * message — extraction outcome is data the classifier consumes, not a gate.
+ * Nothing returns early between extraction and classification.
  */
 class ProcessNotificationUseCase @Inject constructor(
     private val filter: NotificationFilter,
@@ -34,6 +49,7 @@ class ProcessNotificationUseCase @Inject constructor(
     private val insertTransactionUseCase: InsertTransactionUseCase,
     private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase,
     private val pipelineTraceSink: PipelineTraceSink,
+    private val financialIntentClassifier: FinancialIntentClassifier,
 ) {
     init {
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
@@ -55,7 +71,8 @@ class ProcessNotificationUseCase @Inject constructor(
         val tracer = PipelineTracer(traceId)
         tracer.recordReceived(envelope.packageName)
 
-        // 1. Filter
+        // 1. Filter. The one gate upstream of everything else — content that never
+        // looks financial at all does not proceed to extraction or classification.
         val filterResult = filter.evaluate(envelope)
         if (!filterResult.isAccepted) {
             LedgerLogger.d("ProcessNotificationUseCase: REJECTED by Filter (Sender=${envelope.packageName}, Source=${envelope.source})")
@@ -68,55 +85,91 @@ class ProcessNotificationUseCase @Inject constructor(
         LedgerLogger.pipeline("Filter", "Accepted: ${envelope.packageName}")
         tracer.recordFilter(filterResult, 0)
 
-        // 2. Extract (deterministic + intent-aware heuristic extractors, ranked and
-        // validated behind one registry). Everything from the candidate onward is unchanged.
+        // 2. Extract. ALWAYS runs. Produces structured DATA only (ExtractionOutcome)
+        // and decides nothing about routing — including when it ignores or fails
+        // the message. No early return here.
         val extractionOutcome = extractionRegistry.extract(envelope)
-        // Extractor + Registry + Validator stages, derived from the outcome's
-        // per-extractor diagnostics (no instrumentation inside the registry).
         tracer.recordExtraction(extractionOutcome, 0)
-        val candidate = when (extractionOutcome) {
-            is ExtractionRegistry.ExtractionOutcome.Success -> {
+        when (extractionOutcome) {
+            is ExtractionRegistry.ExtractionOutcome.Success ->
                 LedgerLogger.d("ProcessNotificationUseCase: EXTRACTED candidate=${extractionOutcome.candidate}")
-                LedgerLogger.pipeline("Parser", "Matched: ${extractionOutcome.candidate.merchantName}")
-                extractionOutcome.candidate
-            }
-            is ExtractionRegistry.ExtractionOutcome.Ignored -> {
-                LedgerLogger.d("ProcessNotificationUseCase: IGNORED (${extractionOutcome.reason})")
-                LedgerLogger.pipeline("Parser", "Intentionally ignored: ${extractionOutcome.reason}")
-                emitTrace(tracer, PipelineResult.IGNORED)
-                return
-            }
-            is ExtractionRegistry.ExtractionOutcome.Failed -> {
-                LedgerLogger.d("ProcessNotificationUseCase: EXTRACTION FAILED reason=${extractionOutcome.reason}")
-                LedgerLogger.pipeline("Parser", "Failed: ${extractionOutcome.reason}")
-                emitTrace(tracer, PipelineResult.REJECTED)
-                return
-            }
-            is ExtractionRegistry.ExtractionOutcome.Confirmation -> {
+            is ExtractionRegistry.ExtractionOutcome.Ignored ->
+                LedgerLogger.d("ProcessNotificationUseCase: extraction IGNORED (${extractionOutcome.reason}) - still proceeding to intent classification")
+            is ExtractionRegistry.ExtractionOutcome.Failed ->
+                LedgerLogger.d("ProcessNotificationUseCase: extraction FAILED (${extractionOutcome.reason}) - still proceeding to intent classification")
+            is ExtractionRegistry.ExtractionOutcome.Confirmation ->
+                LedgerLogger.d("ProcessNotificationUseCase: extraction matched its own confirmation pattern - still proceeding to intent classification")
+        }
+
+        // 3. Classify. The SOLE routing authority. Consumes the notification AND the
+        // complete extraction outcome as context - never gated by extractor success.
+        // A future local model (Gemma/Phi) replaces only this call.
+        val intent = financialIntentClassifier.classify(envelope, extractionOutcome)
+        tracer.recordIntent(intent.intent.name, intent.confidence, intent.reasoning.firstOrNull())
+        LedgerLogger.pipeline("Intent", "${intent.intent} (conf=${intent.confidence}): ${intent.reasoning.firstOrNull()}")
+
+        // 4. Router. The ONLY place a behavioral decision is made, and it is made
+        // from intent alone.
+        val candidate: TransactionCandidate
+        when (intent.intent) {
+            FinancialIntent.FINANCIAL_CONFIRMATION -> {
+                // Acknowledgement of an earlier event. Never persist. Amount/tail are
+                // read from whatever data extraction happened to produce - used
+                // purely as matching data, not as the reason for this route.
+                val (amountMinor, accountTail) = amountAndTailFrom(extractionOutcome)
                 val cStart = envelope.timestamp.minus(24, ChronoUnit.HOURS)
                 val cEnd = envelope.timestamp.plus(24, ChronoUnit.HOURS)
                 val nearbyResult = transactionRepository.observeTransactionsBetween(cStart, cEnd).first()
                 val nearby = if (nearbyResult is LedgerResult.Success) nearbyResult.data else emptyList()
-                when (val match = confirmationMatcher.match(
-                    amountMinor = extractionOutcome.amountMinor,
-                    accountTail = extractionOutcome.accountTail,
-                    confirmationTime = envelope.timestamp,
-                    existingTransactions = nearby,
-                )) {
-                    is ConfirmationMatcher.MatchResult.Matched ->
-                        LedgerLogger.pipeline("Confirmation", "Confirmed existing txn #${match.transaction.id}; no insert")
-                    is ConfirmationMatcher.MatchResult.Unmatched ->
-                        LedgerLogger.pipeline("Confirmation", "Unmatched: ${match.reason}; dropped")
+                val outcome = ConfirmationInterpreter.interpret(
+                    confirmationMatcher.match(
+                        amountMinor = amountMinor,
+                        accountTail = accountTail,
+                        confirmationTime = envelope.timestamp,
+                        existingTransactions = nearby,
+                    ),
+                )
+                when (outcome) {
+                    is ConfirmationOutcome.ConfirmedMatch ->
+                        LedgerLogger.pipeline("Confirmation", "Confirmed match to txn #${outcome.transaction.id} (${outcome.confidence}%); no insert")
+                    is ConfirmationOutcome.LikelyMatch ->
+                        LedgerLogger.pipeline("Confirmation", "Likely match to txn #${outcome.transaction.id} (${outcome.confidence}%); no insert, flagged for review")
+                    is ConfirmationOutcome.Unmatched ->
+                        // Do NOT invent an expense. Record as unmatched confirmation.
+                        LedgerLogger.pipeline("Confirmation", "Unmatched confirmation: ${outcome.reason}; no insert")
                 }
                 emitTrace(tracer, PipelineResult.CONFIRMED)
                 return
             }
+            FinancialIntent.FINANCIAL_INFORMATION -> {
+                LedgerLogger.pipeline("Intent", "Information; ignored after diagnostics")
+                emitTrace(tracer, PipelineResult.IGNORED)
+                return
+            }
+            FinancialIntent.UNKNOWN -> {
+                LedgerLogger.pipeline("Intent", "Unknown intent; diagnostics only, no insert")
+                emitTrace(tracer, PipelineResult.NOT_APPLICABLE)
+                return
+            }
+            FinancialIntent.FINANCIAL_EVENT -> {
+                // Money moved. This is the ONLY class that reaches persistence, and
+                // it requires the extractor to have actually produced data.
+                val extracted = (extractionOutcome as? ExtractionRegistry.ExtractionOutcome.Success)?.candidate
+                if (extracted == null) {
+                    // Intent said EVENT but there is no structured data to persist.
+                    // Never fabricate a candidate. Surfaced in diagnostics.
+                    LedgerLogger.pipeline("Router", "Event intent but no extracted candidate; no insert")
+                    emitTrace(tracer, PipelineResult.REJECTED)
+                    return
+                }
+                candidate = extracted
+            }
         }
 
-        // 3. Reconcile
+        // 5. Reconcile (only reached for a FINANCIAL_EVENT with a valid candidate).
         val start = candidate.timestamp.minus(24, ChronoUnit.HOURS)
         val end = candidate.timestamp.plus(24, ChronoUnit.HOURS)
-        
+
         val existingTransactionsResult = transactionRepository.observeTransactionsBetween(start, end).first()
         val existingTransactions = if (existingTransactionsResult is LedgerResult.Success) {
             existingTransactionsResult.data
@@ -131,15 +184,15 @@ class ProcessNotificationUseCase @Inject constructor(
         tracer.recordStageNotExecuted(PipelineStage.MERCHANT_RESOLVER, "Not invoked during live ingestion")
         tracer.recordStageNotExecuted(PipelineStage.RELATIONSHIP_ENGINE, "Not invoked during live ingestion")
 
-        // 4. Persistence
+        // 6. Persistence
         var pipelineResult = PipelineResult.NOT_APPLICABLE
         when (reconciliationResult) {
             is ReconciliationResult.New -> {
                 LedgerLogger.pipeline("Reconciliation", "Classified as NEW transaction")
-                
+
                 // Ensure a valid account exists before insertion
                 val accountId = candidate.accountId ?: ensureDefaultAccountUseCase.execute()
-                
+
                 val params = InsertTransactionUseCase.Params(
                     accountId = accountId,
                     amountMinor = candidate.amountMinor ?: 0L,
@@ -190,5 +243,18 @@ class ProcessNotificationUseCase @Inject constructor(
     private fun emitTrace(tracer: PipelineTracer, result: PipelineResult) {
         runCatching { pipelineTraceSink.record(tracer.build(result)) }
     }
+
+    /**
+     * Reads amount/tail from whatever the extractor produced, for confirmation
+     * matching. Pure data lookup - never a routing decision.
+     */
+    private fun amountAndTailFrom(outcome: ExtractionRegistry.ExtractionOutcome): Pair<Long?, String?> =
+        when (outcome) {
+            is ExtractionRegistry.ExtractionOutcome.Success ->
+                outcome.candidate.amountMinor to outcome.candidate.accountHint
+            is ExtractionRegistry.ExtractionOutcome.Confirmation ->
+                outcome.amountMinor to outcome.accountTail
+            else -> null to null
+        }
 }
 

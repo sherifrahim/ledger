@@ -20,6 +20,7 @@ enum class PipelineStage {
     FINANCIAL_EXTRACTORS,
     REGISTRY,
     VALIDATOR,
+    INTENT_CLASSIFIER,
     CONFIRMATION_MATCHER,
     MERCHANT_RESOLVER,
     RELATIONSHIP_ENGINE,
@@ -146,5 +147,7 @@ data class DiagnosticSnapshot(
         }
     }
 }
+
+
 
 
