@@ -1,6 +1,5 @@
 package com.sherif.ledger.core.domain.usecase.transaction
 
-import com.sherif.ledger.feature.semantic.DeterministicSemanticClassifier
 import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
 import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.KnownBankExtractor
@@ -85,8 +84,7 @@ class ProcessNotificationUseCaseTest {
             transactionRepository,
             insertTransactionUseCase,
             EnsureDefaultAccountUseCase(accountRepository),
-            PipelineTraceSink(),
-            DeterministicSemanticClassifier()
+            PipelineTraceSink()
         )
 
         useCase.execute(envelope)
@@ -97,5 +95,4 @@ class ProcessNotificationUseCaseTest {
     private fun createEnvelope() = NotificationEnvelope("com.adcb.mobileapp", "title", "Purchase of AED 50 at Amazon", null, Instant.now(), "key")
     private fun createCandidate() = TransactionCandidate(IngestionSource.SMS, "raw", "Amazon", 1000L, CurrencyCode.AED, Instant.now(), null, 1L, TransactionType.EXPENSE)
 }
-
 

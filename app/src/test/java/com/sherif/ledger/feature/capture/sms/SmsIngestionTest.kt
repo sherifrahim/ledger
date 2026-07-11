@@ -1,6 +1,5 @@
 package com.sherif.ledger.feature.capture.sms
 
-import com.sherif.ledger.feature.semantic.DeterministicSemanticClassifier
 import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
 import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.KnownBankExtractor
@@ -87,8 +86,7 @@ class SmsIngestionTest {
         transactionRepository,
         insertTransactionUseCase,
         EnsureDefaultAccountUseCase(accountRepository),
-            PipelineTraceSink(),
-            DeterministicSemanticClassifier()
+            PipelineTraceSink()
     )
 
     @Test
@@ -157,5 +155,4 @@ class SmsIngestionTest {
         assertEquals(1, transactionRepository.insertedTransactions.size)
     }
 }
-
 
