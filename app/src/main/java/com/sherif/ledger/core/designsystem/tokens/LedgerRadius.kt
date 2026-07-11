@@ -5,21 +5,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * LDL corner radius vocabulary.
- *
- * Pre-built shapes for Compose modifiers plus raw Dp values for cases
- * where a shape object is not accepted (e.g. lerp interpolation in the
- * collapsing hero). This is the single authority for LDL radii.
- *
- * Note: [com.sherif.ledger.core.designsystem.theme.LedgerShapes] feeds
- * Material components via the Material Shapes API and carries its own
- * values. Those are toolkit plumbing, not LDL identity.
+ * Ledger V3 Radius Scale (Soft Precision)
  */
 object LedgerRadius {
-    val SmallDp: Dp = 16.dp
-    val MediumDp: Dp = 24.dp
-    val LargeDp: Dp = 32.dp
-    val XLargeDp: Dp = 40.dp
+    val SmallDp: Dp = 8.dp
+    val MediumDp: Dp = 16.dp
+    val LargeDp: Dp = 24.dp
+    val XLargeDp: Dp = 32.dp
     val FullDp: Dp = 100.dp
 
     val Small = RoundedCornerShape(SmallDp)

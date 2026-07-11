@@ -1,5 +1,7 @@
 package com.sherif.ledger.feature.capture
 
+import com.sherif.ledger.core.domain.service.account.InstitutionRegistry
+import com.sherif.ledger.core.domain.service.account.DeterministicAccountIdentityResolver
 import com.sherif.ledger.feature.semantic.DeterministicFinancialIntentClassifier
 import com.sherif.ledger.feature.diagnostics.PipelineTraceSink
 import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
@@ -42,6 +44,9 @@ class LiveCaptureIntegrationTest {
             return LedgerResult.Success(insertedCount.toLong())
         }
         override suspend fun deleteTransaction(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override fun observeAllTransactions(): Flow<LedgerResult<List<Transaction>>> = flowOf(LedgerResult.Success(emptyList()))
+        override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<com.sherif.ledger.core.domain.repository.AccountOriginCount> = emptyList()
+        override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
     }
 
     private val accountRepository = object : AccountRepository {
@@ -71,7 +76,6 @@ class LiveCaptureIntegrationTest {
             override suspend fun registerAlias(rawText: String, brandId: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
         }),
         CategoryResolver(),
-        BalanceCalculator()
     )
 
     private val parserRegistry = ParserRegistry(setOf(
@@ -85,7 +89,12 @@ class LiveCaptureIntegrationTest {
         ReconciliationEngine(FingerprintGenerator()),
         transactionRepository,
         insertTransactionUseCase,
-        EnsureDefaultAccountUseCase(accountRepository),
+        DeterministicAccountIdentityResolver(
+            InstitutionRegistry(),
+            accountRepository,
+            transactionRepository,
+            EnsureDefaultAccountUseCase(accountRepository),
+        ),
             PipelineTraceSink(),
             DeterministicFinancialIntentClassifier()
     )
@@ -106,6 +115,7 @@ class LiveCaptureIntegrationTest {
         assertEquals(1, transactionRepository.insertedCount)
     }
 }
+
 
 
 

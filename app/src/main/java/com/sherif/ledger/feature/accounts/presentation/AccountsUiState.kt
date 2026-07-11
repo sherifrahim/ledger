@@ -1,5 +1,7 @@
 package com.sherif.ledger.feature.accounts.presentation
 
+import com.sherif.ledger.presentation.dashboard.InsightUiModel
+
 data class AccountsUiState(
     val netWorth: String,
     val netWorthCurrency: String,

@@ -3,25 +3,28 @@ package com.sherif.ledger.presentation.dashboard.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.model.Money
+import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
-import com.sherif.ledger.presentation.dashboard.DashboardUiState
-import com.sherif.ledger.presentation.dashboard.TransactionUiModel
+import com.sherif.ledger.presentation.dashboard.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
-import java.time.format.TextStyle
-import java.util.Locale
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
     init {
@@ -36,65 +39,66 @@ class DashboardViewModel @Inject constructor(
     }
 
     val uiState: StateFlow<DashboardUiState> = combine(
-        transactionRepository.observeRecentTransactions(10),
+        transactionRepository.observeRecentTransactions(50),
         transactionRepository.observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second),
         accountRepository.observeAllAccounts()
-    ) { recentResult, monthResult, accountsResult ->
-        
+    ) { recentResult, monthResult, _ ->
+
+        val netWorth = getFinancialAnalyticsUseCase.computeNetWorth()
+        val primaryCurrency = netWorth.currency
+        val totalBalanceUnits = netWorth.netWorthMinor
+
+        val monthTransactions = (monthResult as? LedgerResult.Success)?.data ?: emptyList()
+        val analytics = getFinancialAnalyticsUseCase.compute(monthTransactions, currentMonthRange.first, currentMonthRange.second)
+
         val recentTransactions = if (recentResult is LedgerResult.Success) {
-            recentResult.data.map { txn ->
-                TransactionUiModel(
-                    merchant = txn.rawText ?: "Unknown",
-                    category = "Other",
-                    amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
-                    isExpense = txn.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE
-                )
-            }
+            recentResult.data
         } else emptyList()
 
-        val accounts = (accountsResult as? LedgerResult.Success)?.data ?: emptyList()
-        val totalBalanceUnits = accounts.sumOf { it.balance.minorUnits }
-        val primaryCurrency = accounts.firstOrNull()?.balance?.currencyCode ?: com.sherif.ledger.core.domain.model.CurrencyCode.AED
-        
-        val monthTransactions = (monthResult as? LedgerResult.Success)?.data ?: emptyList()
-        val incomeUnits = monthTransactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME }.sumOf { it.amount.minorUnits }
-        val expenseUnits = monthTransactions.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE }.sumOf { it.amount.minorUnits }
-        val savingsUnits = incomeUnits - expenseUnits
+        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        val activityGroups = recentTransactions.groupBy { txn ->
+            val date = txn.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+            when {
+                date == LocalDate.now() -> "Today"
+                date == LocalDate.now().minusDays(1) -> "Yesterday"
+                else -> date.format(DateTimeFormatter.ofPattern("d MMMM"))
+            }
+        }.map { (title, txns) ->
+            ActivityGroupUiModel(
+                title = title,
+                items = txns.map { txn ->
+                    ActivityItemUiModel(
+                        id = txn.id.toString(),
+                        merchantName = txn.rawText ?: "Unknown",
+                        category = "Other",
+                        amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
+                        isExpense = txn.type == TransactionType.EXPENSE,
+                        time = txn.timestamp.atZone(ZoneId.systemDefault()).format(timeFormatter),
+                        explanation = if (txn.type == TransactionType.INCOME) "Income" else "Expense"
+                    )
+                }
+            )
+        }.take(5)
 
         DashboardUiState(
-            greeting = "Welcome back",
-            userName = "",
-            currentMonth = LocalDate.now().month.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase(),
-            totalSpent = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(expenseUnits, primaryCurrency), includeSymbol = false),
-            balanceAmount = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(totalBalanceUnits, primaryCurrency), includeSymbol = false),
-            balanceCurrency = primaryCurrency.name,
-            budgetProgress = 0f,
-            expense = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(expenseUnits, primaryCurrency), includeSymbol = true),
-            income = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(incomeUnits, primaryCurrency), includeSymbol = true),
-            savings = MoneyFormatter.format(com.sherif.ledger.core.domain.model.Money(savingsUnits, primaryCurrency), includeSymbol = true),
-            recentTransactions = recentTransactions,
-            insights = emptyList()
-        ).also { 
-            com.sherif.ledger.core.common.logging.LedgerLogger.d("DashboardViewModel: EMITTING uiState. TotalSpent=${it.totalSpent}, Balance=${it.balanceAmount}, RecentCount=${it.recentTransactions.size}")
-        }
+            totalBalance = MoneyFormatter.format(Money(totalBalanceUnits, primaryCurrency), includeSymbol = true),
+            balanceChangePercentage = "+8%",
+            monthlyExpenses = MoneyFormatter.format(Money(analytics.netSpendMinor, primaryCurrency), includeSymbol = true),
+            monthlyExpensesProgress = 0.65f,
+            needsReviewCount = 2,
+            needsReviewAmount = "50,12",
+            categories = listOf(
+                CategoryFilterUiModel("all", "All", true),
+                CategoryFilterUiModel("electricity", "Electricity"),
+                CategoryFilterUiModel("subscription", "Subscription"),
+                CategoryFilterUiModel("food", "Food & Drink"),
+                CategoryFilterUiModel("groceries", "Groceries")
+            ),
+            recentActivity = activityGroups
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = EMPTY_STATE
+        initialValue = DashboardUiState()
     )
-
-    companion object {
-        private val EMPTY_STATE = DashboardUiState(
-            greeting = "",
-            userName = "",
-            currentMonth = "",
-            totalSpent = "0.00",
-            budgetProgress = 0f,
-            expense = "0.00",
-            income = "0.00",
-            savings = "0.00",
-            recentTransactions = emptyList(),
-            insights = emptyList()
-        )
-    }
 }

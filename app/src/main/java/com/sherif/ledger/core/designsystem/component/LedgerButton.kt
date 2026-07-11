@@ -6,18 +6,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
-enum class LedgerButtonStyle { Primary, Secondary, Text }
+enum class LedgerButtonStyle {
+    Solid, // Principal action, high contrast
+    Tonal, // Secondary action, low contrast
+    Ghost; // Subtle action, no background
+    
+    companion object {
+        val Primary = Solid
+        val Secondary = Tonal
+        val Text = Ghost
+    }
+}
 
 /**
- * LDL standard button.
- *
- * Purged of Material 3 Button dependencies. Uses [ledgerClickable] for
- * micro-spring interaction and scale-based feedback.
+ * Ledger V3 Button System
+ * 
+ * Replaces V2 spring-heavy buttons with architectural, immediate reveal controls.
  */
 @Composable
 fun LedgerButton(
@@ -25,75 +35,76 @@ fun LedgerButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    style: LedgerButtonStyle = LedgerButtonStyle.Primary,
+    style: LedgerButtonStyle = LedgerButtonStyle.Solid,
+    icon: ImageVector? = null,
 ) {
-    val contentPadding = PaddingValues(
-        horizontal = LedgerSpacing.XLarge,
-        vertical = LedgerSpacing.Small,
-    )
-    val shape = LedgerRadius.Small
     val colors = LedgerTheme.colors
+    
+    val (backgroundColor, contentColor) = when (style) {
+        LedgerButtonStyle.Solid -> colors.textPrimary to colors.surfaceBase
+        LedgerButtonStyle.Tonal -> colors.surfaceInset to colors.textPrimary
+        LedgerButtonStyle.Ghost -> Color.Transparent to colors.textPrimary
+    }
 
-    val (backgroundColor, contentColor, borderColor) = when (style) {
-        LedgerButtonStyle.Primary -> Triple(
-            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
-            colors.onTint,
-            Color.Transparent,
-        )
-        LedgerButtonStyle.Secondary -> Triple(
-            Color.Transparent,
-            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
-            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
-        )
-        LedgerButtonStyle.Text -> Triple(
-            Color.Transparent,
-            if (enabled) colors.tint else colors.tint.copy(alpha = LedgerTheme.opacity.Disabled),
-            Color.Transparent,
-        )
+    val finalContentColor = if (enabled) contentColor else colors.textTertiary
+    val finalBackgroundColor = if (enabled) backgroundColor else {
+        if (style == LedgerButtonStyle.Ghost) Color.Transparent else colors.surfaceInset.copy(alpha = 0.5f)
     }
 
     Box(
         modifier = modifier
             .ledgerSurface(
-                shape = shape,
-                backgroundColor = backgroundColor,
-                borderColor = borderColor,
-                borderWidth = if (borderColor == Color.Transparent) 0.dp else LedgerTheme.border.Hairline,
+                backgroundColor = finalBackgroundColor,
+                borderColor = if (style == LedgerButtonStyle.Solid) Color.Transparent else colors.border,
                 onClick = onClick,
                 enabled = enabled,
+                shape = LedgerRadius.Medium
             )
-            .padding(contentPadding),
+            .padding(horizontal = LedgerSpacing.Large, vertical = LedgerSpacing.Medium),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = text,
-            style = LedgerTheme.typography.labelLarge,
-            color = contentColor,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.InlineGap)
+        ) {
+            if (icon != null) {
+                androidx.compose.material3.Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = finalContentColor
+                )
+            }
+            Text(
+                text = text,
+                style = LedgerTheme.typography.bodyMedium,
+                color = finalContentColor,
+            )
+        }
     }
 }
 
 /**
- * LDL icon button.
+ * Standardized icon-only button for V3.
  */
 @Composable
 fun LedgerIconButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    tint: Color = LedgerTheme.colors.label,
+    tint: Color = LedgerTheme.colors.textPrimary,
     backgroundColor: Color = Color.Transparent
 ) {
     Box(
         modifier = modifier
             .size(44.dp)
             .ledgerSurface(
-                shape = LedgerRadius.Full,
                 backgroundColor = backgroundColor,
                 borderColor = Color.Transparent,
                 onClick = onClick,
-                enabled = enabled
+                enabled = enabled,
+                shape = LedgerRadius.Full
             ),
         contentAlignment = Alignment.Center
     ) {

@@ -1,7 +1,9 @@
 package com.sherif.ledger.feature.capture.extraction
 
 import com.sherif.ledger.core.domain.model.TransactionCandidate
+import com.sherif.ledger.core.domain.model.TransactionOrigin
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.model.TransferDirection
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
 import com.sherif.ledger.feature.capture.parsing.extraction.MerchantNormalizer
@@ -162,6 +164,8 @@ class HeuristicExtractor @Inject constructor(
             timestamp = envelope.timestamp,
             accountHint = tail,
             transactionType = type,
+            transferDirection = inferDirection(type, lower),
+            origin = TransactionOrigin(envelope.packageName, null),
         )
 
         return ExtractionResult.Extracted(
@@ -209,6 +213,26 @@ class HeuristicExtractor @Inject constructor(
         else -> TransactionType.EXPENSE
     }
 
+    /**
+     * Direction is decided HERE, once, alongside the type decision that already
+     * reads this text — never re-derived downstream by BalanceCalculator or
+     * analytics. A credit-card payment (money paid TOWARDS a card) is definitionally
+     * outgoing regardless of wording, so it is special-cased using the SAME
+     * cardPaymentPhrases signal [inferType] already checked, rather than guessed.
+     * Any other transfer defers to the shared, bank-agnostic direction resolver.
+     */
+    private fun inferDirection(
+        type: TransactionType,
+        lower: String,
+    ): TransferDirection? {
+        if (type != TransactionType.TRANSFER) return null
+        return if (phrases.containsAny(phrases.cardPaymentPhrases, lower) && lower.contains("card")) {
+            TransferDirection.OUTGOING
+        } else {
+            ExtractionHelpers.inferTransferDirection(lower)
+        }
+    }
+
     /** Distinguish the flavour of offer for diagnostics only. */
     private fun classifyOffer(lower: String): String = when {
         lower.contains("loan") -> "Loan Offer"
@@ -237,4 +261,6 @@ class HeuristicExtractor @Inject constructor(
         }
     }
 }
+
+
 

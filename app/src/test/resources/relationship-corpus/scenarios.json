@@ -1,99 +1,15 @@
 [
-  {
-    "name": "refund_of_purchase",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 5000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 50.00 spent at CARREFOUR with card ending 1234", "cardTail": "1234"},
-      {"id": 2, "accountId": 10, "amountMinor": 5000, "type": "REFUND", "epochSecond": 8899200, "rawText": "AED 50.00 refunded from CARREFOUR to card ending 1234", "cardTail": "1234"}
-    ],
-    "expected": [{"type": "REFUND_OF_PURCHASE", "source": 2, "target": 1, "minConfidence": 80}]
-  },
-  {
-    "name": "transfer_to_savings",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 100000, "type": "TRANSFER", "epochSecond": 8640000, "rawText": "AED 1000.00 transferred to savings account"},
-      {"id": 2, "accountId": 20, "amountMinor": 100000, "type": "INCOME", "epochSecond": 8643600, "rawText": "AED 1000.00 received into savings account"}
-    ],
-    "expected": [{"type": "SAVINGS_MOVEMENT", "source": 1, "target": 2, "minConfidence": 70}]
-  },
-  {
-    "name": "transfer_between_accounts",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 250000, "type": "TRANSFER", "epochSecond": 8640000, "rawText": "AED 2500.00 transferred to account XXX5678"},
-      {"id": 2, "accountId": 30, "amountMinor": 250000, "type": "INCOME", "epochSecond": 8646000, "rawText": "AED 2500.00 received from account XXX1234"}
-    ],
-    "expected": [{"type": "TRANSFER_BETWEEN_ACCOUNTS", "source": 1, "target": 2, "minConfidence": 70}]
-  },
-  {
-    "name": "salary_funds_expense",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 600000, "type": "INCOME", "epochSecond": 8640000, "rawText": "Your salary AED 6000.00 has been credited"},
-      {"id": 2, "accountId": 10, "amountMinor": 5000, "type": "EXPENSE", "epochSecond": 8812800, "rawText": "AED 50.00 spent at CARREFOUR"},
-      {"id": 3, "accountId": 10, "amountMinor": 3000, "type": "EXPENSE", "epochSecond": 9072000, "rawText": "AED 30.00 spent at TALABAT"}
-    ],
-    "expected": [
-      {"type": "SALARY_FUNDS_EXPENSE", "source": 1, "target": 2, "minConfidence": 55},
-      {"type": "SALARY_FUNDS_EXPENSE", "source": 1, "target": 3, "minConfidence": 55}
-    ]
-  },
-  {
-    "name": "subscription_netflix",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 4500, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 45.00 paid to NETFLIX.COM"},
-      {"id": 2, "accountId": 10, "amountMinor": 4500, "type": "EXPENSE", "epochSecond": 11232000, "rawText": "AED 45.00 paid to NETFLIX.COM"},
-      {"id": 3, "accountId": 10, "amountMinor": 4500, "type": "EXPENSE", "epochSecond": 13824000, "rawText": "AED 45.00 paid to NETFLIX.COM"}
-    ],
-    "expected": [
-      {"type": "SUBSCRIPTION", "source": 2, "target": 1, "minConfidence": 80},
-      {"type": "SUBSCRIPTION", "source": 3, "target": 2, "minConfidence": 80}
-    ]
-  },
-  {
-    "name": "recurring_bill_dewa",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 32000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 320.00 DEWA electricity bill payment"},
-      {"id": 2, "accountId": 10, "amountMinor": 41000, "type": "EXPENSE", "epochSecond": 11232000, "rawText": "AED 410.00 DEWA electricity bill payment"}
-    ],
-    "expected": [{"type": "RECURRING_BILL", "source": 2, "target": 1, "minConfidence": 70}]
-  },
-  {
-    "name": "cash_withdrawal",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 20000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 200.00 ATM cash withdrawal"}
-    ],
-    "expected": [{"type": "CASH_WITHDRAWAL", "source": 1, "target": null, "minConfidence": 80}]
-  },
-  {
-    "name": "interest_credit",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 1250, "type": "INCOME", "epochSecond": 8640000, "rawText": "AED 12.50 interest credited to your account"}
-    ],
-    "expected": [{"type": "INTEREST_CREDIT", "source": 1, "target": null, "minConfidence": 80}]
-  },
-  {
-    "name": "loan_installment",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 150000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 1500.00 EMI debited for personal loan"},
-      {"id": 2, "accountId": 10, "amountMinor": 150000, "type": "EXPENSE", "epochSecond": 11232000, "rawText": "AED 1500.00 EMI debited for personal loan"}
-    ],
-    "expected": [{"type": "INSTALLMENT_PAYMENT", "source": 2, "target": 1, "minConfidence": 75}]
-  },
-  {
-    "name": "credit_card_payment_with_confirmation",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 20000, "type": "TRANSFER", "epochSecond": 8640000, "rawText": "AED 200.00 paid towards your FAB credit card"},
-      {"id": 2, "accountId": 20, "amountMinor": 20000, "type": "INCOME", "epochSecond": 8726400, "rawText": "Payment received AED 200.00. Outstanding balance updated"}
-    ],
-    "expected": [
-      {"type": "CREDIT_CARD_PAYMENT", "source": 1, "target": 2, "minConfidence": 80},
-      {"type": "CONFIRMATION_OF_PAYMENT", "source": 2, "target": 1, "minConfidence": 80}
-    ]
-  },
-  {
-    "name": "unknown_no_relationship",
-    "transactions": [
-      {"id": 1, "accountId": 10, "amountMinor": 7300, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 73.00 spent at SOME LOCAL SHOP"}
-    ],
-    "expected": []
-  }
+  {"name": "refund_of_purchase", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 5000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 50.00 spent at CARREFOUR with card ending 1234", "cardTail": "1234"}, {"id": 2, "accountId": 10, "amountMinor": 5000, "type": "REFUND", "epochSecond": 8899200, "rawText": "AED 50.00 refunded from CARREFOUR to card ending 1234", "cardTail": "1234"}], "expected": [{"type": "REFUND_OF_PURCHASE", "source": 2, "target": 1, "minConfidence": 80}]},
+  {"name": "transfer_to_savings", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 100000, "type": "TRANSFER", "epochSecond": 8640000, "rawText": "AED 1000.00 transferred to savings account"}, {"id": 2, "accountId": 20, "amountMinor": 100000, "type": "INCOME", "epochSecond": 8643600, "rawText": "AED 1000.00 received into savings account"}], "expected": [{"type": "SAVINGS_MOVEMENT", "source": 1, "target": 2, "minConfidence": 70}]},
+  {"name": "transfer_between_accounts", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 250000, "type": "TRANSFER", "epochSecond": 8640000, "rawText": "AED 2500.00 transferred to account XXX5678"}, {"id": 2, "accountId": 30, "amountMinor": 250000, "type": "INCOME", "epochSecond": 8646000, "rawText": "AED 2500.00 received from account XXX1234"}], "expected": [{"type": "TRANSFER_BETWEEN_ACCOUNTS", "source": 1, "target": 2, "minConfidence": 70}]},
+  {"name": "salary_funds_expense", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 600000, "type": "INCOME", "epochSecond": 8640000, "rawText": "Your salary AED 6000.00 has been credited"}, {"id": 2, "accountId": 10, "amountMinor": 5000, "type": "EXPENSE", "epochSecond": 8812800, "rawText": "AED 50.00 spent at CARREFOUR"}, {"id": 3, "accountId": 10, "amountMinor": 3000, "type": "EXPENSE", "epochSecond": 9072000, "rawText": "AED 30.00 spent at TALABAT"}], "expected": [{"type": "SALARY_FUNDS_EXPENSE", "source": 1, "target": 2, "minConfidence": 55}, {"type": "SALARY_FUNDS_EXPENSE", "source": 1, "target": 3, "minConfidence": 55}]},
+  {"name": "subscription_netflix", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 4500, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 45.00 paid to NETFLIX.COM"}, {"id": 2, "accountId": 10, "amountMinor": 4500, "type": "EXPENSE", "epochSecond": 11232000, "rawText": "AED 45.00 paid to NETFLIX.COM"}, {"id": 3, "accountId": 10, "amountMinor": 4500, "type": "EXPENSE", "epochSecond": 13824000, "rawText": "AED 45.00 paid to NETFLIX.COM"}], "expected": [{"type": "SUBSCRIPTION", "source": 2, "target": 1, "minConfidence": 80}, {"type": "SUBSCRIPTION", "source": 3, "target": 2, "minConfidence": 80}]},
+  {"name": "recurring_bill_dewa", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 32000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 320.00 DEWA electricity bill payment"}, {"id": 2, "accountId": 10, "amountMinor": 41000, "type": "EXPENSE", "epochSecond": 11232000, "rawText": "AED 410.00 DEWA electricity bill payment"}], "expected": [{"type": "RECURRING_BILL", "source": 2, "target": 1, "minConfidence": 70}, {"type": "RECURRING_MERCHANT", "source": 2, "target": 1, "minConfidence": 60}]},
+  {"name": "cash_withdrawal", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 20000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 200.00 ATM cash withdrawal"}], "expected": [{"type": "CASH_WITHDRAWAL", "source": 1, "target": null, "minConfidence": 80}]},
+  {"name": "interest_credit", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 1250, "type": "INCOME", "epochSecond": 8640000, "rawText": "AED 12.50 interest credited to your account"}], "expected": [{"type": "INTEREST_CREDIT", "source": 1, "target": null, "minConfidence": 80}]},
+  {"name": "loan_installment", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 150000, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 1500.00 EMI debited for personal loan"}, {"id": 2, "accountId": 10, "amountMinor": 150000, "type": "EXPENSE", "epochSecond": 11232000, "rawText": "AED 1500.00 EMI debited for personal loan"}], "expected": [{"type": "INSTALLMENT_PAYMENT", "source": 2, "target": 1, "minConfidence": 75}, {"type": "LOAN_REPAYMENT", "source": 1, "target": null, "minConfidence": 60}]},
+  {"name": "credit_card_payment_with_confirmation", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 20000, "type": "TRANSFER", "epochSecond": 8640000, "rawText": "AED 200.00 paid towards your FAB credit card"}, {"id": 2, "accountId": 20, "amountMinor": 20000, "type": "INCOME", "epochSecond": 8726400, "rawText": "Payment received AED 200.00. Outstanding balance updated"}], "expected": [{"type": "CREDIT_CARD_PAYMENT", "source": 1, "target": 2, "minConfidence": 80}, {"type": "CONFIRMATION_OF_PAYMENT", "source": 2, "target": 1, "minConfidence": 80}, {"type": "TRANSFER_BETWEEN_ACCOUNTS", "source": 1, "target": 2, "minConfidence": 60}]},
+  {"name": "unknown_no_relationship", "transactions": [{"id": 1, "accountId": 10, "amountMinor": 7300, "type": "EXPENSE", "epochSecond": 8640000, "rawText": "AED 73.00 spent at SOME LOCAL SHOP"}], "expected": []}
 ]
+
 

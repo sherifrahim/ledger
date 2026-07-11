@@ -1,0 +1,71 @@
+[
+  {
+    "name": "salary",
+    "text": "Your salary AED 6000.00 has been credited to your account XXX1234",
+    "expectedType": "INCOME",
+    "expectedDirection": null,
+    "note": "Salary is income only, never expense, never a transfer."
+  },
+  {
+    "name": "refund",
+    "text": "AED 50.00 refunded from CARREFOUR to your account XXX1234",
+    "expectedType": "REFUND",
+    "expectedDirection": null
+  },
+  {
+    "name": "internal_transfer_outgoing",
+    "text": "AED660.00 transferred via ADCB Personal Internet Banking from acc. no. XXX920001",
+    "expectedType": "TRANSFER",
+    "expectedDirection": "OUTGOING",
+    "note": "The dominant real-world pattern: money leaving via a described channel."
+  },
+  {
+    "name": "internal_transfer_incoming",
+    "text": "AED 1000.00 credited via NEFT transfer into account XXX5678",
+    "expectedType": "TRANSFER",
+    "expectedDirection": "INCOMING",
+    "note": "An incoming-transfer phrase co-occurring with a transfer signal."
+  },
+  {
+    "name": "credit_card_payment",
+    "text": "AED 200.00 paid towards your FAB credit card ending 6989",
+    "expectedType": "TRANSFER",
+    "expectedDirection": "OUTGOING",
+    "note": "HeuristicExtractor wins the registry ranking here (score 100: amount+40, verb 'paid'+35, tail+15, merchant-fallback 'Transfer'+10) over GenericBankParser's flat 99 -- 'towards' does not match any merchant-extraction regex (no word-boundary 'to'), so extractMerchant falls back to the type-based 'Transfer' string, which counts as a non-null merchant for scoring. HeuristicExtractor's card-payment-aware inferType (cardPaymentPhrases + \"card\") types this TRANSFER, and the direction fix special-cases it OUTGOING (definitional, not text-guessed). Verified against the exact scoring formula (amount+40/verb+35/tail+15/merchant+10, threshold 70), not assumed.",
+    "expectedWinner": "HeuristicExtractor"
+  },
+  {
+    "name": "credit_card_payment_no_tail",
+    "text": "AED 200.00 paid towards your credit card this month.",
+    "expectedType": "TRANSFER",
+    "expectedDirection": "OUTGOING",
+    "note": "No parseable card/account tail, so GenericBankParser fails and HeuristicExtractor's card-payment-aware inferType wins, typing TRANSFER. This is the case where the direction fix in HeuristicExtractor.inferDirection actually takes effect -- special-cased OUTGOING since paying a card is definitionally outgoing, not text-guessed. (Deliberately avoids 'outstanding balance' wording, which is a strongConfirmationPhrase and would route this to Confirmation instead.)"
+  },
+  {
+    "name": "cash_withdrawal",
+    "text": "AED 200.00 withdrawn from ATM using card ending 1234",
+    "expectedType": "EXPENSE",
+    "expectedDirection": null,
+    "note": "Typed EXPENSE by extraction (frozen, unmodified); excluded from spend at the analytics layer via the relationship engine's CashWithdrawalResolver, not by retyping. Wording deliberately uses 'withdrawn' (an eventVerbs entry) rather than only 'cash withdrawal', because HeuristicExtractor's scoring only awards points for eventVerbs matches -- 'cash withdrawal'/'ATM' alone (matching atmPhrases, a separate list used only for type inference) do not contribute to the score, and text without a scoring verb or merchant match falls below the 70-point threshold and is terminally Ignored by the registry regardless of GenericBankParser's own valid parse. Verified against the exact score formula, not assumed."
+  },
+  {
+    "name": "loan_payment",
+    "text": "AED 1500.00 EMI debited for personal loan from account XXX1234",
+    "expectedType": "EXPENSE",
+    "expectedDirection": null
+  },
+  {
+    "name": "interest",
+    "text": "AED 12.50 interest credited to your account XXX1234",
+    "expectedType": "INCOME",
+    "expectedDirection": null
+  },
+  {
+    "name": "genuine_purchase",
+    "text": "AED 37.00 spent at CARREFOUR with card ending 1959",
+    "expectedType": "EXPENSE",
+    "expectedDirection": null
+  }
+]
+
+

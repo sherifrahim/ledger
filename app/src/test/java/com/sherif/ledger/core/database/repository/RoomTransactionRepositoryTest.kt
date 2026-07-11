@@ -39,10 +39,13 @@ class RoomTransactionRepositoryTest {
         }
 
         override fun observeTransactionsForAccount(accountId: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())
+        override fun observeAllTransactions(): Flow<List<TransactionEntity>> = flowOf(emptyList())
         override fun observeTransactionsBetween(start: Long, end: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())
         override suspend fun getTransactionById(id: Long): TransactionEntity? = null
         override suspend fun insertTransaction(transaction: TransactionEntity): Long = 1L
         override suspend fun softDeleteTransaction(id: Long, timestamp: Long): Int = 1
+        override suspend fun countByOriginSignature(packageName: String, cardTail: String): List<com.sherif.ledger.core.database.dao.AccountOriginCountRow> = emptyList()
+        override suspend fun reassignByOriginSignature(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
     }
 
     private val repository = RoomTransactionRepository(fakeDao)
@@ -79,3 +82,4 @@ class RoomTransactionRepositoryTest {
         assertEquals(1L, (result as LedgerResult.Success).data)
     }
 }
+

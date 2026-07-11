@@ -16,5 +16,12 @@ data class Transaction(
     val source: IngestionSource,
     val rawText: String?,
     val cardTail: String? = null,
-    val fingerprint: String
+    val fingerprint: String,
+    // See TransactionCandidate.transferDirection: normalized once upstream, never
+    // re-derived downstream.
+    val transferDirection: TransferDirection? = null,
+    // Provenance evidence for AccountIdentityResolver. See TransactionOrigin.
+    val origin: TransactionOrigin? = null,
 )
+
+

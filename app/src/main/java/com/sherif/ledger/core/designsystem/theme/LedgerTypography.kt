@@ -15,49 +15,56 @@ private val Inter = FontFamily(
     Font(R.font.inter_bold, FontWeight.Bold),
 )
 
+/**
+ * Ledger V3 Typography (Editorial & Authoritative)
+ */
 object LedgerTextStyles {
 
+    // Authoritative Financial Figures
     val Display = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Bold,
-        fontSize = 50.sp, // Reduced by ~8% for RC-003 parity
-        lineHeight = 54.sp,
-        letterSpacing = (-1.5).sp,
+        fontSize = 44.sp,
+        lineHeight = 48.sp,
+        letterSpacing = (-1.0).sp,
+        fontFeatureSettings = "tnum", // Tabular Numerals
     )
 
     val Headline = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
-        lineHeight = 38.sp,
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
+        letterSpacing = (-0.5).sp,
     )
 
     val Title = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
+        fontSize = 20.sp,
+        lineHeight = 26.sp,
     )
 
-    val Section = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
-    )
-
-    val Body = TextStyle(
+    // Body & Narrative
+    val BodyLarge = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
+        fontSize = 17.sp,
         lineHeight = 24.sp,
+    )
+
+    val BodyMedium = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Normal,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
     )
 
     val Label = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
+        fontSize = 13.sp,
+        lineHeight = 18.sp,
     )
 
     val Caption = TextStyle(
@@ -66,27 +73,28 @@ object LedgerTextStyles {
         fontSize = 12.sp,
         lineHeight = 16.sp,
     )
-val Mono = TextStyle(
-    fontFamily = FontFamily.Monospace,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 16.sp,
-    lineHeight = 24.sp,
-)
-    val Amount = TextStyle(
+
+    // Explanatory Intelligence
+    val Narrative = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Bold,
-        fontSize = 36.sp,
-        lineHeight = 40.sp,
-        letterSpacing = (-0.8).sp,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.2.sp,
     )
+
+    // V2 Compatibility Aliases
+    val Section = Title
+    val Body = BodyLarge
+    val Mono = BodyMedium.copy(fontFamily = FontFamily.Monospace)
 }
 
 val LedgerTypography = Typography(
     displayLarge = LedgerTextStyles.Display,
     headlineLarge = LedgerTextStyles.Headline,
     headlineMedium = LedgerTextStyles.Title,
-    titleLarge = LedgerTextStyles.Section,
-    bodyLarge = LedgerTextStyles.Body,
+    bodyLarge = LedgerTextStyles.BodyLarge,
+    bodyMedium = LedgerTextStyles.BodyMedium,
     labelLarge = LedgerTextStyles.Label,
     bodySmall = LedgerTextStyles.Caption,
 )

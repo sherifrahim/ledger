@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.sherif.ledger.core.domain.model.AccountType
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.model.TransferDirection
 import java.time.Instant
 
 /**
@@ -34,4 +35,12 @@ class LedgerConverters {
 
     @TypeConverter
     fun toIngestionSource(value: String): IngestionSource = IngestionSource.valueOf(value)
+
+    @TypeConverter
+    fun fromTransferDirection(direction: TransferDirection?): String? = direction?.name
+
+    @TypeConverter
+    fun toTransferDirection(value: String?): TransferDirection? = value?.let { TransferDirection.valueOf(it) }
 }
+
+

@@ -1,10 +1,6 @@
 package com.sherif.ledger.core.designsystem.component
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,33 +10,45 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 /**
- * LDL screen header for primary landing zones.
- *
- * Provides a large, authoritative title with optional trailing actions.
+ * Ledger V3 Header (Architectural Anchor)
+ * 
+ * Provides a clean, typographic start to every major screen zone.
  */
 @Composable
 fun LedgerHeader(
     title: String,
     modifier: Modifier = Modifier,
-    actions: @Composable RowScope.() -> Unit = {},
+    subtitle: String? = null,
+    actions: @Composable (RowScope.() -> Unit)? = null,
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = LedgerSpacing.Medium),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = LedgerSpacing.Large),
+        verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Atomic)
     ) {
-        Text(
-            text = title,
-            style = LedgerTextStyles.Headline,
-            color = LedgerTheme.colors.label,
-        )
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            actions()
+            Text(
+                text = title,
+                style = LedgerTextStyles.Headline,
+                color = LedgerTheme.colors.textPrimary,
+            )
+            if (actions != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    actions()
+                }
+            }
+        }
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                style = LedgerTextStyles.BodyMedium,
+                color = LedgerTheme.colors.textSecondary,
+            )
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.sherif.ledger.core.domain.usecase.transaction
 
+import com.sherif.ledger.core.domain.service.account.InstitutionRegistry
+import com.sherif.ledger.core.domain.service.account.DeterministicAccountIdentityResolver
 import com.sherif.ledger.core.domain.model.*
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
@@ -51,6 +53,9 @@ class ProcessNotificationUseCaseIntentRoutingTest {
             return LedgerResult.Success(insertedCount.toLong())
         }
         override suspend fun deleteTransaction(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override fun observeAllTransactions(): Flow<LedgerResult<List<Transaction>>> = flowOf(LedgerResult.Success(emptyList()))
+        override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<com.sherif.ledger.core.domain.repository.AccountOriginCount> = emptyList()
+        override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
     }
 
     private val accountRepository = object : AccountRepository {
@@ -76,7 +81,6 @@ class ProcessNotificationUseCaseIntentRoutingTest {
             override suspend fun registerAlias(rawText: String, brandId: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
         }),
         CategoryResolver(),
-        BalanceCalculator()
     )
 
     /** Builds the use case with the REAL extraction pipeline (no fakes). */
@@ -98,7 +102,12 @@ class ProcessNotificationUseCaseIntentRoutingTest {
             ReconciliationEngine(FingerprintGenerator()),
             transactionRepository,
             insertTransactionUseCase,
-            EnsureDefaultAccountUseCase(accountRepository),
+            DeterministicAccountIdentityResolver(
+                InstitutionRegistry(),
+                accountRepository,
+                transactionRepository,
+                EnsureDefaultAccountUseCase(accountRepository),
+            ),
             traceSink,
             DeterministicFinancialIntentClassifier(),
         )
@@ -203,4 +212,5 @@ class ProcessNotificationUseCaseIntentRoutingTest {
         assertEquals("Exactly one transaction from the whole chain", 1, transactionRepository.insertedCount)
     }
 }
+
 

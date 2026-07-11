@@ -8,7 +8,7 @@ import com.sherif.ledger.core.domain.model.TransactionCandidate
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.repository.TransactionRepository
-import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
+import com.sherif.ledger.core.domain.service.account.AccountIdentityResolver
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
 import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
@@ -39,6 +39,11 @@ import javax.inject.Inject
  * The extractor never decides routing, including when it ignores or fails a
  * message — extraction outcome is data the classifier consumes, not a gate.
  * Nothing returns early between extraction and classification.
+ *
+ * Phase 9: which ACCOUNT a persisted transaction belongs to is resolved by
+ * [AccountIdentityResolver] from multiple deterministic signals — never a bare
+ * accountId carried on the candidate (extraction never resolves accounts) and
+ * never a silent default-account fallback with no evidence trail.
  */
 class ProcessNotificationUseCase @Inject constructor(
     private val filter: NotificationFilter,
@@ -47,7 +52,7 @@ class ProcessNotificationUseCase @Inject constructor(
     private val reconciliationEngine: ReconciliationEngine,
     private val transactionRepository: TransactionRepository,
     private val insertTransactionUseCase: InsertTransactionUseCase,
-    private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase,
+    private val accountIdentityResolver: AccountIdentityResolver,
     private val pipelineTraceSink: PipelineTraceSink,
     private val financialIntentClassifier: FinancialIntentClassifier,
 ) {
@@ -190,18 +195,26 @@ class ProcessNotificationUseCase @Inject constructor(
             is ReconciliationResult.New -> {
                 LedgerLogger.pipeline("Reconciliation", "Classified as NEW transaction")
 
-                // Ensure a valid account exists before insertion
-                val accountId = candidate.accountId ?: ensureDefaultAccountUseCase.execute()
+                // Which account this belongs to — resolved from multiple
+                // deterministic signals, never a bare candidate field and never a
+                // silent guess. See AccountIdentityResolver.
+                val identity = accountIdentityResolver.resolve(envelope, candidate)
+                LedgerLogger.pipeline(
+                    "AccountIdentity",
+                    "${identity.decision} accountId=${identity.accountId} confidence=${identity.confidence}: ${identity.evidence.joinToString("; ")}",
+                )
 
                 val params = InsertTransactionUseCase.Params(
-                    accountId = accountId,
+                    accountId = identity.accountId,
                     amountMinor = candidate.amountMinor ?: 0L,
                     currencyCode = candidate.currencyCode ?: CurrencyCode.AED,
                     type = candidate.transactionType ?: TransactionType.EXPENSE,
                     timestamp = candidate.timestamp,
                     source = envelope.source,
                     rawMerchantText = candidate.merchantName ?: "Unknown",
-                    cardTail = candidate.accountHint
+                    cardTail = candidate.accountHint,
+                    transferDirection = candidate.transferDirection,
+                    origin = candidate.origin,
                 )
                 LedgerLogger.d("ProcessNotificationUseCase: PERSISTING params=$params")
                 val result = insertTransactionUseCase.execute(params)
@@ -257,4 +270,5 @@ class ProcessNotificationUseCase @Inject constructor(
             else -> null to null
         }
 }
+
 

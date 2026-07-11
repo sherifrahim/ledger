@@ -2,6 +2,7 @@ package com.sherif.ledger.feature.capture.parsing
 
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.model.TransactionCandidate
+import com.sherif.ledger.core.domain.model.TransactionOrigin
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.core.common.logging.LedgerLogger
@@ -66,7 +67,8 @@ private class AdcbPurchasePattern(private val normalizer: MerchantNormalizer) : 
                 currencyCode = currency,
                 timestamp = envelope.timestamp,
                 accountHint = account,
-                transactionType = TransactionType.EXPENSE
+                transactionType = TransactionType.EXPENSE,
+                origin = TransactionOrigin(envelope.packageName, null),
             )
         )
     }
@@ -110,7 +112,8 @@ LedgerLogger.pipeline(
                 currencyCode = currency,
                 timestamp = envelope.timestamp,
                 accountHint = account,
-                transactionType = TransactionType.INCOME
+                transactionType = TransactionType.INCOME,
+                origin = TransactionOrigin(envelope.packageName, null),
             )
         )
     }
@@ -137,7 +140,8 @@ private class AdcbCreditPattern(private val normalizer: MerchantNormalizer) : No
                 currencyCode = currency,
                 timestamp = envelope.timestamp,
                 accountHint = account,
-                transactionType = TransactionType.INCOME
+                transactionType = TransactionType.INCOME,
+                origin = TransactionOrigin(envelope.packageName, null),
             )
         )
     }
@@ -162,7 +166,9 @@ private class AdcbTransferPattern(private val normalizer: MerchantNormalizer) : 
                 currencyCode = currency,
                 timestamp = envelope.timestamp,
                 accountHint = account,
-                transactionType = TransactionType.TRANSFER
+                transactionType = TransactionType.TRANSFER,
+                transferDirection = ExtractionHelpers.inferTransferDirection(normalizedText.lowercase()),
+                origin = TransactionOrigin(envelope.packageName, null),
             )
         )
     }
@@ -189,7 +195,8 @@ private class AdcbRefundPattern(private val normalizer: MerchantNormalizer) : No
                 currencyCode = currency,
                 timestamp = envelope.timestamp,
                 accountHint = account,
-                transactionType = TransactionType.REFUND
+                transactionType = TransactionType.REFUND,
+                origin = TransactionOrigin(envelope.packageName, null),
             )
         )
     }
@@ -212,3 +219,5 @@ private class AdcbOtpPattern : NotificationPattern {
 
     override fun extract(envelope: NotificationEnvelope, normalizedText: String): ParseResult = ParseResult.Ignore
 }
+
+

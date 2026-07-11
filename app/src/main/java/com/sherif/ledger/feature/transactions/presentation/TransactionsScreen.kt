@@ -1,124 +1,128 @@
 package com.sherif.ledger.feature.transactions.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
-import com.sherif.ledger.core.designsystem.component.LedgerHeader
-import com.sherif.ledger.core.designsystem.component.LedgerSearchBar
-import com.sherif.ledger.core.designsystem.component.LedgerTag
-import com.sherif.ledger.core.designsystem.component.ledgerClickable
-import com.sherif.ledger.core.designsystem.component.ledgerSurface
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.sherif.ledger.core.designsystem.component.*
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
-import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
-import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
-import com.sherif.ledger.feature.transactions.presentation.components.TimelineSection
-import com.sherif.ledger.feature.transactions.presentation.preview.TransactionsPreviewData
 
 @Composable
 fun TransactionsScreen(
     state: TransactionsUiState,
-    onTransactionClick: ((String) -> Unit)? = null,
+    onTransactionClick: (String) -> Unit = {},
     onSearchClick: () -> Unit = {},
 ) {
-    com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: TransactionsScreen(groupCount=${state.groups.size})")
-    var searchQuery by remember { mutableStateOf("") }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LedgerTheme.colors.surfaceLevel0),
-        contentPadding = PaddingValues(
-            top = LedgerSpacing.Large,
-            bottom = LedgerSpacing.ScreenBottom,
-        ),
-    ) {
-        item(key = "title") {
-            LedgerHeader(
-                title = "Transactions",
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .padding(horizontal = LedgerSpacing.Screen)
-            )
-        }
-
-        item(key = "search") {
-            LedgerSearchBar(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                placeholder = "Search transactions",
-                modifier = Modifier
-                    .padding(horizontal = LedgerSpacing.Screen)
-                    .ledgerClickable { onSearchClick() },
-                enabled = false, // Force navigation to SearchFilterScreen
-            )
-            Spacer(Modifier.height(LedgerSpacing.Group))
-            FilterPills(modifier = Modifier.padding(horizontal = LedgerSpacing.Screen))
-            Spacer(Modifier.height(LedgerSpacing.Section))
-        }
-
-        if (state.groups.isEmpty()) {
-            item(key = "empty_state") {
-                LedgerEmptyState(
-                    title = "No history yet",
-                    subtitle = "Your transaction history will build up automatically as you spend."
-                )
+    Scaffold(
+        topBar = {
+            TransactionsTopBar(onSearchClick)
+        },
+        containerColor = LedgerTheme.colors.surfaceBase
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(horizontal = LedgerSpacing.ScreenPadding)
+        ) {
+            item {
+                TransactionFilterChips()
             }
-        } else {
-            com.sherif.ledger.core.common.logging.LedgerLogger.d("Transactions: RENDERING groups=${state.groups.size}")
-            items(state.groups, key = { it.id }) { group ->
-                TimelineSection(
-                    group = group,
-                    onTransactionClick = onTransactionClick,
-                    modifier = Modifier.padding(horizontal = LedgerSpacing.Screen),
-                )
-                Spacer(Modifier.height(LedgerSpacing.Section))
+
+            state.groups.forEach { group ->
+                item {
+                    Text(
+                        text = group.title,
+                        style = LedgerTheme.typography.labelLarge,
+                        color = LedgerTheme.colors.textTertiary,
+                        modifier = Modifier.padding(vertical = LedgerSpacing.Medium)
+                    )
+                }
+                
+                items(group.transactions, key = { it.id }) { txn ->
+                    LedgerTransactionRow(
+                        title = txn.merchant,
+                        amount = txn.amount,
+                        explanation = if (txn.category == MerchantCategory.Salary) "Income" else "Matched",
+                        currency = "AED",
+                        isExpense = txn.category != MerchantCategory.Salary,
+                        onClick = { onTransactionClick(txn.id) }
+                    )
+                    LedgerDivider(alpha = 0.05f)
+                }
+            }
+            
+            item {
+                Spacer(Modifier.height(100.dp))
             }
         }
     }
 }
 
 @Composable
-private fun FilterPills(modifier: Modifier = Modifier) {
+private fun TransactionsTopBar(onSearchClick: () -> Unit) {
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Medium),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        FilterPill("All", selected = true)
-        FilterPill("Income", selected = false)
-        FilterPill("Expense", selected = false)
-        FilterPill("Transfer", selected = false)
+        Spacer(Modifier.width(44.dp))
+
+        Text(
+            text = "Transactions",
+            style = LedgerTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = LedgerTheme.colors.textPrimary
+        )
+
+        LedgerIconButton(
+            icon = Icons.Default.Search,
+            onClick = onSearchClick,
+            tint = LedgerTheme.colors.textPrimary
+        )
     }
 }
 
 @Composable
-private fun FilterPill(
-    label: String,
-    selected: Boolean,
-) {
-    val colors = LedgerTheme.colors
-    LedgerTag(
-        text = label,
-        containerColor = if (selected) colors.success else colors.surfaceLevel1,
-        contentColor = if (selected) colors.onTint else colors.secondaryLabel,
-        modifier = Modifier.ledgerClickable { /* TODO */ },
-    )
+private fun TransactionFilterChips() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = LedgerSpacing.Small),
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
+    ) {
+        val filters = listOf("All", "Income", "Expenses", "Transfers")
+        filters.forEachIndexed { index, filter ->
+            val isSelected = index == 0
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(if (isSelected) LedgerTheme.colors.textPrimary else LedgerTheme.colors.surfaceInset)
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = filter,
+                    style = LedgerTheme.typography.labelLarge,
+                    color = if (isSelected) LedgerTheme.colors.surfaceBase else LedgerTheme.colors.textSecondary
+                )
+            }
+        }
+    }
 }

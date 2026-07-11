@@ -7,11 +7,12 @@ import com.sherif.ledger.core.domain.model.LedgerError
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.Transaction
+import com.sherif.ledger.core.domain.model.TransactionOrigin
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.model.TransferDirection
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.repository.TransactionRunner
-import com.sherif.ledger.core.domain.service.transaction.BalanceCalculator
 import com.sherif.ledger.core.domain.service.transaction.CategoryResolver
 import com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator
 import com.sherif.ledger.core.domain.service.transaction.MerchantResolver
@@ -22,6 +23,12 @@ import javax.inject.Inject
 /**
  * Orchestrator Use Case for inserting a new transaction into the system.
  * Coordinates validation, identity generation, resolution services, and atomic persistence.
+ *
+ * Phase 9: does NOT write or mutate any account balance. Balances are never
+ * cached — they are always derived by replaying persisted transactions (see
+ * [com.sherif.ledger.core.domain.service.transaction.AccountBalanceService]).
+ * Persisting a transaction here is the complete effect of an insert; there is no
+ * second, independently-maintained number to keep in sync.
  */
 class InsertTransactionUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
@@ -31,7 +38,6 @@ class InsertTransactionUseCase @Inject constructor(
     private val fingerprintGenerator: FingerprintGenerator,
     private val merchantResolver: MerchantResolver,
     private val categoryResolver: CategoryResolver,
-    private val balanceCalculator: BalanceCalculator
 ) {
     init {
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: InsertTransactionUseCase")
@@ -74,13 +80,16 @@ class InsertTransactionUseCase @Inject constructor(
                 source = params.source,
                 rawText = params.rawMerchantText,
                 cardTail = params.cardTail,
-                fingerprint = fingerprint
+                fingerprint = fingerprint,
+                transferDirection = params.transferDirection,
+                origin = params.origin,
             )
             
             LedgerLogger.pipeline("Persistence", "LINEAGE: Domain -> Merchant=${transaction.rawText}, Amount=${transaction.amount.minorUnits}, Fingerprint=${transaction.fingerprint.take(8)}")
             com.sherif.ledger.core.common.logging.LedgerLogger.pipeline("Pipeline", "Persistence Input: ${params.amountMinor} ${params.currencyCode}")
 
-            // Persistence
+            // Persistence. This is the ONLY write. No account balance is mutated —
+            // the persisted transaction IS the complete effect of this insert.
             val insertResult = transactionRepository.insertTransaction(transaction)
             if (insertResult is LedgerResult.Failure) {
                 return@runInTransaction insertResult as LedgerResult<Transaction>
@@ -88,15 +97,6 @@ class InsertTransactionUseCase @Inject constructor(
             
             val newTransactionId = (insertResult as LedgerResult.Success).data
             val persistedTransaction = transaction.copy(id = newTransactionId)
-
-            // Balance Adjustment
-            val updatedBalance = balanceCalculator.calculate(account.balance, persistedTransaction)
-            val updateResult = accountRepository.updateAccount(account.copy(balance = updatedBalance))
-            
-            if (updateResult is LedgerResult.Failure) {
-                // Room withTransaction will rollback on exception
-                throw IllegalStateException("Critical failure: Could not update account balance for transaction $newTransactionId")
-            }
 
             LedgerResult.Success(persistedTransaction).also {
                 com.sherif.ledger.core.common.logging.LedgerLogger.pipeline(
@@ -114,6 +114,9 @@ class InsertTransactionUseCase @Inject constructor(
         val timestamp: Instant,
         val source: IngestionSource,
         val rawMerchantText: String,
-        val cardTail: String? = null
+        val cardTail: String? = null,
+        val transferDirection: TransferDirection? = null,
+        val origin: TransactionOrigin? = null,
     )
 }
+

@@ -19,8 +19,8 @@ data class AccountEntity(
     
     val type: AccountType,
     
-    @ColumnInfo(name = "balance_minor")
-    val balanceMinor: Long,
+    @ColumnInfo(name = "opening_balance_minor")
+    val openingBalanceMinor: Long,
 
     @ColumnInfo(name = "currency_code")
     val currencyCode: CurrencyCode,
@@ -40,3 +40,4 @@ data class AccountEntity(
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long = System.currentTimeMillis()
 )
+

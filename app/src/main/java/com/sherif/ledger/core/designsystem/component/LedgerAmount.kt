@@ -1,14 +1,15 @@
 package com.sherif.ledger.core.designsystem.component
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
+import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
@@ -20,46 +21,46 @@ enum class LedgerAmountStyle {
 }
 
 /**
- * LDS amount text for money values.
- *
- * The caller provides the final display string so formatting and currency
- * decisions stay in the appropriate feature or domain layer. Direction and
- * status are expressed through [color], drawn from LDL financial semantics.
+ * Ledger V3 Amount Component
+ * 
+ * Focuses on authoritative typographic alignment without decorative monospace.
  */
 @Composable
 fun LedgerAmount(
     amount: String,
     modifier: Modifier = Modifier,
+    currency: String? = null,
     style: LedgerAmountStyle = LedgerAmountStyle.Regular,
-    color: Color = LedgerTheme.colors.label,
+    color: Color = LedgerTheme.colors.textPrimary,
     textAlign: TextAlign = TextAlign.Start,
 ) {
-    com.sherif.ledger.core.common.logging.LedgerLogger.d("LDS: Rendering Amount: $amount")
     val textStyle: TextStyle = when (style) {
-        LedgerAmountStyle.Small -> LedgerTextStyles.Mono.copy(
-            fontSize = LedgerTextStyles.Label.fontSize,
-            lineHeight = LedgerTextStyles.Label.lineHeight,
-            fontWeight = FontWeight.Bold,
-        )
-
-        LedgerAmountStyle.Regular -> LedgerTextStyles.Mono
-        
-        LedgerAmountStyle.Large -> LedgerTextStyles.Amount.copy(
-            fontFamily = FontFamily.Monospace,
-            fontSize = LedgerTextStyles.Section.fontSize,
-            lineHeight = LedgerTextStyles.Section.lineHeight,
-        )
-        
-        LedgerAmountStyle.Display -> LedgerTextStyles.Display.copy(
-            fontFamily = FontFamily.Monospace,
-        )
+        LedgerAmountStyle.Small -> LedgerTextStyles.Label
+        LedgerAmountStyle.Regular -> LedgerTextStyles.BodyMedium
+        LedgerAmountStyle.Large -> LedgerTextStyles.Title
+        LedgerAmountStyle.Display -> LedgerTextStyles.Display
     }
 
-    Text(
-        text = amount,
+    Row(
         modifier = modifier,
-        style = textStyle.copy(textAlign = textAlign),
-        color = color,
-        maxLines = 1,
-    )
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Atomic)
+    ) {
+        if (currency != null) {
+            Text(
+                text = currency,
+                style = textStyle.copy(
+                    fontSize = textStyle.fontSize * 0.6f,
+                    color = LedgerTheme.colors.textSecondary,
+                    textAlign = textAlign
+                )
+            )
+        }
+        Text(
+            text = amount,
+            style = textStyle.copy(textAlign = textAlign),
+            color = color,
+            maxLines = 1,
+        )
+    }
 }

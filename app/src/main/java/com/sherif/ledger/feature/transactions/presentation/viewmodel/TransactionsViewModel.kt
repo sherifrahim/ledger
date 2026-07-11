@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.transactions.presentation.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
     init {
@@ -28,6 +30,11 @@ class TransactionsViewModel @Inject constructor(
     val uiState: StateFlow<TransactionsUiState> = transactionRepository.observeRecentTransactions(100)
         .map { result ->
             if (result is LedgerResult.Success) {
+                // Single relationship-analysis pass over the whole fetched list, so
+                // per-day subtotals below are consistent with the monthly aggregate
+                // shown elsewhere — never a second, independent aggregation.
+                val effectiveSpend = getFinancialAnalyticsUseCase.effectiveSpendByTransactionId(result.data)
+
                 val groups = result.data.groupBy { 
                     it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 }.map { (date, txns) ->
@@ -43,7 +50,9 @@ class TransactionsViewModel @Inject constructor(
 
                     val firstTxn = txns.first()
                     val primaryCurrency = firstTxn.amount.currencyCode
-                    val expenseUnits = txns.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.EXPENSE }.sumOf { it.amount.minorUnits }
+                    // Real spend: excludes credit-card payments / cash withdrawals,
+                    // nets matched refunds. Never raw EXPENSE-type sum.
+                    val expenseUnits = txns.sumOf { effectiveSpend[it.id] ?: 0L }
                     val incomeUnits = txns.filter { it.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME }.sumOf { it.amount.minorUnits }
 
                     TransactionGroupUi(
@@ -92,3 +101,5 @@ class TransactionsViewModel @Inject constructor(
     }
 
 }
+
+

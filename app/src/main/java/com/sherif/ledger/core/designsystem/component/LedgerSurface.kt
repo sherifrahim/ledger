@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -19,58 +19,32 @@ import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
-import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 /**
- * LDL foundation for surfaces.
- *
- * Implements the atomic visual expression for Classic and Glass themes.
- *
- * Classic: The original "Carved" aesthetic with tonal backgrounds and hairlines.
- * Glass: Diffusion-first aesthetic with translucency and vertical edge-lighting.
+ * Ledger V3 Surface Engine
+ * 
+ * Implements the "Machined Financial Instrument" material language.
+ * Focuses on continuous surfaces, quiet shadows, and architectural sections.
  */
 fun Modifier.ledgerSurface(
-    level: LedgerSurfaceLevel = LedgerSurfaceLevel.Level1,
-    shape: Shape = LedgerRadius.Small,
+    level: LedgerSurfaceLevel = LedgerSurfaceLevel.Inset,
+    shape: Shape = LedgerRadius.Medium,
     backgroundColor: Color? = null,
     borderColor: Color? = null,
     borderWidth: Dp = LedgerTheme.border.Hairline,
+    elevation: Dp = 0.dp,
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
 ): Modifier = composed {
     val colors = LedgerTheme.colors
-    val isGlass = colors.themeType != LedgerThemeType.Classic
-
-    val resolvedBackground = when {
-        backgroundColor != null -> backgroundColor
-        isGlass -> colors.glassSurface
-        else -> colors.surface(level)
-    }
-
-    val resolvedBorderColor = when {
-        borderColor != null -> borderColor
-        isGlass -> colors.glassBorder
-        else -> colors.separator.copy(alpha = LedgerTheme.motion.SurfaceBorderAlpha)
-    }
-
-    // Edge Lighting (Glass only): High-intensity top-edge highlight
-    val edgeLightModifier = if (isGlass) {
-        Modifier.border(
-            width = 1.dp,
-            brush = Brush.verticalGradient(
-                0.0f to colors.edgeLight,
-                0.1f to colors.edgeLight.copy(alpha = 0.1f),
-                1.0f to Color.Transparent
-            ),
-            shape = shape
-        )
-    } else Modifier
+    val resolvedBackground = backgroundColor ?: colors.surface(level)
+    val resolvedBorderColor = borderColor ?: colors.border
 
     this
+        .then(if (elevation > 0.dp) Modifier.shadow(elevation, shape, clip = false) else Modifier)
         .clip(shape)
         .background(resolvedBackground)
-        .then(edgeLightModifier)
         .border(width = borderWidth, color = resolvedBorderColor, shape = shape)
         .then(
             if (onClick != null) {
@@ -80,23 +54,29 @@ fun Modifier.ledgerSurface(
 }
 
 /**
- * LDL grouped content surface.
- *
- * Replaces Material [androidx.compose.material3.Surface] entirely.
+ * Ledger V3 Container Primitive
+ * 
+ * Replaces all V1/V2 card components.
  */
 @Composable
 fun LedgerSurface(
     modifier: Modifier = Modifier,
-    level: LedgerSurfaceLevel = LedgerSurfaceLevel.Level1,
-    shape: Shape = LedgerRadius.Small,
-    contentPadding: PaddingValues = PaddingValues(LedgerSpacing.Group),
+    level: LedgerSurfaceLevel = LedgerSurfaceLevel.Inset,
+    shape: Shape = LedgerRadius.Medium,
+    contentPadding: PaddingValues = PaddingValues(LedgerSpacing.Medium),
+    elevation: Dp = 0.dp,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .ledgerSurface(level = level, shape = shape, onClick = onClick)
+            .ledgerSurface(
+                level = level,
+                shape = shape,
+                elevation = elevation,
+                onClick = onClick
+            )
             .padding(contentPadding),
         content = content,
     )

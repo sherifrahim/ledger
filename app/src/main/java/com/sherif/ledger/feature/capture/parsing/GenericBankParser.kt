@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.capture.parsing
 import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.model.TransactionCandidate
+import com.sherif.ledger.core.domain.model.TransactionOrigin
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
@@ -69,6 +70,12 @@ class GenericBankParser @Inject constructor(
         val currency = ExtractionHelpers.extractCurrency(text)
         val type = detectType(lower)
         val merchant = extractMerchant(text, type)
+        // Direction is decided HERE, once, alongside the type decision that already
+        // reads this text — never re-derived downstream by BalanceCalculator or
+        // analytics.
+        val direction = if (type == TransactionType.TRANSFER) {
+            ExtractionHelpers.inferTransferDirection(lower)
+        } else null
 
         LedgerLogger.pipeline(
             "GenericBank",
@@ -85,6 +92,8 @@ class GenericBankParser @Inject constructor(
                 timestamp = envelope.timestamp,
                 accountHint = account,
                 transactionType = type,
+                transferDirection = direction,
+                origin = TransactionOrigin(envelope.packageName, null),
             ),
         )
     }
@@ -134,5 +143,7 @@ class GenericBankParser @Inject constructor(
         }
     }
 }
+
+
 
 

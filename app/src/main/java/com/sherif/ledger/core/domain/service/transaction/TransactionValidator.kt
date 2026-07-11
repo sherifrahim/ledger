@@ -21,9 +21,10 @@ class TransactionValidator @Inject constructor() {
     }
 
     fun validateAccount(account: Account, params: InsertTransactionUseCase.Params): LedgerError? {
-        if (account.balance.currencyCode != params.currencyCode) {
+        if (account.openingBalance.currencyCode != params.currencyCode) {
             return LedgerError.InvalidCurrency
         }
         return null
     }
 }
+

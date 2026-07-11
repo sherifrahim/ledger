@@ -10,6 +10,7 @@ import com.sherif.ledger.core.domain.model.Category
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.Transaction
+import com.sherif.ledger.core.domain.model.TransactionOrigin
 import java.time.Instant
 
 /**
@@ -20,7 +21,7 @@ fun AccountEntity.toDomain(): Account = Account(
     id = id,
     name = name,
     type = type,
-    balance = Money(balanceMinor, currencyCode),
+    openingBalance = Money(openingBalanceMinor, currencyCode),
     accountNumberTail = accountNumberTail,
     bankBrandId = bankBrandId
 )
@@ -29,8 +30,8 @@ fun Account.toEntity(): AccountEntity = AccountEntity(
     id = id,
     name = name,
     type = type,
-    balanceMinor = balance.minorUnits,
-    currencyCode = balance.currencyCode,
+    openingBalanceMinor = openingBalance.minorUnits,
+    currencyCode = openingBalance.currencyCode,
     accountNumberTail = accountNumberTail,
     bankBrandId = bankBrandId
 )
@@ -76,7 +77,11 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     source = source,
     rawText = rawText,
     cardTail = cardTail,
-    fingerprint = fingerprint
+    fingerprint = fingerprint,
+    transferDirection = transferDirection,
+    origin = if (originPackageName != null || originSenderIdentity != null) {
+        TransactionOrigin(originPackageName, originSenderIdentity)
+    } else null,
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -91,5 +96,9 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     source = source,
     rawText = rawText,
     cardTail = cardTail,
-    fingerprint = fingerprint
+    fingerprint = fingerprint,
+    transferDirection = transferDirection,
+    originPackageName = origin?.packageName,
+    originSenderIdentity = origin?.senderIdentity,
 )
+

@@ -68,12 +68,12 @@ class RoomAccountRepository @Inject constructor(
     }
 
     override suspend fun updateAccount(account: Account): LedgerResult<Unit> = try {
-        val balanceBefore = accountDao.getAccountById(account.id)?.balanceMinor
+        val balanceBefore = accountDao.getAccountById(account.id)?.openingBalanceMinor
         
         val rowsUpdated = accountDao.updateAccount(account.toEntity())
         
         LedgerLogger.d("Repository: updateAccount PK: ${account.id}, Rows Updated: $rowsUpdated")
-        LedgerLogger.pipeline("Persistence", "Account update: PK=${account.id}, NewBal=${account.balance.minorUnits}")
+        LedgerLogger.pipeline("Persistence", "Account update: PK=${account.id}, NewOpeningBal=${account.openingBalance.minorUnits}")
         
         if (rowsUpdated != 1) {
             LedgerLogger.e("Repository: updateAccount FAILED. Affected rows: $rowsUpdated (Expected: 1)")
@@ -81,8 +81,8 @@ class RoomAccountRepository @Inject constructor(
         } else {
             // Integrity Check: Reload and Verify
             val reloaded = accountDao.getAccountById(account.id)
-            val balancePersisted = account.balance.minorUnits
-            val balanceReloaded = reloaded?.balanceMinor
+            val balancePersisted = account.openingBalance.minorUnits
+            val balanceReloaded = reloaded?.openingBalanceMinor
             
             LedgerLogger.d("Repository: updateAccount Balance Audit - Before: $balanceBefore, Persisted: $balancePersisted, Reloaded: $balanceReloaded")
             
@@ -114,3 +114,4 @@ class RoomAccountRepository @Inject constructor(
         LedgerResult.Failure(LedgerError.DatabaseFailure)
     }
 }
+

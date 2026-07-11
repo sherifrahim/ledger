@@ -1,34 +1,38 @@
 package com.sherif.ledger.presentation.dashboard.preview
 
-import com.sherif.ledger.presentation.dashboard.DashboardUiState
-import com.sherif.ledger.presentation.dashboard.InsightUiModel
-import com.sherif.ledger.presentation.dashboard.TransactionUiModel
+import com.sherif.ledger.presentation.dashboard.*
 
 object DashboardPreviewData {
 
     val state = DashboardUiState(
-        greeting = "Good morning",
-        userName = "Sherif",
-        currentMonth = "June",
-        totalSpent = "AED 2,840.25",
-        balanceAmount = "2,840.25",
-        balanceCurrency = "AED",
-        budgetProgress = 0.62f,
-        expense = "AED 1,950",
-        expenseChange = "↑ 8%",
-        income = "AED 5,200",
-        incomeChange = "↑ 12%",
-        savings = "AED 3,250",
-        savingsChange = "↑ 5%",
-        recentTransactions = listOf(
-            TransactionUiModel("Amazon", "Shopping", "AED 52", isExpense = true, date = "Today", merchantAccentHue = 0xFF232F3E),
-            TransactionUiModel("Carrefour", "Groceries", "AED 126", isExpense = true, date = "Today", merchantAccentHue = 0xFF0058A8),
-            TransactionUiModel("Costa Coffee", "Coffee", "AED 19", isExpense = true, date = "Yesterday", merchantAccentHue = 0xFF830025),
-            TransactionUiModel("Salary", "Income", "AED 5,200", isExpense = false, date = "May 31", merchantAccentHue = 0xFF047857),
+        totalBalance = "$ 120,432.05",
+        balanceChangePercentage = "+8%",
+        monthlyExpenses = "$ 20,321",
+        monthlyExpensesProgress = 0.65f,
+        needsReviewCount = 2,
+        needsReviewAmount = "50,12",
+        categories = listOf(
+            CategoryFilterUiModel("all", "All", true),
+            CategoryFilterUiModel("electricity", "Electricity"),
+            CategoryFilterUiModel("subscription", "Subscription"),
+            CategoryFilterUiModel("food", "Food & Drink"),
+            CategoryFilterUiModel("groceries", "Groceries")
         ),
-        insights = listOf(
-            InsightUiModel("Food spending", "12% lower than last week", "\u2193 12%"),
-            InsightUiModel("Subscriptions", "Netflix renews tomorrow", ""),
-        ),
+        recentActivity = listOf(
+            ActivityGroupUiModel(
+                title = "Today",
+                items = listOf(
+                    ActivityItemUiModel("1", "Salary", "Income", "1,200.00", false, "10:45 AM", "ADCB"),
+                    ActivityItemUiModel("2", "Carrefour Market", "Groceries", "98.25", true, "10:32 AM", "Expense")
+                )
+            ),
+            ActivityGroupUiModel(
+                title = "Yesterday",
+                items = listOf(
+                    ActivityItemUiModel("3", "ADDC", "Electricity", "323.00", true, "06:30 PM", ""),
+                    ActivityItemUiModel("4", "Spotify", "Subscription", "15.99", true, "09:30 AM", "")
+                )
+            )
+        )
     )
 }

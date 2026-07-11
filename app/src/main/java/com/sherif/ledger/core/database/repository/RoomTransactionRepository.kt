@@ -7,6 +7,7 @@ import com.sherif.ledger.core.database.mapper.toEntity
 import com.sherif.ledger.core.domain.model.LedgerError
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Transaction
+import com.sherif.ledger.core.domain.repository.AccountOriginCount
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -47,6 +48,16 @@ class RoomTransactionRepository @Inject constructor(
             }
             .catch { e -> 
                 emit(LedgerResult.Failure(LedgerError.Unknown(e.message ?: "Database error"))) 
+            }
+
+    override fun observeAllTransactions(): Flow<LedgerResult<List<Transaction>>> =
+        transactionDao.observeAllTransactions()
+            .map { entities ->
+                val result: LedgerResult<List<Transaction>> = LedgerResult.Success(entities.map { it.toDomain() })
+                result
+            }
+            .catch { e ->
+                emit(LedgerResult.Failure(LedgerError.Unknown(e.message ?: "Database error")))
             }
 
     override fun observeTransactionsBetween(start: Instant, end: Instant): Flow<LedgerResult<List<Transaction>>> =
@@ -122,4 +133,15 @@ class RoomTransactionRepository @Inject constructor(
         LedgerLogger.e("Repository: softDeleteTransaction Failure", e)
         LedgerResult.Failure(LedgerError.DatabaseFailure)
     }
+
+    override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> =
+        transactionDao.countByOriginSignature(packageName, cardTail).map { AccountOriginCount(it.accountId, it.count) }
+
+    override suspend fun reassignTransactions(
+        fromAccountId: Long,
+        packageName: String,
+        cardTail: String,
+        toAccountId: Long,
+    ): Int = transactionDao.reassignByOriginSignature(fromAccountId, packageName, cardTail, toAccountId)
 }
+

@@ -1,250 +1,146 @@
 package com.sherif.ledger.feature.accounts.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsTopHeight
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
-import com.sherif.ledger.core.designsystem.component.LedgerAmount
-import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
-import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
-import com.sherif.ledger.core.designsystem.component.LedgerHairline
-import com.sherif.ledger.core.designsystem.component.LedgerHeader
-import com.sherif.ledger.core.designsystem.component.LedgerSectionHeader
-import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
-import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
-import com.sherif.ledger.core.designsystem.component.ledgerClickable
-import com.sherif.ledger.core.designsystem.component.ledgerSurface
+import com.sherif.ledger.core.designsystem.component.*
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
-import com.sherif.ledger.feature.analytics.presentation.InsightsPreview
-import com.sherif.ledger.feature.accounts.presentation.components.AccountRow
-import com.sherif.ledger.feature.accounts.presentation.preview.AccountsPreviewData
-
-private object HeroTransitions {
-    const val ExpandedExit = 0.55f
-    const val CompactEnter = 0.60f
-}
 
 @Composable
 fun AccountsScreen(
-    onNavigateToInsights: () -> Unit = {},
     state: AccountsUiState,
+    onNavigateToInsights: () -> Unit = {},
 ) {
-    com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: AccountsScreen(netWorth=${state.netWorth}, sectionCount=${state.sections.size})")
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val expandedHeight = 240.dp + statusBarPadding
-    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight + statusBarPadding
-    val maxOffsetPx = with(LocalDensity.current) { (expandedHeight - collapsedHeight).toPx() }
-    val listState = rememberLazyListState()
-    val collapseProgress by remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 1f
-            else (listState.firstVisibleItemScrollOffset / maxOffsetPx).coerceIn(0f, 1f)
-        }
-    }
-
-    Box(Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0)) {
-        
+    Scaffold(
+        topBar = {
+            AccountsTopBar()
+        },
+        containerColor = LedgerTheme.colors.surfaceBase
+    ) { padding ->
         LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = LedgerSpacing.Screen,
-                end = LedgerSpacing.Screen,
-                bottom = LedgerSpacing.ScreenBottom + 100.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(horizontal = LedgerSpacing.ScreenPadding),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
         ) {
-            item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
-
-            item(key = "insights") {
-                state.insight?.let { insight ->
-                    InsightsPreview(
-                        title = insight.title,
-                        subtitle = insight.subtitle,
-                        indicator = insight.indicator,
-                        onClick = onNavigateToInsights
-                    )
+            state.sections.forEach { section ->
+                items(section.accounts, key = { it.id }) { account ->
+                    AccountItemRow(account)
+                    LedgerDivider(alpha = 0.05f)
                 }
             }
 
-            if (state.sections.isEmpty()) {
-                item(key = "empty_state") {
-                    LedgerEmptyState(
-                        title = "No accounts yet",
-                        subtitle = "Your accounts will appear here automatically as transactions are detected."
-                    )
-                }
-            } else {
-                state.sections.forEach { section ->
-                    item(key = "section_${section.title}") {
-                        Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Group)) {
-                            LedgerSectionHeader(title = section.title.uppercase())
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                section.accounts.forEachIndexed { index, account ->
-                                    AccountRow(
-                                        account = account,
-                                        onClick = { /* TODO: Account Detail */ }
-                                    )
-                                    if (index != section.accounts.lastIndex) {
-                                        LedgerHairline(modifier = Modifier.padding(start = LedgerSpacing.AvatarIndent))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            item {
+                Spacer(Modifier.height(LedgerSpacing.Large))
+                LedgerButton(
+                    text = "Add Account",
+                    onClick = { /* TODO */ },
+                    style = LedgerButtonStyle.Ghost,
+                    icon = Icons.Default.Add,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
             
-            item(key = "add_account") {
-                Row(
+            item {
+                Spacer(Modifier.height(100.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountsTopBar() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Medium),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(Modifier.width(44.dp)) // Offset for center title
+
+        Text(
+            text = "Accounts",
+            style = LedgerTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = LedgerTheme.colors.textPrimary
+        )
+
+        LedgerIconButton(
+            icon = Icons.Default.Add,
+            onClick = { /* TODO */ },
+            tint = LedgerTheme.colors.textPrimary
+        )
+    }
+}
+
+@Composable
+private fun AccountItemRow(account: AccountUi) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = LedgerSpacing.Medium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)
+    ) {
+        // Bank Icon
+        LedgerBrandIcon(
+            name = account.name,
+            size = 40.dp
+        )
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = account.name,
+                style = LedgerTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                color = LedgerTheme.colors.textPrimary
+            )
+            Text(
+                text = account.subtitle,
+                style = LedgerTheme.typography.bodySmall,
+                color = LedgerTheme.colors.textSecondary
+            )
+            
+            // Mock payment due for credit cards to match mock 1:1
+            if (account.subtitle.lowercase().contains("credit")) {
+                Spacer(Modifier.height(4.dp))
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .ledgerSurface(level = LedgerSurfaceLevel.Level1)
-                        .ledgerClickable { /* TODO */ }
-                        .padding(LedgerSpacing.Medium),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .clip(CircleShape)
+                        .background(LedgerTheme.colors.attention.copy(alpha = 0.1f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = null,
-                        tint = LedgerTheme.colors.success,
-                        modifier = Modifier.size(LedgerTheme.iconSize.Medium)
-                    )
-                    Spacer(Modifier.width(LedgerSpacing.Medium))
                     Text(
-                        text = "Add account",
-                        style = LedgerTextStyles.Label,
-                        color = LedgerTheme.colors.label
+                        text = "Payment due in 5 days",
+                        style = LedgerTextStyles.Caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                        color = LedgerTheme.colors.attention
                     )
                 }
             }
         }
 
-        LedgerCollapsingHero(
-            collapseProgress = collapseProgress,
-            expandedHeight = expandedHeight,
-            collapsedHeight = collapsedHeight,
-            background = SolidColor(Color.Transparent),
-            contentBackground = {
-                LedgerAtmosphereGlow(Modifier.fillMaxSize())
-            },
-            expandedContent = { progress ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = LedgerSpacing.Screen)
-                        .graphicsLayer {
-                            alpha = (1f - progress / HeroTransitions.ExpandedExit).coerceIn(0f, 1f)
-                        },
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-                    Spacer(Modifier.height(LedgerSpacing.Large))
-
-                    LedgerHeader(
-                        title = "Accounts",
-                        modifier = Modifier.padding(horizontal = LedgerSpacing.XxSmall)
-                    )
-                    
-                    Spacer(Modifier.height(LedgerSpacing.Large))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(132.dp)
-                            .ledgerSurface(
-                                level = LedgerSurfaceLevel.Level1,
-                                shape = LedgerRadius.Large,
-                            ),
-                    ) {
-                        LedgerAtmosphereGlow(Modifier.fillMaxSize())
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(LedgerSpacing.Medium),
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = "Total balance",
-                                style = LedgerTextStyles.Label,
-                                color = LedgerTheme.colors.tertiaryLabel,
-                            )
-                            Spacer(Modifier.height(LedgerSpacing.XxSmall))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = state.netWorthCurrency,
-                                    style = LedgerTextStyles.Section.copy(fontWeight = FontWeight.Bold),
-                                    color = LedgerTheme.colors.success,
-                                )
-                                Spacer(Modifier.width(LedgerSpacing.Small))
-                                com.sherif.ledger.core.common.logging.LedgerLogger.d("Accounts: RENDERING netWorth=${state.netWorth}")
-                                LedgerAmount(
-                                    amount = state.netWorth,
-                                    style = LedgerAmountStyle.Large,
-                                    color = LedgerTheme.colors.label,
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            compactContent = { progress ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding()
-                        .graphicsLayer { 
-                            alpha = ((progress - HeroTransitions.CompactEnter) * 4f).coerceIn(0f, 1f) 
-                        },
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "Accounts",
-                        style = LedgerTextStyles.Section,
-                        color = LedgerTheme.colors.label,
-                        modifier = Modifier.padding(horizontal = LedgerSpacing.Screen)
-                    )
-                }
-            }
+        LedgerAmount(
+            amount = account.balance,
+            style = LedgerAmountStyle.Regular,
+            color = if (account.isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary
         )
     }
 }

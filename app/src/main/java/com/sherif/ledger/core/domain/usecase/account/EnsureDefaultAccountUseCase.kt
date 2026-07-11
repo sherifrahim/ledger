@@ -27,7 +27,7 @@ class EnsureDefaultAccountUseCase @Inject constructor(
             id = 0,
             name = "Primary Account",
             type = AccountType.CHECKING,
-            balance = Money.zero(CurrencyCode.AED),
+            openingBalance = Money.zero(CurrencyCode.AED),
             accountNumberTail = null,
             bankBrandId = null
         )

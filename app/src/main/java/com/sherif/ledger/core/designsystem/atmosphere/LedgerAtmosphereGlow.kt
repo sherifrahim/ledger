@@ -12,58 +12,64 @@ import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
 /**
  * Renders the atmospheric lighting for Ledger.
  *
- * Performance-safe implementation using layered radial gradients to simulate
- * light diffusion and depth without heavy Gaussian blur.
+ * Rebuilt for V3 identity: Multi-layer elliptical diffusion sitting off-axis.
+ * Simulates environmental architectural lighting rather than a UI decoration.
  */
 @Composable
 fun LedgerAtmosphereGlow(
     modifier: Modifier = Modifier,
     atmosphere: Atmosphere = LedgerAtmosphere.current,
+    scrollProgress: Float = 0f // Deterministic scroll-based reaction
 ) {
     val colors = LedgerTheme.colors
     val isGlass = colors.themeType != LedgerThemeType.Classic
     
-    // Classic uses a very restrained wash. Glass uses richer diffusion.
-    val baseAlpha = if (isGlass) 1.0f else 0.4f
-    val intensity = atmosphere.intensity * baseAlpha
+    // Luxury intensity through restraint.
+    val baseAlpha = if (isGlass) 1.0f else 0.35f
+    val intensity = (atmosphere.intensity * baseAlpha).coerceIn(0f, 1f)
 
     Canvas(modifier) {
         val w = size.width
         val h = size.height
 
-        // 1. Primary Directional Light (Diffusion source)
+        // 1. LAYER A: Massive Off-Axis Elliptical Wash (The Source)
+        // Sitting 20% above and 20% left of the viewport.
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    atmosphere.primaryGlow.copy(alpha = 0.15f * intensity),
+                    atmosphere.primaryGlow.copy(alpha = 0.12f * intensity),
                     Color.Transparent
                 ),
-                center = Offset(w * 0.2f, h * 0.15f),
-                radius = w * 1.5f
+                center = Offset(w * 0.15f, -h * 0.1f),
+                radius = w * 1.8f
             )
         )
 
-        // 2. Secondary Atmospheric Tone (Temperature modulation)
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    atmosphere.secondaryGlow.copy(alpha = 0.10f * intensity),
-                    Color.Transparent
-                ),
-                center = Offset(w * 0.8f, h * 0.45f),
-                radius = w * 1.2f
-            )
-        )
-
-        // 3. Temperature Wash
+        // 2. LAYER B: The Environmental Diffusion (The Air)
+        // Central wash that reacts softly to scroll progress.
+        val diffusionExpansion = 1.0f + (scrollProgress * 0.15f)
         drawRect(
-            brush = Brush.linearGradient(
+            brush = Brush.verticalGradient(
                 colors = listOf(
-                    atmosphere.coolGlow.copy(alpha = 0.05f * intensity),
-                    atmosphere.warmGlow.copy(alpha = 0.05f * intensity)
+                    atmosphere.primaryGlow.copy(alpha = 0.04f * intensity),
+                    atmosphere.coolGlow.copy(alpha = 0.02f * intensity),
+                    Color.Transparent
                 ),
-                start = Offset(0f, 0f),
-                end = Offset(w, h)
+                startY = 0f,
+                endY = h * 0.6f * diffusionExpansion
+            )
+        )
+
+        // 3. LAYER C: Graphite Vignette (The Ground)
+        // Ensures the instrument settles into the negative space.
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    Color.Black.copy(alpha = 0.08f * intensity)
+                ),
+                startY = h * 0.7f,
+                endY = h
             )
         )
     }

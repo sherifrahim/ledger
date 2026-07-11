@@ -1,408 +1,289 @@
 package com.sherif.ledger.presentation.dashboard
 
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sherif.ledger.core.designsystem.atmosphere.LedgerAtmosphereGlow
-import com.sherif.ledger.core.designsystem.component.LedgerAmount
-import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
-import com.sherif.ledger.core.designsystem.component.ledgerClickable
-import com.sherif.ledger.core.designsystem.component.ledgerSurface
-import com.sherif.ledger.core.designsystem.component.hero.LedgerCollapsingHero
+import com.sherif.ledger.core.designsystem.component.*
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
-import com.sherif.ledger.core.designsystem.component.hero.LedgerHeroDefaults
-import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
-import com.sherif.ledger.feature.analytics.presentation.InsightsPreview
-import com.sherif.ledger.presentation.dashboard.components.RecentTransactionsSection
-import com.sherif.ledger.presentation.dashboard.preview.DashboardPreviewData
-
-private object HeroTransitions {
-    const val TopBarExit = 0.15f
-    const val TopBarTranslationPx = 30f
-    const val BalanceLabelExit = 0.25f
-    const val AmountExit = 0.45f
-    const val CurrencyExit = 0.50f
-    const val ExpandedExit = 0.55f
-    const val CompactEnter = 0.60f
-}
-
-private object HeroSnap {
-    const val Enabled = false
-    const val ZoneStart = 0.25f
-    const val ZoneEnd = 0.75f
-    const val DampingRatio = 0.92f
-    const val Stiffness = 200f
-}
 
 @Composable
 fun DashboardScreen(
+    state: DashboardUiState,
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
-    state: DashboardUiState,
+    onSearchClick: () -> Unit = {}
 ) {
-    com.sherif.ledger.core.common.logging.LedgerLogger.d("RECOMPOSING: DashboardScreen(totalSpent=${state.totalSpent}, balanceAmount=${state.balanceAmount}, recentTransactionsCount=${state.recentTransactions.size})")
-    
-    val formattedTotalSpent = remember(state.totalSpent, state.balanceCurrency) {
-        state.totalSpent.replace(state.balanceCurrency, "").trim()
-    }
-    val formattedBalance = remember(state.balanceCurrency, state.balanceAmount) {
-        "${state.balanceCurrency} ${state.balanceAmount}"
-    }
-
-    val expandedHeight = LedgerHeroDefaults.ExpandedHeight
-    val collapsedHeight = LedgerHeroDefaults.CollapsedHeight
-    val maxOffsetPx = with(LocalDensity.current) {
-        (expandedHeight - collapsedHeight).toPx()
-    }
-    val listState = rememberLazyListState()
-    val collapseProgress by remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 1f
-            else (listState.firstVisibleItemScrollOffset / maxOffsetPx).coerceIn(0f, 1f)
-        }
-    }
-
-    if (HeroSnap.Enabled) {
-        LaunchedEffect(listState.isScrollInProgress) {
-            if (!listState.isScrollInProgress && listState.firstVisibleItemIndex == 0) {
-                val p = collapseProgress
-                if (p in HeroSnap.ZoneStart..HeroSnap.ZoneEnd) {
-                    val targetPx = if (p > 0.5f) maxOffsetPx else 0f
-                    val currentPx = listState.firstVisibleItemScrollOffset.toFloat()
-                    listState.animateScrollBy(
-                        value = targetPx - currentPx,
-                        animationSpec = spring(
-                            dampingRatio = HeroSnap.DampingRatio,
-                            stiffness = HeroSnap.Stiffness,
-                        ),
-                    )
-                }
-            }
-        }
-    }
-
-    val c = LedgerTheme.colors
-
-    Box(Modifier.fillMaxSize().background(c.surfaceLevel0)) {
-        // Global Atmosphere (Subtle wash) - Ensures bleed behind status bar
-        LedgerAtmosphereGlow(Modifier.fillMaxSize())
-
-        LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(
-                start = LedgerSpacing.Group,
-                end = LedgerSpacing.Group,
-                bottom = LedgerSpacing.ScreenBottom + 100.dp, // Clear the floating dock
-            ),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            item(key = "hero_spacer") { Spacer(Modifier.height(expandedHeight)) }
-            item(key = "transactions") { RecentTransactionsSection(state, onSeeAllClick = onNavigateToTransactions) }
-            item(key = "insights") {
-                if (state.insights.isNotEmpty()) {
-                    val insight = state.insights.first()
-                    InsightsPreview(
-                        title = insight.title,
-                        subtitle = insight.subtitle,
-                        indicator = insight.indicator,
-                        onClick = onNavigateToInsights
-                    )
-                }
-            }
-        }
-
-        LedgerCollapsingHero(
-            collapseProgress = collapseProgress,
-            expandedHeight = expandedHeight,
-            collapsedHeight = collapsedHeight,
-            background = SolidColor(LedgerTheme.colors.surfaceLevel0),
-            contentBackground = {
-                LedgerAtmosphereGlow(Modifier.fillMaxSize())
-            },
-            expandedContent = { progress -> 
-                ExpandedHero(
-                    progress = progress, 
-                    state = state,
-                    formattedTotalSpent = formattedTotalSpent
-                ) 
-            },
-            compactContent = { progress -> 
-                CompactHero(
-                    progress = progress, 
-                    state = state,
-                    formattedBalance = formattedBalance
-                ) 
-            },
-        )
-    }
-}
-
-@Composable
-private fun ExpandedHero(
-    progress: Float, 
-    state: DashboardUiState,
-    formattedTotalSpent: String
-) {
-Column(
-    modifier = Modifier
-        .fillMaxSize()
-        .statusBarsPadding()
-        .padding(horizontal = LedgerSpacing.Group)
-        .padding(bottom = LedgerSpacing.XxLarge)
-        .graphicsLayer {
-            alpha = (1f - progress / HeroTransitions.ExpandedExit)
-                .coerceIn(0f, 1f)
+    Scaffold(
+        topBar = {
+            DashboardTopBar()
         },
-    horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // 1. The Financial Instrument Monolith (Centered in content area)
-        Column(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
+        containerColor = LedgerTheme.colors.surfaceBase
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(horizontal = LedgerSpacing.ScreenPadding),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.SectionGap)
         ) {
-            Text(
-                text = "MONTHLY SPENDING",
-                style = LedgerTextStyles.Caption.copy(
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.4.sp, // Refined identity
-                ),
-                color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted), // Refined contrast
-            )
-            
-            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING totalSpent=$formattedTotalSpent")
-            LedgerAmount(
-                amount = formattedTotalSpent,
-                style = LedgerAmountStyle.Display,
-                color = LedgerTheme.colors.label,
-                modifier = Modifier.graphicsLayer {
-                    val scale = 1f - (progress * 0.10f)
-                    scaleX = scale
-                    scaleY = scale
-                },
-                textAlign = TextAlign.Center
-            )
-            
-            Text(
-                text = state.balanceCurrency,
-                style = LedgerTextStyles.Caption.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.5.sp
-                ),
-                color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted), // Refined contrast
-            )
-            
-            Spacer(Modifier.height(LedgerSpacing.XSmall)) // Stronger visual grouping
-            
-            // Interaction Pill
-            Box(
-                modifier = Modifier
-                    .ledgerSurface(
-                        backgroundColor = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Subtle),
-                        borderColor = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Subtle),
-                        shape = LedgerRadius.Full,
-                    )
-                    .ledgerClickable { /* TODO */ }
-                    .padding(horizontal = LedgerSpacing.Medium, vertical = 6.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            item {
+                TotalBalanceSection(state.totalBalance, state.balanceChangePercentage)
+            }
+
+            item {
+                CategoryChipsSection(state.categories)
+            }
+
+            item {
+                SummaryCardsSection(
+                    monthlyExpenses = state.monthlyExpenses,
+                    progress = state.monthlyExpensesProgress,
+                    needsReviewCount = state.needsReviewCount,
+                    needsReviewAmount = state.needsReviewAmount
+                )
+            }
+
+            item {
+                RecentActivityHeader(onSeeAllClick = onNavigateToTransactions)
+            }
+
+            state.recentActivity.forEach { group ->
+                item {
                     Text(
-                        text = state.currentMonth.uppercase(),
-                        style = LedgerTextStyles.Caption.copy(
-                            fontSize = 10.sp, 
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.8.sp
-                        ),
-                        color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Overlay),
-                    )
-                    Spacer(Modifier.width(LedgerSpacing.XxSmall))
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted),
-                        modifier = Modifier.size(10.dp),
+                        text = group.title,
+                        style = LedgerTheme.typography.labelLarge,
+                        color = LedgerTheme.colors.textTertiary,
+                        modifier = Modifier.padding(vertical = LedgerSpacing.Small)
                     )
                 }
+                items(group.items, key = { it.id }) { item ->
+                    LedgerTransactionRow(
+                        title = item.merchantName,
+                        amount = item.amount,
+                        explanation = item.explanation,
+                        currency = "AED",
+                        isExpense = item.isExpense,
+                        time = item.time,
+                        onClick = { /* TODO: Transaction Detail */ }
+                    )
+                    LedgerDivider(alpha = 0.05f)
+                }
+            }
+            
+            item {
+                Spacer(Modifier.height(100.dp)) // Nav bar buffer
             }
         }
-
- Spacer(
-        modifier = Modifier.weight(0.45f)
-    )
-
-        // 2. Summary Metrics (Anchored to bottom of hero area)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = LedgerSpacing.Medium),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            MetricItem(
-                label = "INCOME",
-                value = state.income,
-                change = state.incomeChange,
-                icon = Icons.AutoMirrored.Filled.ArrowForward,
-                color = LedgerTheme.colors.income,
-            )
-            MetricItem(
-                label = "EXPENSES",
-                value = state.expense,
-                change = state.expenseChange,
-                icon = Icons.Filled.KeyboardArrowDown,
-                color = LedgerTheme.colors.expense,
-            )
-            MetricItem(
-                label = "SAVINGS",
-                value = state.savings,
-                change = state.savingsChange,
-                icon = Icons.Filled.Star,
-                color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Secondary),
-            )
-        }
     }
 }
 
 @Composable
-private fun MetricItem(
-    label: String,
-    value: String,
-    change: String,
-    icon: ImageVector,
-    color: Color,
-) {
-    com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: MetricItem(label=$label, value=$value)")
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(LedgerTheme.iconSize.Medium)
-                .clip(CircleShape)
-                .background(color.copy(alpha = LedgerTheme.opacity.Fill)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(10.dp) // Refined for RC17 Dashboard local
-            )
-        }
-        Spacer(Modifier.height(LedgerSpacing.Small))
-        Text(
-            text = label,
-            style = LedgerTextStyles.Caption.copy(
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.6.sp, // Stronger identity
-                lineHeight = 12.sp,
-            ),
-            color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Secondary), // Softened for hierarchy
-        )
-        LedgerAmount(
-            amount = value,
-            style = LedgerAmountStyle.Small,
-            color = color,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = change,
-            style = LedgerTextStyles.Caption.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 14.sp,
-            ),
-            color = color.copy(alpha = LedgerTheme.opacity.Emphasis), // Subordinate to amount
-        )
-        Text(
-            text = "vs last month",
-            style = LedgerTextStyles.Caption.copy(fontSize = 8.sp, lineHeight = 10.sp),
-            color = LedgerTheme.colors.label.copy(alpha = LedgerTheme.opacity.Muted),
-        )
-    }
-}
-
-@Composable
-private fun CompactHero(
-    progress: Float, 
-    state: DashboardUiState,
-    formattedBalance: String
-) {
+private fun DashboardTopBar() {
     Row(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = LedgerSpacing.Group)
-            .graphicsLayer {
-                alpha = ((progress - HeroTransitions.CompactEnter) /
-                    (1f - HeroTransitions.CompactEnter)).coerceIn(0f, 1f)
-            },
-        verticalAlignment = Alignment.CenterVertically,
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Medium),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        // Mock Avatar
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(LedgerTheme.colors.surfaceInset),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("S", style = LedgerTheme.typography.labelLarge)
+        }
+
+        Text(
+            text = "paywave", // Using mock name for 1:1
+            style = LedgerTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-0.5).sp
+            ),
+            color = LedgerTheme.colors.textPrimary
+        )
+
+        LedgerIconButton(
+            icon = Icons.Default.Notifications,
+            onClick = { /* TODO */ },
+            tint = LedgerTheme.colors.textPrimary
+        )
+    }
+}
+
+@Composable
+private fun TotalBalanceSection(balance: String, change: String) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Total Balance",
+            style = LedgerTheme.typography.labelLarge,
+            color = LedgerTheme.colors.textSecondary
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Total balance",
-                style = LedgerTextStyles.Caption,
-                color = LedgerTheme.colors.tertiaryLabel,
+                text = balance,
+                style = LedgerTheme.typography.displayLarge,
+                color = LedgerTheme.colors.textPrimary
             )
-            com.sherif.ledger.core.common.logging.LedgerLogger.d("Dashboard: RENDERING balanceAmount=$formattedBalance")
-            LedgerAmount(
-                amount = formattedBalance,
-                style = LedgerAmountStyle.Regular,
-                color = LedgerTheme.colors.label,
+            Spacer(Modifier.width(LedgerSpacing.Small))
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(LedgerTheme.colors.positive.copy(alpha = 0.1f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = change,
+                    style = LedgerTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = LedgerTheme.colors.positive
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryChipsSection(categories: List<CategoryFilterUiModel>) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
+        contentPadding = PaddingValues(vertical = LedgerSpacing.Small)
+    ) {
+        items(categories) { category ->
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (category.isSelected) LedgerTheme.colors.textPrimary else LedgerTheme.colors.surfaceInset)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = category.label,
+                    style = LedgerTheme.typography.labelLarge,
+                    color = if (category.isSelected) LedgerTheme.colors.surfaceBase else LedgerTheme.colors.textSecondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryCardsSection(
+    monthlyExpenses: String,
+    progress: Float,
+    needsReviewCount: Int,
+    needsReviewAmount: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.ContentGap)
+    ) {
+        // All Operations Card
+        LedgerSurface(
+            modifier = Modifier.weight(1f),
+            level = LedgerSurfaceLevel.Inset,
+            shape = LedgerRadius.Large,
+            contentPadding = PaddingValues(LedgerSpacing.Medium)
+        ) {
+            Text("All", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text("Operations", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "Expenses in February, 2026",
+                style = LedgerTheme.typography.bodySmall,
+                color = LedgerTheme.colors.textTertiary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = monthlyExpenses,
+                style = LedgerTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Black
+            )
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .height(6.dp)
+                    .clip(CircleShape),
+                color = LedgerTheme.colors.positive,
+                trackColor = LedgerTheme.colors.border
             )
         }
-        
+
+        // Need Review Card
+        LedgerSurface(
+            modifier = Modifier.weight(1f),
+            level = LedgerSurfaceLevel.Inset,
+            shape = LedgerRadius.Large,
+            contentPadding = PaddingValues(LedgerSpacing.Medium)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Need", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                // Small mock user avatar
+                Box(Modifier.size(24.dp).clip(CircleShape).background(Color.LightGray))
+            }
+            Text("Review", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "14 February 2026",
+                style = LedgerTheme.typography.bodySmall,
+                color = LedgerTheme.colors.textTertiary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "$$needsReviewAmount",
+                style = LedgerTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                "Pay • WISE CO LTD",
+                style = LedgerTheme.typography.bodySmall,
+                color = LedgerTheme.colors.textTertiary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecentActivityHeader(onSeeAllClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
-            text = state.currentMonth,
-            style = LedgerTextStyles.Mono.copy(fontSize = 11.sp),
-            color = LedgerTheme.colors.tertiaryLabel,
+            text = "RECENT ACTIVITY",
+            style = LedgerTheme.typography.labelLarge.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            ),
+            color = LedgerTheme.colors.textSecondary
         )
+        TextButton(onClick = onSeeAllClick) {
+            Text("See all", color = LedgerTheme.colors.positive)
+        }
     }
 }

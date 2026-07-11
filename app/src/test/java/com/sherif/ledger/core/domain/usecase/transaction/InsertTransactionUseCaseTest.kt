@@ -37,6 +37,9 @@ class InsertTransactionUseCaseTest {
             return LedgerResult.Success(1L)
         }
         override suspend fun deleteTransaction(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override fun observeAllTransactions(): Flow<LedgerResult<List<Transaction>>> = flowOf(LedgerResult.Success(emptyList()))
+        override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<com.sherif.ledger.core.domain.repository.AccountOriginCount> = emptyList()
+        override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
     }
 
     private val accountRepository = object : AccountRepository {
@@ -81,12 +84,14 @@ class InsertTransactionUseCaseTest {
         validator = com.sherif.ledger.core.domain.service.transaction.TransactionValidator(),
         fingerprintGenerator = com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator(),
         merchantResolver = com.sherif.ledger.core.domain.service.transaction.MerchantResolver(merchantRepository),
-        categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver(),
-        balanceCalculator = com.sherif.ledger.core.domain.service.transaction.BalanceCalculator()
+        categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver()
     )
 
     @Test
-    fun `successful insertion updates balance`() = runBlocking {
+    fun `successful insertion never touches account balance`() = runBlocking {
+        // Phase 9: InsertTransactionUseCase no longer mutates any account balance.
+        // The persisted transaction is the complete effect of an insert; balance
+        // is always derived by replay (AccountBalanceService), never cached here.
         val params = InsertTransactionUseCase.Params(
             accountId = 1L,
             amountMinor = 1000L,
@@ -100,7 +105,7 @@ class InsertTransactionUseCaseTest {
         val result = useCase.execute(params)
 
         assertTrue(result is LedgerResult.Success)
-        assertEquals(4000L, accountRepository.updatedAccount?.balance?.minorUnits)
+        assertEquals("InsertTransactionUseCase must never call updateAccount", null, accountRepository.updatedAccount)
         assertEquals(10L, (result as LedgerResult.Success).data.brandId)
         assertEquals(1L, result.data.categoryId) // Amazon -> Shopping (1)
     }
@@ -139,8 +144,7 @@ class InsertTransactionUseCaseTest {
             validator = com.sherif.ledger.core.domain.service.transaction.TransactionValidator(),
             fingerprintGenerator = com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator(),
             merchantResolver = com.sherif.ledger.core.domain.service.transaction.MerchantResolver(merchantRepository),
-            categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver(),
-            balanceCalculator = com.sherif.ledger.core.domain.service.transaction.BalanceCalculator()
+            categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver()
         )
         
         val resultDuplicate = useCaseWithDuplicate.execute(params)
@@ -165,3 +169,4 @@ class InsertTransactionUseCaseTest {
         assertEquals(LedgerError.AccountNotFound, (result as LedgerResult.Failure).error)
     }
 }
+

@@ -22,7 +22,7 @@ import com.sherif.ledger.core.database.entity.TransactionEntity
         BrandEntity::class,
         MerchantAliasEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)
@@ -36,3 +36,5 @@ abstract class LedgerDatabase : RoomDatabase() {
         const val DATABASE_NAME = "ledger_db"
     }
 }
+
+

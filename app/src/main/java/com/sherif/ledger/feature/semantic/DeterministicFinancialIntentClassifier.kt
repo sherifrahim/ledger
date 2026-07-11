@@ -40,6 +40,18 @@ class DeterministicFinancialIntentClassifier @Inject constructor() : FinancialIn
         "available credit updated", "credit limit updated",
         "payment towards", "received against", "credited to your card",
         "payment credited", "payment posted", "minimum amount due",
+        // Phase 9 (Bug 1): additional real-world confirmation phrasings, closing
+        // the gap that let a credit-card payment confirmation fall through to the
+        // extraction-success fallback tier and be misread as a new event. Kept to
+        // phrasings that are unambiguously RETROSPECTIVE (acknowledging something
+        // that happened elsewhere) — deliberately excludes anything that could
+        // equally describe a live purchase completing in real time.
+        "payment confirmed", "payment is confirmed",
+        "chargeback processed", "chargeback completed",
+        "dispute resolved", "payment settled", "settlement confirmed",
+        "loan payment received", "loan installment received",
+        "emi payment received", "installment payment received",
+        "your payment has been received",
     )
 
     // Pure information: statements, reminders, balance/limit notices. Not money moving.
@@ -159,4 +171,5 @@ class DeterministicFinancialIntentClassifier @Inject constructor() : FinancialIn
         )
     }
 }
+
 

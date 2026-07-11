@@ -36,7 +36,8 @@ import java.time.Instant
         Index(value = ["brand_id"]),
         Index(value = ["category_id"]),
         Index(value = ["timestamp_millis"]),
-        Index(value = ["fingerprint"], unique = true)
+        Index(value = ["fingerprint"], unique = true),
+        Index(value = ["origin_package_name", "card_tail"]),
     ]
 )
 data class TransactionEntity(
@@ -83,5 +84,20 @@ data class TransactionEntity(
     val createdAt: Long = System.currentTimeMillis(),
     
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    // Normalized once at extraction time; see Transaction.transferDirection.
+    @ColumnInfo(name = "transfer_direction")
+    val transferDirection: com.sherif.ledger.core.domain.model.TransferDirection? = null,
+
+    // Provenance evidence for AccountIdentityResolver. Plain columns, not a Room
+    // @Embedded object, so the domain TransactionOrigin stays free of persistence
+    // annotations — the mapper reconstructs it, same pattern as Money.
+    @ColumnInfo(name = "origin_package_name")
+    val originPackageName: String? = null,
+
+    @ColumnInfo(name = "origin_sender_identity")
+    val originSenderIdentity: String? = null,
 )
+
+
