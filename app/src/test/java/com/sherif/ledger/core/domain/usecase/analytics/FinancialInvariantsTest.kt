@@ -7,6 +7,7 @@ import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.model.TransferDirection
 import com.sherif.ledger.feature.relationship.RelationshipEngine
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -27,6 +28,14 @@ class FinancialInvariantsTest {
         transactionRepository = FakeUnusedRepository, // compute() is called directly; execute() is not exercised here
         relationshipEngine = RelationshipEngine.default(),
         merchantResolver = com.sherif.ledger.feature.merchant.MerchantResolver(com.sherif.ledger.feature.merchant.MerchantRegistry()),
+        accountBalanceService = com.sherif.ledger.core.domain.service.transaction.AccountBalanceService(
+            com.sherif.ledger.core.domain.service.transaction.BalanceCalculator(),
+            FakeUnusedRepository,
+            FakeUnusedAccountRepository,
+            RelationshipEngine.default(),
+            com.sherif.ledger.core.domain.service.account.InstitutionRegistry(),
+        ), // never exercised: compute() is called directly, computeNetWorth() is not under test here
+        storyPresenter = com.sherif.ledger.core.domain.service.transaction.FinancialStoryPresenter(),
     )
 
     private val periodStart = Instant.ofEpochSecond(0)
@@ -294,6 +303,16 @@ class FinancialInvariantsTest {
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String) = throw NotImplementedError()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = throw NotImplementedError()
     }
+
+    /** Never invoked: AccountBalanceService is only constructor-required here, never exercised. */
+    private object FakeUnusedAccountRepository : com.sherif.ledger.core.domain.repository.AccountRepository {
+        override fun observeAllAccounts() = throw NotImplementedError()
+        override suspend fun getAccountById(id: Long) = throw NotImplementedError()
+        override suspend fun insertAccount(account: com.sherif.ledger.core.domain.model.Account) = throw NotImplementedError()
+        override suspend fun updateAccount(account: com.sherif.ledger.core.domain.model.Account) = throw NotImplementedError()
+        override suspend fun deleteAccount(id: Long) = throw NotImplementedError()
+    }
 }
+
 
 

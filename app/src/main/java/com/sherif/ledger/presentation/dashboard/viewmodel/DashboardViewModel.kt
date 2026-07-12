@@ -9,8 +9,6 @@ import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
-import com.sherif.ledger.feature.relationship.RelationshipEngine
-import com.sherif.ledger.feature.transactions.presentation.FinancialStoryPresenter
 import com.sherif.ledger.presentation.dashboard.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,13 +20,23 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
+/**
+ * Phase 10: consumes ONLY [GetFinancialAnalyticsUseCase] — never
+ * [com.sherif.ledger.feature.relationship.RelationshipEngine] or
+ * [com.sherif.ledger.core.domain.service.transaction.FinancialStoryPresenter]
+ * directly. Relationship analysis and story formatting happen exactly once,
+ * inside the analytics use case; this ViewModel only renders what it returns.
+ *
+ * No value here is fabricated. balanceChangePercentage is null (and the UI hides
+ * its badge) whenever a real month-over-month comparison isn't computable —
+ * never a static placeholder. There is no "learning phase" that replaces a real,
+ * already-computed number with status text: if the data exists, it's shown.
+ */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
-    private val relationshipEngine: RelationshipEngine,
-    private val storyPresenter: FinancialStoryPresenter,
 ) : ViewModel() {
 
     private val currentMonthRange = run {
@@ -51,8 +59,15 @@ class DashboardViewModel @Inject constructor(
         val monthTransactions = (monthResult as? LedgerResult.Success)?.data ?: emptyList()
         val analytics = getFinancialAnalyticsUseCase.compute(monthTransactions, currentMonthRange.first, currentMonthRange.second)
 
+        val balanceChangePercentage = getFinancialAnalyticsUseCase.computeMonthOverMonthChange(
+            analytics.netSpendMinor, currentMonthRange.first,
+        )
+
         val recentTransactions = (recentResult as? LedgerResult.Success)?.data ?: emptyList()
-        val relationships = relationshipEngine.analyze(recentTransactions)
+        // The ONLY place relationship-derived explanations/categories are resolved
+        // for this screen — one call into the analytics layer, not a direct
+        // RelationshipEngine invocation here.
+        val stories = getFinancialAnalyticsUseCase.transactionStories(recentTransactions)
 
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
         val activityGroups = recentTransactions.groupBy { txn ->
@@ -66,31 +81,27 @@ class DashboardViewModel @Inject constructor(
             ActivityGroupUiModel(
                 title = title,
                 items = txns.map { txn ->
+                    val story = stories[txn.id]
                     ActivityItemUiModel(
                         id = txn.id.toString(),
                         merchantName = txn.rawText ?: "Unknown",
-                        category = "Other",
+                        category = story?.category ?: "UNKNOWN",
                         amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                         isExpense = txn.type == TransactionType.EXPENSE,
                         time = txn.timestamp.atZone(ZoneId.systemDefault()).format(timeFormatter),
-                        explanation = storyPresenter.format(txn, relationships)
+                        explanation = story?.explanation ?: ""
                     )
                 }
             )
         }
 
-        // Determine if we are in "learning" phase
-        val isLearning = monthTransactions.size < 5
-
         DashboardUiState(
             totalBalance = MoneyFormatter.format(Money(totalBalanceUnits, primaryCurrency), includeSymbol = true),
-            balanceChangePercentage = if (isLearning) "Learning..." else "+8%",
-            monthlyExpenses = if (isLearning) "Tracking..." else MoneyFormatter.format(Money(analytics.netSpendMinor, primaryCurrency), includeSymbol = true),
-            monthlyExpensesProgress = if (isLearning) 0.1f else 0.65f,
-            needsReviewCount = 0,
-            needsReviewAmount = "0.00",
+            balanceChangePercentage = balanceChangePercentage,
+            monthlyExpenses = MoneyFormatter.format(Money(analytics.netSpendMinor, primaryCurrency), includeSymbol = true),
             categories = analytics.categoryTotals.map { CategoryFilterUiModel(it.category, it.category) },
             recentActivity = activityGroups,
+            intelligenceSummary = analytics.intelligenceSummary,
             insights = emptyList()
         )
     }.stateIn(
@@ -102,14 +113,13 @@ class DashboardViewModel @Inject constructor(
     companion object {
         private val EMPTY_STATE = DashboardUiState(
             totalBalance = "0.00",
-            balanceChangePercentage = "0%",
+            balanceChangePercentage = null,
             monthlyExpenses = "0.00",
-            monthlyExpensesProgress = 0f,
-            needsReviewCount = 0,
-            needsReviewAmount = "0.00",
             categories = emptyList(),
             recentActivity = emptyList(),
+            intelligenceSummary = emptyList(),
             insights = emptyList()
         )
     }
 }
+

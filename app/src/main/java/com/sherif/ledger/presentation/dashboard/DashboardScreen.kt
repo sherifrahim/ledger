@@ -54,9 +54,7 @@ fun DashboardScreen(
             item {
                 SummaryCardsSection(
                     monthlyExpenses = state.monthlyExpenses,
-                    progress = state.monthlyExpensesProgress,
-                    needsReviewCount = state.needsReviewCount,
-                    needsReviewAmount = state.needsReviewAmount
+                    intelligenceSummary = state.intelligenceSummary,
                 )
             }
 
@@ -133,7 +131,7 @@ private fun DashboardTopBar() {
 }
 
 @Composable
-private fun TotalBalanceSection(balance: String, change: String) {
+private fun TotalBalanceSection(balance: String, change: String?) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Financial State",
@@ -147,7 +145,7 @@ private fun TotalBalanceSection(balance: String, change: String) {
                 color = LedgerTheme.colors.textPrimary
             )
             Spacer(Modifier.width(LedgerSpacing.Small))
-            if (change != "Learning...") {
+            if (change != null) {
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
@@ -193,9 +191,7 @@ private fun CategoryChipsSection(categories: List<CategoryFilterUiModel>) {
 @Composable
 private fun SummaryCardsSection(
     monthlyExpenses: String,
-    progress: Float,
-    needsReviewCount: Int,
-    needsReviewAmount: String
+    intelligenceSummary: List<String>,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -222,19 +218,11 @@ private fun SummaryCardsSection(
                 style = LedgerTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black
             )
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .height(6.dp)
-                    .clip(CircleShape),
-                color = LedgerTheme.colors.positive,
-                trackColor = LedgerTheme.colors.border
-            )
         }
 
-        // Ledger Intelligence Card
+        // Ledger Intelligence Card — real backend-derived facts only. Empty until
+        // RelationshipEngine has actually found something; never a fabricated
+        // confidence figure or "System healthy" placeholder.
         LedgerSurface(
             modifier = Modifier.weight(1f),
             level = LedgerSurfaceLevel.Inset,
@@ -248,22 +236,16 @@ private fun SummaryCardsSection(
             }
             Text("Intelligence", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             Text(
-                if (needsReviewCount > 0) "$needsReviewCount events to review" else "System healthy",
+                intelligenceSummary.getOrNull(1) ?: "No patterns identified yet",
                 style = LedgerTheme.typography.bodySmall,
                 color = LedgerTheme.colors.textTertiary,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = if (needsReviewAmount != "0.00") "$$needsReviewAmount" else "Learning",
+                text = intelligenceSummary.getOrNull(0) ?: "Analyzing",
                 style = LedgerTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black
-            )
-            Text(
-                "Confidence Score: 98%",
-                style = LedgerTheme.typography.bodySmall,
-                color = LedgerTheme.colors.textTertiary,
-                modifier = Modifier.padding(top = 4.dp)
             )
         }
     }
@@ -289,3 +271,4 @@ private fun RecentActivityHeader(onSeeAllClick: () -> Unit) {
         }
     }
 }
+

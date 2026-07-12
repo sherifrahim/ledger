@@ -50,6 +50,13 @@ data class FinancialAnalytics(
     /** One point per day in the period, real net spend for that day, in display
      *  order. This is what feeds the Insights line chart — never placeholder data. */
     val trendPoints: List<TrendPoint>,
+
+    /** Real, backend-derived facts about the relationships found this period —
+     *  "3 Financial Stories matched", "2 recurring subscriptions identified".
+     *  Ordered by significance. Empty when nothing was found — never a fabricated
+     *  placeholder like a static confidence percentage. Built from the SAME
+     *  relationship pass already run for spend/refund netting; no extra pass. */
+    val intelligenceSummary: List<String>,
 )
 
 data class CategoryTotal(
@@ -68,5 +75,6 @@ data class TrendPoint(
     val label: String,
     val amountMinor: Long,
 )
+
 
 

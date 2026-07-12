@@ -51,7 +51,7 @@ class AccountIdentityResolverTest {
         override fun observeAllTransactions() = flowOf<LedgerResult<List<Transaction>>>(LedgerResult.Success(emptyList()))
         override fun observeTransactionsForAccount(accountId: Long) = flowOf<LedgerResult<List<Transaction>>>(LedgerResult.Success(emptyList()))
         override fun observeTransactionsBetween(start: Instant, end: Instant) = flowOf<LedgerResult<List<Transaction>>>(LedgerResult.Success(emptyList()))
-        override suspend fun getTransactionById(id: Long) = LedgerResult.Failure<Transaction>(com.sherif.ledger.core.domain.model.LedgerError.Unknown(""))
+        override suspend fun getTransactionById(id: Long) = LedgerResult.Failure(com.sherif.ledger.core.domain.model.LedgerError.Unknown(""))
         override suspend fun insertTransaction(transaction: Transaction) = LedgerResult.Success(1L)
         override suspend fun deleteTransaction(id: Long) = LedgerResult.Success(Unit)
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> =
@@ -148,4 +148,5 @@ class AccountIdentityResolverTest {
         assertEquals(1, accountRepository.accounts.size)
     }
 }
+
 

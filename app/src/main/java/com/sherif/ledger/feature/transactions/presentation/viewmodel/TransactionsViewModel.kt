@@ -34,6 +34,9 @@ class TransactionsViewModel @Inject constructor(
                 // per-day subtotals below are consistent with the monthly aggregate
                 // shown elsewhere — never a second, independent aggregation.
                 val effectiveSpend = getFinancialAnalyticsUseCase.effectiveSpendByTransactionId(result.data)
+                // Real category, from Merchant Intelligence via the analytics layer —
+                // never a presentation-layer merchant-name guess.
+                val stories = getFinancialAnalyticsUseCase.transactionStories(result.data)
 
                 val groups = result.data.groupBy { 
                     it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -42,7 +45,7 @@ class TransactionsViewModel @Inject constructor(
                         TransactionUi(
                             id = txn.id.toString(),
                             merchant = txn.rawText ?: "Unknown",
-                            category = categoryFor(txn),
+                            category = toUiCategory(txn, stories[txn.id]?.category),
                             amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                             subtitle = txn.source.name
                         )
@@ -89,17 +92,35 @@ class TransactionsViewModel @Inject constructor(
         return date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d"))
     }
 
-    private fun categoryFor(txn: com.sherif.ledger.core.domain.model.Transaction): MerchantCategory {
-        val name = (txn.rawText ?: "").uppercase()
-        return when {
-            txn.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME -> MerchantCategory.Salary
-            "COSTA" in name -> MerchantCategory.Coffee
-            "CARREFOUR" in name -> MerchantCategory.Grocery
-            "AMAZON" in name -> MerchantCategory.Shopping
+    /**
+     * Maps the REAL backend category (Merchant Intelligence, via
+     * [GetFinancialAnalyticsUseCase.transactionStories]) to this screen's icon
+     * enum. This is legitimate presentation-layer formatting — deciding which
+     * icon represents "GROCERIES" — never a re-derivation of what the category
+     * actually is from the merchant name. Salary is a transaction-type fact, not
+     * a merchant category, so it's read directly from the transaction type.
+     */
+    private fun toUiCategory(
+        txn: com.sherif.ledger.core.domain.model.Transaction,
+        backendCategory: String?,
+    ): MerchantCategory {
+        if (txn.type == com.sherif.ledger.core.domain.model.TransactionType.INCOME) return MerchantCategory.Salary
+        return when (backendCategory) {
+            "GROCERIES" -> MerchantCategory.Grocery
+            "SHOPPING" -> MerchantCategory.Shopping
+            "TRANSPORT" -> MerchantCategory.Transport
+            "FOOD_DELIVERY", "DINING" -> MerchantCategory.Food
+            "UTILITIES", "TELECOM", "FINANCE", "GOVERNMENT" -> MerchantCategory.Bills
+            "ENTERTAINMENT" -> MerchantCategory.Entertainment
+            "TRAVEL" -> MerchantCategory.Travel
+            "HEALTH" -> MerchantCategory.Healthcare
+            "FUEL" -> MerchantCategory.Fuel
+            "EDUCATION" -> MerchantCategory.Education
             else -> MerchantCategory.Shopping
         }
     }
 
 }
+
 
 
