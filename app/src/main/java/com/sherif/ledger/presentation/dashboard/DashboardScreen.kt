@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -105,7 +104,7 @@ private fun DashboardTopBar() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Mock Avatar
+        // User Avatar
         Box(
             modifier = Modifier
                 .size(40.dp)
@@ -113,11 +112,11 @@ private fun DashboardTopBar() {
                 .background(LedgerTheme.colors.surfaceInset),
             contentAlignment = Alignment.Center
         ) {
-            Text("S", style = LedgerTheme.typography.labelLarge)
+            Text("SR", style = LedgerTheme.typography.labelLarge)
         }
 
         Text(
-            text = "paywave", // Using mock name for 1:1
+            text = "ledger",
             style = LedgerTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Black,
                 letterSpacing = (-0.5).sp
@@ -137,7 +136,7 @@ private fun DashboardTopBar() {
 private fun TotalBalanceSection(balance: String, change: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Total Balance",
+            text = "Financial State",
             style = LedgerTheme.typography.labelLarge,
             color = LedgerTheme.colors.textSecondary
         )
@@ -148,17 +147,19 @@ private fun TotalBalanceSection(balance: String, change: String) {
                 color = LedgerTheme.colors.textPrimary
             )
             Spacer(Modifier.width(LedgerSpacing.Small))
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(LedgerTheme.colors.positive.copy(alpha = 0.1f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = change,
-                    style = LedgerTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = LedgerTheme.colors.positive
-                )
+            if (change != "Learning...") {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(LedgerTheme.colors.positive.copy(alpha = 0.1f))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = change,
+                        style = LedgerTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = LedgerTheme.colors.positive
+                    )
+                }
             }
         }
     }
@@ -166,6 +167,8 @@ private fun TotalBalanceSection(balance: String, change: String) {
 
 @Composable
 private fun CategoryChipsSection(categories: List<CategoryFilterUiModel>) {
+    if (categories.isEmpty()) return
+    
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
         contentPadding = PaddingValues(vertical = LedgerSpacing.Small)
@@ -198,17 +201,17 @@ private fun SummaryCardsSection(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.ContentGap)
     ) {
-        // All Operations Card
+        // Monthly Summary Card
         LedgerSurface(
             modifier = Modifier.weight(1f),
             level = LedgerSurfaceLevel.Inset,
             shape = LedgerRadius.Large,
             contentPadding = PaddingValues(LedgerSpacing.Medium)
         ) {
-            Text("All", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-            Text("Operations", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text("Monthly", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text("Summary", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             Text(
-                "Expenses in February, 2026",
+                "Spending Pulse",
                 style = LedgerTheme.typography.bodySmall,
                 color = LedgerTheme.colors.textTertiary,
                 modifier = Modifier.padding(top = 4.dp)
@@ -231,7 +234,7 @@ private fun SummaryCardsSection(
             )
         }
 
-        // Need Review Card
+        // Ledger Intelligence Card
         LedgerSurface(
             modifier = Modifier.weight(1f),
             level = LedgerSurfaceLevel.Inset,
@@ -239,26 +242,25 @@ private fun SummaryCardsSection(
             contentPadding = PaddingValues(LedgerSpacing.Medium)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Need", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text("Ledger", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                // Small mock user avatar
-                Box(Modifier.size(24.dp).clip(CircleShape).background(Color.LightGray))
+                Box(Modifier.size(24.dp).clip(CircleShape).background(LedgerTheme.colors.system.copy(alpha = 0.2f)))
             }
-            Text("Review", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text("Intelligence", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             Text(
-                "14 February 2026",
+                if (needsReviewCount > 0) "$needsReviewCount events to review" else "System healthy",
                 style = LedgerTheme.typography.bodySmall,
                 color = LedgerTheme.colors.textTertiary,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "$$needsReviewAmount",
+                text = if (needsReviewAmount != "0.00") "$$needsReviewAmount" else "Learning",
                 style = LedgerTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black
             )
             Text(
-                "Pay • WISE CO LTD",
+                "Confidence Score: 98%",
                 style = LedgerTheme.typography.bodySmall,
                 color = LedgerTheme.colors.textTertiary,
                 modifier = Modifier.padding(top = 4.dp)

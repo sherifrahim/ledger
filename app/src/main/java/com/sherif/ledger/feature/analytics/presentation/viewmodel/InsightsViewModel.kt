@@ -37,6 +37,8 @@ class InsightsViewModel @Inject constructor(
         .observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second)
         .map { result ->
             val transactions = (result as? LedgerResult.Success)?.data ?: emptyList()
+            val isLearning = transactions.size < 5
+            
             if (transactions.isEmpty()) {
                 EMPTY_STATE
             } else {
@@ -45,8 +47,8 @@ class InsightsViewModel @Inject constructor(
                 )
 
                 InsightsUiState(
-                    spentTotal = MoneyFormatter.format(Money(analytics.netSpendMinor, analytics.currency), includeSymbol = true),
-                    incomeTotal = MoneyFormatter.format(Money(analytics.incomeMinor, analytics.currency), includeSymbol = true),
+                    spentTotal = if (isLearning) "Tracking..." else MoneyFormatter.format(Money(analytics.netSpendMinor, analytics.currency), includeSymbol = true),
+                    incomeTotal = if (isLearning) "Calculating..." else MoneyFormatter.format(Money(analytics.incomeMinor, analytics.currency), includeSymbol = true),
                     dateRange = "This Month",
                     categories = analytics.categoryTotals.take(8).mapIndexed { index, total ->
                         toCategoryUi(total, analytics.netSpendMinor, analytics.currency, index)
@@ -68,7 +70,8 @@ class InsightsViewModel @Inject constructor(
             amount = MoneyFormatter.format(Money(total.amountMinor, currency), includeSymbol = true),
             percentageValue = pct.toInt(),
             color = CATEGORY_COLORS[index % CATEGORY_COLORS.size],
-            currency = currency.name
+            currency = currency.name,
+            percentage = "${pct.toInt()}%"
         )
     }
 

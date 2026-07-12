@@ -14,6 +14,7 @@ data class InsightsUiState(
 data class CategoryInsightUi(
     val name: String,
     val amount: String,
+    val percentage: String = "",
     val percentageValue: Int = 0,
     val color: Color,
     val currency: String = "AED"
