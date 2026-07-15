@@ -24,3 +24,4 @@ data class SplitShare(
     val settledAt: Instant? = null,
 )
 
+

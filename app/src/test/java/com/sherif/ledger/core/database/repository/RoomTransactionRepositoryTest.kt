@@ -44,6 +44,7 @@ class RoomTransactionRepositoryTest {
         override suspend fun getTransactionById(id: Long): TransactionEntity? = null
         override suspend fun insertTransaction(transaction: TransactionEntity): Long = 1L
         override suspend fun softDeleteTransaction(id: Long, timestamp: Long): Int = 1
+        override suspend fun updateNote(id: Long, note: String?, timestamp: Long): Int = 1
         override suspend fun countByOriginSignature(packageName: String, cardTail: String): List<com.sherif.ledger.core.database.dao.AccountOriginCountRow> = emptyList()
         override suspend fun reassignByOriginSignature(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
     }
@@ -82,4 +83,5 @@ class RoomTransactionRepositoryTest {
         assertEquals(1L, (result as LedgerResult.Success).data)
     }
 }
+
 

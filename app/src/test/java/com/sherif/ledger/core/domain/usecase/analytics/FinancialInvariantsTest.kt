@@ -287,6 +287,7 @@ class FinancialInvariantsTest {
         override suspend fun getTransactionById(id: Long) = com.sherif.ledger.core.domain.model.LedgerResult.Success(transactions.first { it.id == id })
         override suspend fun insertTransaction(transaction: Transaction) = com.sherif.ledger.core.domain.model.LedgerResult.Success(1L)
         override suspend fun deleteTransaction(id: Long) = com.sherif.ledger.core.domain.model.LedgerResult.Success(Unit)
+        override suspend fun updateNote(id: Long, note: String?) = com.sherif.ledger.core.domain.model.LedgerResult.Success(Unit)
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String) = emptyList<com.sherif.ledger.core.domain.repository.AccountOriginCount>()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
     }
@@ -300,6 +301,7 @@ class FinancialInvariantsTest {
         override suspend fun getTransactionById(id: Long) = throw NotImplementedError()
         override suspend fun insertTransaction(transaction: Transaction) = throw NotImplementedError()
         override suspend fun deleteTransaction(id: Long) = throw NotImplementedError()
+        override suspend fun updateNote(id: Long, note: String?) = throw NotImplementedError()
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String) = throw NotImplementedError()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = throw NotImplementedError()
     }
@@ -313,6 +315,7 @@ class FinancialInvariantsTest {
         override suspend fun deleteAccount(id: Long) = throw NotImplementedError()
     }
 }
+
 
 
 

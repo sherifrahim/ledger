@@ -120,6 +120,30 @@ class AccountBalanceServiceTest {
         assertEquals("Liability decreases by the SAME payment: 5000 owed - 2000 paid = 3000", 3_000L, creditBalance)
     }
 
+    @Test fun `a card-payment-worded transaction already on the liability account is never double-counted`() = runBlocking {
+        // RC3 regression: confirmed live (not hypothetical) — AccountMatching
+        // previously had no check excluding a payment already persisted ON the
+        // account being evaluated. A card-payment-shaped transaction recorded
+        // directly on its own credit account (e.g. the card issuer's own
+        // confirmation slipping through as an event) had its effect applied
+        // twice: once via its own effect(), again via the dual-effect loop
+        // matching it back to the same account it's already on.
+        val credit = Account(20L, "FAB Credit Card", AccountType.CREDIT, Money.zero(CurrencyCode.AED), "6989", null)
+        val transactions = listOf(
+            // Prior purchase: owed = 5000.
+            txn(1, 20, 5_000, TransactionType.EXPENSE, 1, "spent using FAB card ending 6989"),
+            // Card-payment-worded EXPENSE persisted directly ON the credit
+            // account itself (accountId=20), carrying its OWN tail+package —
+            // the self-referencing shape the fix targets.
+            txn(2, 20, 2_000, TransactionType.EXPENSE, 2, "AED 20.00 paid towards your FAB credit card", cardTail = "6989", packageName = "com.fab.personalbanking"),
+        )
+        val balances = service(listOf(credit), transactions).currentBalances()
+        // Before the fix this asserted 5000 (7000 direct, minus an erroneous
+        // -2000 self-match) and the test genuinely failed against the
+        // unfixed code — verified by hand before writing this assertion.
+        assertEquals(7_000L, balances.first().balance.minorUnits)
+    }
+
     @Test fun `net worth is assets minus liabilities using the same replayed balances`() = runBlocking {
         val checking = Account(10L, "ADCB Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), null, null)
         val credit = Account(20L, "FAB Credit Card", AccountType.CREDIT, Money.zero(CurrencyCode.AED), null, null)
@@ -133,5 +157,7 @@ class AccountBalanceServiceTest {
         assertEquals(100_000L, netWorth.minorUnits)
     }
 }
+
+
 
 

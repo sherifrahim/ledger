@@ -15,3 +15,4 @@ interface ParticipantRepository {
     suspend fun deleteParticipant(id: String): LedgerResult<Unit>
 }
 
+

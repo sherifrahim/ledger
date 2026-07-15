@@ -61,6 +61,14 @@ class AccountBalanceService @Inject constructor(
             if (account.type.isLiability) {
                 for (relationship in creditCardPayments) {
                     val payment = txnById[relationship.sourceTransactionId] ?: continue
+                    // RC3: a payment already persisted ON this same account is
+                    // not "a payment from elsewhere" — it's already counted via
+                    // this account's own effect() loop above. Without this
+                    // check, a card issuer's own confirmation message
+                    // misrouted onto its own credit account (a live-verified
+                    // scenario, not hypothetical) gets its effect applied
+                    // twice: once as an ordinary transaction, once again here.
+                    if (payment.accountId == account.id) continue
                     val institution = institutionRegistry.resolve(payment.origin?.packageName)
                     val tail = payment.cardTail
                     if (tail != null && AccountMatching.matches(institution, tail, payment.amount.currencyCode, account)) {
@@ -85,4 +93,6 @@ class AccountBalanceService @Inject constructor(
         return Money(assets - liabilities, currency)
     }
 }
+
+
 

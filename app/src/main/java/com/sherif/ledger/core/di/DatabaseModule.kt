@@ -55,3 +55,4 @@ object DatabaseModule {
     fun provideSplitDao(db: LedgerDatabase): SplitDao = db.splitDao()
 }
 
+

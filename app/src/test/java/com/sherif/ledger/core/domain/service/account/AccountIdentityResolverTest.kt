@@ -14,6 +14,7 @@ import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -148,7 +149,81 @@ class AccountIdentityResolverTest {
         assertEquals(AccountIdentityDecision.FALLBACK_DEFAULT, result.decision)
         assertEquals(1, accountRepository.accounts.size)
     }
+
+    // ---- RC2: the race-condition fix, proven directly (restored after being
+    // lost during an unrelated recovery mishap earlier in RC3 -- caught by
+    // this same audit's "verify, don't assume" discipline) ----
+
+    /** Delays inside insertAccount() to force a real interleaving window between
+     *  "check existing accounts" and "commit the new one" -- exactly the window
+     *  the historical race condition exploited. Without the resolver's mutex,
+     *  concurrent resolve() calls can both pass the check before either commits. */
+    private class DelayedAccountRepository : AccountRepository {
+        val accounts = java.util.Collections.synchronizedList(mutableListOf(
+            Account(1L, "Primary Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), null, null),
+        ))
+        override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.toList()))
+        override suspend fun getAccountById(id: Long): LedgerResult<Account> =
+            accounts.find { it.id == id }?.let { LedgerResult.Success(it) } ?: LedgerResult.Failure(com.sherif.ledger.core.domain.model.LedgerError.AccountNotFound)
+        override suspend fun insertAccount(account: Account): LedgerResult<Long> {
+            kotlinx.coroutines.delay(20) // widen the race window deliberately
+            val id = (accounts.maxOfOrNull { it.id } ?: 0L) + 1
+            accounts += account.copy(id = id)
+            return LedgerResult.Success(id)
+        }
+        override suspend fun updateAccount(account: Account): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+    }
+
+    @Test fun `concurrent resolution for the same new identity creates exactly one account`() = runBlocking {
+        val delayedAccounts = DelayedAccountRepository()
+        val concurrentResolver = DeterministicAccountIdentityResolver(
+            InstitutionRegistry(),
+            delayedAccounts,
+            transactionRepository,
+            EnsureDefaultAccountUseCase(delayedAccounts),
+        )
+        // Single-shot near-certainty: institution + tail + currency + explicit
+        // type hint all agree, so this creates on the very first sighting --
+        // exactly the shape most likely to race in practice (a burst of
+        // messages for a newly-seen card, e.g. on notification-listener
+        // reconnect replaying a backlog).
+        val env = envelope("com.fab.personalbanking")
+        val cand = candidate("AED 200.00 paid towards your FAB credit card ending 6989", "6989")
+
+        val results = (1..5).map {
+            async { concurrentResolver.resolve(env, cand) }
+        }.map { it.await() }
+
+        val distinctAccountIds = results.map { it.accountId }.distinct()
+        assertEquals("All concurrent resolutions must agree on exactly one account", 1, distinctAccountIds.size)
+        assertEquals(
+            "Exactly one FAB account must exist, not one per concurrent caller",
+            1,
+            delayedAccounts.accounts.count { it.name.contains("FAB") },
+        )
+    }
+
+    // ---- RC3: the type-hint scoring fix, tested directly since it cannot
+    // change any observable resolve() decision given today's threshold
+    // configuration (institution+tail alone already clears BIND_THRESHOLD) ----
+
+    @Test fun `scoreAgainstExisting no longer awards the type bonus when there is no type signal at all`() {
+        val account = Account(1L, "FAB Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), "6989", null)
+        val institution = InstitutionIdentity("FAB", CurrencyCode.AED)
+
+        val withNoSignal = resolver.scoreAgainstExisting(account, institution, "6989", CurrencyCode.AED, typeHint = null)
+        assertEquals("No type evidence must not be treated as a confirmed match", 90, withNoSignal)
+
+        val withGenuineMatch = resolver.scoreAgainstExisting(account, institution, "6989", CurrencyCode.AED, typeHint = AccountType.CHECKING)
+        assertEquals("A genuine, explicit type agreement still earns the bonus", 100, withGenuineMatch)
+
+        val withGenuineMismatch = resolver.scoreAgainstExisting(account, institution, "6989", CurrencyCode.AED, typeHint = AccountType.CREDIT)
+        assertEquals("A genuine, explicit type conflict must not earn the bonus", 90, withGenuineMismatch)
+    }
 }
+
+
 
 
 

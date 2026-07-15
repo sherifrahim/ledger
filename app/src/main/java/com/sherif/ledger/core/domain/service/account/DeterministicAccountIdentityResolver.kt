@@ -191,7 +191,12 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         return if (cardPaymentPhrases.any { lower.contains(it) } && lower.contains("card")) AccountType.CREDIT else null
     }
 
-    private fun scoreAgainstExisting(
+    // internal (not private) so the scoring logic itself is directly
+    // testable, rather than only observable through resolve()'s pass/fail
+    // decision — necessary here since the fix below cannot, by itself, change
+    // any observable binding outcome given today's threshold configuration
+    // (institution+tail alone already clears BIND_THRESHOLD).
+    internal fun scoreAgainstExisting(
         account: Account,
         institution: InstitutionIdentity,
         tail: String,
@@ -202,7 +207,16 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         if (account.name.contains(institution.name, ignoreCase = true)) score += 40
         if (account.accountNumberTail == tail) score += 35
         if (account.openingBalance.currencyCode == currency) score += 15
-        if (typeHint == null || account.type == typeHint) score += 10
+        // RC3: was `typeHint == null || account.type == typeHint`, which
+        // conflated "no type signal at all" with "confirmed match" and awarded
+        // the bonus either way. Absence of evidence is not evidence of a
+        // match. Only a genuine, explicit agreement earns these points now.
+        // Note this alone does not prevent two different physical cards
+        // sharing a tail at the same institution from binding together —
+        // institution+tail+currency (90) already clears BIND_THRESHOLD (75)
+        // without this bonus. That's a separate, more fundamental limitation
+        // of 4-digit tail entropy, not something this fix resolves.
+        if (typeHint != null && account.type == typeHint) score += 10
         return score
     }
 
@@ -241,6 +255,8 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         return (result as? LedgerResult.Success)?.data ?: ensureDefaultAccountUseCase.execute()
     }
 }
+
+
 
 
 

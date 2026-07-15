@@ -46,3 +46,4 @@ class SplitCalculator @Inject constructor() {
         percentages.sum() <= 100.0
 }
 
+

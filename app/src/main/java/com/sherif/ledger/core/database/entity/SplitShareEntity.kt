@@ -52,3 +52,4 @@ data class SplitShareEntity(
     val settledAt: Long? = null,
 )
 
+

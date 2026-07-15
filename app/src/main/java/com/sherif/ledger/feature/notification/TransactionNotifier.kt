@@ -10,3 +10,4 @@ interface TransactionNotifier {
     fun notifyCaptured(transaction: Transaction, merchantOrDescription: String, formattedAmount: String)
 }
 
+

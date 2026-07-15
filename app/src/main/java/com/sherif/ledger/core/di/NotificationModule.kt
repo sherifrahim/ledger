@@ -17,3 +17,4 @@ abstract class NotificationModule {
     abstract fun bindTransactionNotifier(impl: AndroidTransactionCaptureNotifier): TransactionNotifier
 }
 
+
