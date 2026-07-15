@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.capture.notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.sherif.ledger.core.common.logging.LedgerLogger
+import com.sherif.ledger.core.domain.usecase.account.DetectDuplicateAccountIdentitiesUseCase
 import com.sherif.ledger.core.domain.usecase.transaction.ProcessNotificationUseCase
 import com.sherif.ledger.feature.capture.source.NotificationSourceAdapter
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,11 +27,37 @@ class LedgerNotificationListener : NotificationListenerService() {
     @Inject
     lateinit var notificationSourceAdapter: NotificationSourceAdapter
 
+    @Inject
+    lateinit var detectDuplicateAccountIdentitiesUseCase: DetectDuplicateAccountIdentitiesUseCase
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onListenerConnected() {
         super.onListenerConnected()
         LedgerLogger.d("NotificationListener connected")
+
+        // RC2: one-time diagnostic scan for duplicate account identities left
+        // behind by the pre-fix race condition. Detection only -- logs findings
+        // for manual review, never merges or reassigns anything automatically.
+        serviceScope.launch {
+            try {
+                val findings = detectDuplicateAccountIdentitiesUseCase.execute()
+                if (findings.isEmpty()) {
+                    LedgerLogger.d("DuplicateAccountScan: no duplicate account identities found")
+                } else {
+                    findings.forEach { finding ->
+                        LedgerLogger.e(
+                            "DuplicateAccountScan: DUPLICATE IDENTITY package=${finding.packageName} " +
+                                "tail=${finding.cardTail} -> accounts=${finding.accountIds.zip(finding.accountNames)} " +
+                                "transactionCounts=${finding.transactionCounts} " +
+                                "(diagnostic only; nothing was merged or reassigned)"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                LedgerLogger.e("DuplicateAccountScan failed", e)
+            }
+        }
     }
 
     override fun onListenerDisconnected() {
@@ -84,3 +111,6 @@ class LedgerNotificationListener : NotificationListenerService() {
         serviceScope.cancel()
     }
 }
+
+
+

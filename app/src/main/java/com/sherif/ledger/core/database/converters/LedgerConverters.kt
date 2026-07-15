@@ -3,6 +3,7 @@ package com.sherif.ledger.core.database.converters
 import androidx.room.TypeConverter
 import com.sherif.ledger.core.domain.model.AccountType
 import com.sherif.ledger.core.domain.model.IngestionSource
+import com.sherif.ledger.core.domain.model.SplitType
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.model.TransferDirection
 import java.time.Instant
@@ -41,6 +42,13 @@ class LedgerConverters {
 
     @TypeConverter
     fun toTransferDirection(value: String?): TransferDirection? = value?.let { TransferDirection.valueOf(it) }
+
+    @TypeConverter
+    fun fromSplitType(type: SplitType): String = type.name
+
+    @TypeConverter
+    fun toSplitType(value: String): SplitType = SplitType.valueOf(value)
 }
+
 
 

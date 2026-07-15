@@ -11,7 +11,10 @@ import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Deterministic account identity resolution. No AI — every decision traces to
@@ -29,13 +32,30 @@ import javax.inject.Inject
  * real bar — never a single moderate-confidence guess. Below both bars, the
  * transaction falls back to the default account: a visible, queryable state, not
  * a silent invention.
+ *
+ * RC2: @Singleton + an internal [Mutex] serializing the whole resolve-or-create
+ * sequence (including the default-account get-or-create inside
+ * [EnsureDefaultAccountUseCase], which has the identical race shape). Both parts
+ * are required together — a Mutex on a non-singleton class gives every injection
+ * site (notification listener, SMS receiver, historical importer) its own,
+ * separately useless lock. Without this, notification/SMS processing on
+ * Dispatchers.IO's thread pool could run two resolutions for the same identity
+ * concurrently: both see "no matching account yet" before either commits, and
+ * both create one — a real, confirmed root cause of unstable balances, since a
+ * split-account identity has no database-level uniqueness constraint to catch it
+ * (unlike transactions, which do, via the fingerprint index).
  */
+@Singleton
 class DeterministicAccountIdentityResolver @Inject constructor(
     private val institutionRegistry: InstitutionRegistry,
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase,
 ) : AccountIdentityResolver {
+
+    /** Shared across every caller because this class is @Singleton — serializes
+     *  the whole resolve-or-create sequence app-wide. See class KDoc. */
+    private val mutex = Mutex()
 
     companion object {
         /** Binding to an already-established account: institution + tail alone
@@ -55,13 +75,33 @@ class DeterministicAccountIdentityResolver @Inject constructor(
          *  one = the count). */
         const val CREATE_OBSERVATION_COUNT = 3
 
+        // RC1 stabilization decision, not the permanent architecture: "card
+        // ending"/"card no" were removed from this list. Both phrases appear in
+        // ordinary DEBIT card purchase messages just as often as credit card
+        // ones — a resolver that can't yet distinguish debit from credit
+        // reliably must not guess CREDIT from generic card-tail mentions alone.
+        // A real checking account mistyped as CREDIT gets every transaction's
+        // arithmetic inverted (BalanceCalculator.effect() flips sign for
+        // liability accounts), corrupting the whole account, not just the
+        // purchase that triggered it — so this stays conservative until a
+        // proper evidence-based resolver considers bank identity, relationship
+        // evidence, payment confirmations, and merchant history together before
+        // converging on an account type.
         private val cardPaymentPhrases = listOf(
-            "credit card", "card ending", "card no", "card payment",
+            "credit card", "card payment", "credit card payment",
             "towards your card", "towards credit card",
         )
     }
 
     override suspend fun resolve(
+        envelope: NotificationEnvelope,
+        candidate: TransactionCandidate,
+    ): AccountIdentityResult = mutex.withLock { resolveLocked(envelope, candidate) }
+
+    /** Serializes app-wide by [mutex] — every read of existing accounts, every
+     *  decision, and every create() call for both this resolver and the default
+     *  account happens as one atomic sequence relative to any other caller. */
+    private suspend fun resolveLocked(
         envelope: NotificationEnvelope,
         candidate: TransactionCandidate,
     ): AccountIdentityResult {
@@ -201,4 +241,8 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         return (result as? LedgerResult.Success)?.data ?: ensureDefaultAccountUseCase.execute()
     }
 }
+
+
+
+
 

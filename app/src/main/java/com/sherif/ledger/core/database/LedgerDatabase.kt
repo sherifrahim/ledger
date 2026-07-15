@@ -7,11 +7,16 @@ import com.sherif.ledger.core.database.converters.LedgerConverters
 import com.sherif.ledger.core.database.dao.AccountDao
 import com.sherif.ledger.core.database.dao.BrandDao
 import com.sherif.ledger.core.database.dao.CategoryDao
+import com.sherif.ledger.core.database.dao.ParticipantDao
+import com.sherif.ledger.core.database.dao.SplitDao
 import com.sherif.ledger.core.database.dao.TransactionDao
 import com.sherif.ledger.core.database.entity.AccountEntity
 import com.sherif.ledger.core.database.entity.BrandEntity
 import com.sherif.ledger.core.database.entity.CategoryEntity
 import com.sherif.ledger.core.database.entity.MerchantAliasEntity
+import com.sherif.ledger.core.database.entity.ParticipantEntity
+import com.sherif.ledger.core.database.entity.SplitEntity
+import com.sherif.ledger.core.database.entity.SplitShareEntity
 import com.sherif.ledger.core.database.entity.TransactionEntity
 
 @Database(
@@ -20,9 +25,12 @@ import com.sherif.ledger.core.database.entity.TransactionEntity
         TransactionEntity::class,
         CategoryEntity::class,
         BrandEntity::class,
-        MerchantAliasEntity::class
+        MerchantAliasEntity::class,
+        ParticipantEntity::class,
+        SplitEntity::class,
+        SplitShareEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)
@@ -31,10 +39,13 @@ abstract class LedgerDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
     abstract fun brandDao(): BrandDao
+    abstract fun participantDao(): ParticipantDao
+    abstract fun splitDao(): SplitDao
 
     companion object {
         const val DATABASE_NAME = "ledger_db"
     }
 }
+
 
 

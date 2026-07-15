@@ -47,6 +47,7 @@ class SmsIngestionTest {
             return LedgerResult.Success(id)
         }
         override suspend fun deleteTransaction(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override suspend fun updateNote(id: Long, note: String?): LedgerResult<Unit> = LedgerResult.Success(Unit)
         override fun observeAllTransactions(): Flow<LedgerResult<List<Transaction>>> = flowOf(LedgerResult.Success(emptyList()))
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<com.sherif.ledger.core.domain.repository.AccountOriginCount> = emptyList()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
@@ -97,7 +98,8 @@ class SmsIngestionTest {
             EnsureDefaultAccountUseCase(accountRepository),
         ),
             PipelineTraceSink(),
-            DeterministicFinancialIntentClassifier()
+            DeterministicFinancialIntentClassifier(),
+            FakeTransactionNotifier,
     )
 
     @Test
@@ -167,6 +169,14 @@ class SmsIngestionTest {
     }
 }
 
-
-
+private object FakeTransactionNotifier : com.sherif.ledger.feature.notification.TransactionNotifier {
+    override fun notifyCaptured(
+        transaction: com.sherif.ledger.core.domain.model.Transaction,
+        merchantOrDescription: String,
+        formattedAmount: String,
+    ) {
+        // no-op: notification posting requires the Android framework, out of
+        // scope for these plain JVM tests
+    }
+}
 

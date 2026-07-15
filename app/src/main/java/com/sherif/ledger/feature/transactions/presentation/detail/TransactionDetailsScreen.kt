@@ -47,7 +47,7 @@ fun TransactionDetailsScreen(
                 
                 Spacer(Modifier.height(LedgerSpacing.Large))
                 Text(
-                    text = (if (state.isIncome) "+" else "-") + "$" + state.amount,
+                    text = state.sign + state.amount,
                     style = LedgerTheme.typography.displayLarge.copy(fontSize = 40.sp),
                     fontWeight = FontWeight.Black
                 )
@@ -134,3 +134,7 @@ private fun DetailRow(label: String, value: String) {
         Text(value, style = LedgerTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = LedgerTheme.colors.textPrimary)
     }
 }
+
+
+
+

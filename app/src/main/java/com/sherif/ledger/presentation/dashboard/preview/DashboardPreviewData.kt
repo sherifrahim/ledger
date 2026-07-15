@@ -5,9 +5,9 @@ import com.sherif.ledger.presentation.dashboard.*
 object DashboardPreviewData {
 
     val state = DashboardUiState(
-        totalBalance = "$ 120,432.05",
+        totalBalance = "AED 120,432.05",
         balanceChangePercentage = "+8%",
-        monthlyExpenses = "$ 20,321",
+        monthlyExpenses = "AED 20,321",
         categories = listOf(
             CategoryFilterUiModel("all", "All", true),
             CategoryFilterUiModel("electricity", "Electricity"),
@@ -37,4 +37,8 @@ object DashboardPreviewData {
         )
     )
 }
+
+
+
+
 

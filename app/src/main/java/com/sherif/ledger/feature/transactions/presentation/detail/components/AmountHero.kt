@@ -16,6 +16,10 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
  * Large centered amount display for transaction detail.
  *
  * The amount is the emotional anchor.
+ *
+ * [amount] must already be fully formatted (via MoneyFormatter, with symbol) by
+ * the caller — this component only prepends the sign. It never hardcodes a
+ * currency symbol itself.
  */
 @Composable
 fun AmountHero(
@@ -34,7 +38,7 @@ fun AmountHero(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.XxSmall),
     ) {
         LedgerAmount(
-            amount = "${sign}AED $amount",
+            amount = "$sign$amount",
             style = com.sherif.ledger.core.designsystem.component.LedgerAmountStyle.Large,
             color = amountColor,
         )
@@ -45,3 +49,7 @@ fun AmountHero(
         )
     }
 }
+
+
+
+

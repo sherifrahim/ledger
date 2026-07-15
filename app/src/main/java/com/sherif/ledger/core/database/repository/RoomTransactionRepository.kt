@@ -134,6 +134,19 @@ class RoomTransactionRepository @Inject constructor(
         LedgerResult.Failure(LedgerError.DatabaseFailure)
     }
 
+    override suspend fun updateNote(id: Long, note: String?): LedgerResult<Unit> = try {
+        val rowsUpdated = transactionDao.updateNote(id, note, System.currentTimeMillis())
+        if (rowsUpdated == 1) {
+            LedgerResult.Success(Unit)
+        } else {
+            LedgerLogger.e("Repository: updateNote FAILED. Affected rows: $rowsUpdated (Expected: 1)")
+            LedgerResult.Failure(LedgerError.DatabaseFailure)
+        }
+    } catch (e: Exception) {
+        LedgerLogger.e("Repository: updateNote failure", e)
+        LedgerResult.Failure(LedgerError.DatabaseFailure)
+    }
+
     override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> =
         transactionDao.countByOriginSignature(packageName, cardTail).map { AccountOriginCount(it.accountId, it.count) }
 
@@ -144,4 +157,5 @@ class RoomTransactionRepository @Inject constructor(
         toAccountId: Long,
     ): Int = transactionDao.reassignByOriginSignature(fromAccountId, packageName, cardTail, toAccountId)
 }
+
 

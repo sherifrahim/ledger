@@ -41,6 +41,7 @@ class AccountBalanceServiceTest {
         override suspend fun getTransactionById(id: Long) = LedgerResult.Success(transactions.first { it.id == id })
         override suspend fun insertTransaction(transaction: Transaction) = LedgerResult.Success(1L)
         override suspend fun deleteTransaction(id: Long) = LedgerResult.Success(Unit)
+        override suspend fun updateNote(id: Long, note: String?) = LedgerResult.Success(Unit)
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> = emptyList()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
     }
@@ -132,4 +133,5 @@ class AccountBalanceServiceTest {
         assertEquals(100_000L, netWorth.minorUnits)
     }
 }
+
 

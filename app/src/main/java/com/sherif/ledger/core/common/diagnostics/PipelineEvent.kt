@@ -33,3 +33,4 @@ data class PipelineEvent(
     val traceId: String? = null,
     val metadata: Map<String, String> = emptyMap()
 )
+

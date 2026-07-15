@@ -18,6 +18,11 @@ interface TransactionRepository {
     suspend fun insertTransaction(transaction: Transaction): LedgerResult<Long>
     suspend fun deleteTransaction(id: Long): LedgerResult<Unit>
 
+    /** Sets or clears the single user-authored note on a transaction. Passing
+     *  null clears it. Never consulted by any balance or analytics computation —
+     *  purely descriptive metadata. */
+    suspend fun updateNote(id: Long, note: String?): LedgerResult<Unit>
+
     /** Bounded, indexed, read-only: how many transactions with this exact
      *  (package, tail) origin signature currently sit on each account. Powers
      *  AccountIdentityResolver's historical-match and repeated-observation
@@ -36,4 +41,5 @@ interface TransactionRepository {
         toAccountId: Long,
     ): Int
 }
+
 

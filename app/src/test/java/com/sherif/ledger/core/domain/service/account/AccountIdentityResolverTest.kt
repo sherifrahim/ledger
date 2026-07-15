@@ -54,6 +54,7 @@ class AccountIdentityResolverTest {
         override suspend fun getTransactionById(id: Long) = LedgerResult.Failure(com.sherif.ledger.core.domain.model.LedgerError.Unknown(""))
         override suspend fun insertTransaction(transaction: Transaction) = LedgerResult.Success(1L)
         override suspend fun deleteTransaction(id: Long) = LedgerResult.Success(Unit)
+        override suspend fun updateNote(id: Long, note: String?) = LedgerResult.Success(Unit)
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> =
             (originCounts[packageName to cardTail] ?: emptyMap()).map { (accId, count) -> AccountOriginCount(accId, count) }
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
@@ -148,5 +149,6 @@ class AccountIdentityResolverTest {
         assertEquals(1, accountRepository.accounts.size)
     }
 }
+
 
 

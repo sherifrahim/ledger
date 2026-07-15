@@ -43,6 +43,12 @@ class MainActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
+
+        // Set by AndroidTransactionCaptureNotifier's "Split" action — landing
+        // spot is Transaction Details until a dedicated split-creation screen exists.
+        val deepLinkTransactionId = intent.getLongExtra(
+            com.sherif.ledger.feature.notification.AndroidTransactionCaptureNotifier.EXTRA_TRANSACTION_ID, -1L,
+        ).takeIf { it > 0 }
         
         setContent {
             val mainViewModel: MainViewModel = hiltViewModel()
@@ -68,7 +74,7 @@ class MainActivity : ComponentActivity() {
                     if (isPermissionGranted) {
                         if (isSmsImported) {
                             com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=true. Launching Dashboard.")
-                            LedgerApp()
+                            LedgerApp(deepLinkTransactionId = deepLinkTransactionId)
                         } else {
                             com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=false. Launching SMS Onboarding.")
                             SmsOnboardingScreen(onComplete = {
@@ -86,7 +92,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun LedgerApp() {
+private fun LedgerApp(deepLinkTransactionId: Long? = null) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -97,6 +103,12 @@ private fun LedgerApp() {
         LedgerRoute.Transactions.route,
         LedgerRoute.Profile.route,
     )
+
+    androidx.compose.runtime.LaunchedEffect(deepLinkTransactionId) {
+        if (deepLinkTransactionId != null) {
+            navController.navigate(LedgerRoute.TransactionDetails.create(deepLinkTransactionId.toString()))
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         LedgerNavHost(
@@ -111,3 +123,4 @@ private fun LedgerApp() {
         }
     }
 }
+

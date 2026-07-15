@@ -22,6 +22,12 @@ data class Transaction(
     val transferDirection: TransferDirection? = null,
     // Provenance evidence for AccountIdentityResolver. See TransactionOrigin.
     val origin: TransactionOrigin? = null,
+    // User-authored annotation. Single note per transaction, editable in place —
+    // never touched by any Financial Truth computation (balance, analytics,
+    // relationships). Purely descriptive metadata the user attaches.
+    val note: String? = null,
+    val noteUpdatedAt: Instant? = null,
 )
+
 
 

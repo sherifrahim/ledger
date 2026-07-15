@@ -50,6 +50,7 @@ class GetFinancialAnalyticsUseCasePhase10Test {
         override suspend fun getTransactionById(id: Long) = throw NotImplementedError()
         override suspend fun insertTransaction(transaction: Transaction) = throw NotImplementedError()
         override suspend fun deleteTransaction(id: Long) = throw NotImplementedError()
+        override suspend fun updateNote(id: Long, note: String?) = throw NotImplementedError()
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> = emptyList()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
     }
@@ -173,4 +174,5 @@ class GetFinancialAnalyticsUseCasePhase10Test {
         assertEquals("+50%", result)
     }
 }
+
 

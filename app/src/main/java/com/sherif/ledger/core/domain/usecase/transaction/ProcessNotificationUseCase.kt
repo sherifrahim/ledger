@@ -23,6 +23,8 @@ import com.sherif.ledger.feature.semantic.ConfirmationInterpreter
 import com.sherif.ledger.feature.semantic.ConfirmationOutcome
 import com.sherif.ledger.feature.semantic.FinancialIntent
 import com.sherif.ledger.feature.semantic.FinancialIntentClassifier
+import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.feature.notification.TransactionNotifier
 import kotlinx.coroutines.flow.first
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -55,6 +57,7 @@ class ProcessNotificationUseCase @Inject constructor(
     private val accountIdentityResolver: AccountIdentityResolver,
     private val pipelineTraceSink: PipelineTraceSink,
     private val financialIntentClassifier: FinancialIntentClassifier,
+    private val transactionNotifier: TransactionNotifier,
 ) {
     init {
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
@@ -222,6 +225,20 @@ class ProcessNotificationUseCase @Inject constructor(
                     LedgerLogger.pipeline("Persistence", "Transaction inserted successfully: ${result.data.id}")
                     tracer.recordPersistence(true, "Transaction inserted: ${result.data.id}", 0)
                     pipelineResult = PipelineResult.PERSISTED
+
+                    // Never let a notification-posting issue undermine an
+                    // already-successful persist — this is purely a UX
+                    // convenience layered on top of a transaction that's
+                    // already safely written.
+                    try {
+                        transactionNotifier.notifyCaptured(
+                            transaction = result.data,
+                            merchantOrDescription = candidate.merchantName ?: "Transaction",
+                            formattedAmount = MoneyFormatter.format(result.data.amount, includeSymbol = true),
+                        )
+                    } catch (e: Exception) {
+                        LedgerLogger.e("ProcessNotificationUseCase: notifyCaptured failed", e)
+                    }
                 } else if (result is LedgerResult.Failure) {
                     LedgerLogger.e("Persistence failed: ${result.error}")
                     tracer.recordPersistence(false, "Persistence failed: ${result.error}", 0)
@@ -270,5 +287,6 @@ class ProcessNotificationUseCase @Inject constructor(
             else -> null to null
         }
 }
+
 
 

@@ -7,6 +7,7 @@ import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.service.diagnostic.BalanceTraceDiagnostic
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.presentation.dashboard.*
@@ -37,7 +38,13 @@ class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
+    private val balanceTraceDiagnostic: BalanceTraceDiagnostic, // TEMPORARY — see class KDoc. Remove after this investigation.
 ) : ViewModel() {
+
+    // TEMPORARY: runs the diagnostic exactly once per ViewModel lifetime, purely
+    // to log findings — it never touches or alters anything the UI displays.
+    // Remove this flag and the trigger below once the investigation concludes.
+    private var diagnosticHasRun = false
 
     private val currentMonthRange = run {
         val now = java.time.ZonedDateTime.now()
@@ -51,6 +58,15 @@ class DashboardViewModel @Inject constructor(
         transactionRepository.observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second),
         accountRepository.observeAllAccounts()
     ) { recentResult, monthResult, _ ->
+
+        if (!diagnosticHasRun) {
+            diagnosticHasRun = true
+            try {
+                balanceTraceDiagnostic.run() // TEMPORARY — logs a structured report, changes nothing displayed
+            } catch (e: Exception) {
+                com.sherif.ledger.core.common.logging.LedgerLogger.e("BalanceTraceDiagnostic failed", e)
+            }
+        }
 
         val netWorth = getFinancialAnalyticsUseCase.computeNetWorth()
         val primaryCurrency = netWorth.currency
@@ -122,4 +138,6 @@ class DashboardViewModel @Inject constructor(
         )
     }
 }
+
+
 

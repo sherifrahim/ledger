@@ -31,6 +31,9 @@ interface TransactionDao {
     @Query("UPDATE transactions SET is_deleted = 1, deleted_at = :timestamp WHERE id = :id")
     suspend fun softDeleteTransaction(id: Long, timestamp: Long = System.currentTimeMillis()): Int
 
+    @Query("UPDATE transactions SET note = :note, note_updated_at = :timestamp WHERE id = :id")
+    suspend fun updateNote(id: Long, note: String?, timestamp: Long): Int
+
     /** Grouped, indexed count of transactions sharing an exact origin signature,
      *  by which account they currently sit on. Bounded by the (small) set of
      *  distinct accounts a signature has ever touched — not a full scan. */
@@ -63,4 +66,5 @@ interface TransactionDao {
 
 /** Room projection for [countByOriginSignature]. */
 data class AccountOriginCountRow(val accountId: Long, val count: Int)
+
 

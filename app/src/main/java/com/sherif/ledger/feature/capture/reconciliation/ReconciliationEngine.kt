@@ -11,6 +11,16 @@ import javax.inject.Inject
 /**
  * Engine responsible for reconciling transaction candidates against existing data.
  * Implements multi-signal confidence scoring to detect duplicates and updates.
+ *
+ * RC1 stabilization: amount, account/card tail, and temporal proximity now
+ * outweigh exact merchant wording — merchant text is supporting evidence, not
+ * the primary identity signal. This fixes real duplicate insertion when the
+ * same bank event arrives through independent channels (SMS + push
+ * notification) with slightly different extracted merchant text.
+ *
+ * No longer checks candidate.accountId — extraction never populates it
+ * (account identity is resolved separately, after reconciliation, by
+ * AccountIdentityResolver), so that check was always a no-op.
  */
 class ReconciliationEngine @Inject constructor(
     private val fingerprintGenerator: FingerprintGenerator
@@ -30,10 +40,24 @@ class ReconciliationEngine @Inject constructor(
         }
 
         // 2. Fuzzy Matching Signals
-        val matches = existingTransactions.map { existing ->
+        // RC3: log every comparison, not only the winner — if an unrelated
+        // transaction is scoring high enough to cause a false Duplicate/Updated
+        // match (e.g. two genuinely separate transfers sharing the same ACCOUNT
+        // tail, which — unlike a card tail — is identical across every message
+        // from that account), this makes it directly visible instead of silent.
+        val scored = existingTransactions.map { existing ->
             calculateConfidenceWithDetails(candidate, existing) to existing
-        }.filter { it.first.score >= 90 } // Min threshold for reconciliation
-         .sortedByDescending { it.first.score }
+        }
+        scored.forEach { (score, existing) ->
+            LedgerLogger.d(
+                "Reconciliation: candidate vs existing#${existing.id} " +
+                    "(rawText='${existing.rawText}', tail=${existing.cardTail}, amount=${existing.amount.minorUnits}) " +
+                    "-> score=${score.score} [${score.details}]"
+            )
+        }
+        val matches = scored
+            .filter { it.first.score >= 90 } // Min threshold for reconciliation
+            .sortedByDescending { it.first.score }
 
         val bestMatch = matches.firstOrNull()
 
@@ -58,34 +82,57 @@ class ReconciliationEngine @Inject constructor(
 
     private data class ScoreResult(val score: Int, val details: String)
 
+    /**
+     * XDR-inspired: amount, account/card tail, and temporal proximity are the
+     * primary identity signals for "is this the same real-world event" —
+     * merchant text is supporting evidence, never the sole determinant. This
+     * matters because Ledger captures the same bank event through independent
+     * channels (push notification and SMS), which can extract slightly
+     * different merchant wording for what is genuinely one transaction.
+     *
+     * Merchant match and tail match are INDEPENDENT paths to high confidence —
+     * either alone (combined with amount + time + type) can reach the
+     * reconciliation threshold, since most captured messages have a merchant
+     * string but not all have a parseable tail. A mismatch on either is
+     * recorded but never zeroes the score outright; only amount and currency
+     * mismatches are absolute, structural rejects.
+     *
+     * Known trade-off, accepted deliberately: two genuinely different
+     * transactions on the same card, for the same amount, within a minute of
+     * each other, can score high enough to be merged. This is judged rarer and
+     * less harmful than the duplicate-insertion bug this fixes.
+     */
     private fun calculateConfidenceWithDetails(candidate: TransactionCandidate, existing: Transaction): ScoreResult {
-        // Absolute Reject: Different merchants or currencies
-        if (candidate.merchantName != null && candidate.merchantName != existing.rawText) {
-            return ScoreResult(0, "Merchant mismatch") 
-        }
-        
         if (candidate.currencyCode != existing.amount.currencyCode) return ScoreResult(0, "Currency mismatch")
-        if (candidate.accountId != null && candidate.accountId != existing.accountId) return ScoreResult(0, "Account mismatch")
+        if (candidate.amountMinor != existing.amount.minorUnits) return ScoreResult(0, "Amount mismatch")
 
-        var score = 0
-        val details = mutableListOf<String>()
-        
-        // Amount Match
-        if (candidate.amountMinor == existing.amount.minorUnits) {
-            score += 70
-            details.add("Amount: 70")
+        var score = 40 // amount already confirmed equal above
+        val details = mutableListOf("Amount: 40")
+
+        if (candidate.merchantName != null && candidate.merchantName == existing.rawText) {
+            score += 30
+            details.add("Merchant: 30")
         }
 
-        // Time Proximity
+        val tailMatch = candidate.accountHint != null && existing.cardTail != null && candidate.accountHint == existing.cardTail
+        if (tailMatch) {
+            score += 30
+            details.add("Tail: 30")
+        }
+
         val timeDrift = Duration.between(candidate.timestamp, existing.timestamp).abs().toMinutes()
-        when {
-            timeDrift <= 1 -> { score += 30; details.add("Time: 30") }
-            timeDrift <= 5 -> { score += 25; details.add("Time: 25") }
-            timeDrift <= 30 -> { score += 15; details.add("Time: 15") }
-            timeDrift <= 1440 -> { score += 5; details.add("Time: 5") }
+        val timeScore = when {
+            timeDrift <= 1 -> 20
+            timeDrift <= 5 -> 15
+            timeDrift <= 30 -> 10
+            timeDrift <= 1440 -> 5
+            else -> 0
+        }
+        if (timeScore > 0) {
+            score += timeScore
+            details.add("Time: $timeScore")
         }
 
-        // Transaction Type
         if (candidate.transactionType == existing.type) {
             score += 10
             details.add("Type: 10")
@@ -108,3 +155,7 @@ class ReconciliationEngine @Inject constructor(
         return fingerprintGenerator.generate(params)
     }
 }
+
+
+
+

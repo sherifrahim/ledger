@@ -98,6 +98,14 @@ data class TransactionEntity(
 
     @ColumnInfo(name = "origin_sender_identity")
     val originSenderIdentity: String? = null,
+
+    // User-authored annotation — single note per transaction, editable in place.
+    // Never consulted by any balance/analytics computation.
+    val note: String? = null,
+
+    @ColumnInfo(name = "note_updated_at")
+    val noteUpdatedAt: Long? = null,
 )
+
 
 

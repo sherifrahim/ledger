@@ -16,6 +16,17 @@ import javax.inject.Singleton
 /**
  * Scans the system SMS provider for historical financial data. Delegates envelope
  * construction to [SmsImportSourceAdapter] (the single translation boundary).
+ *
+ * RC2: the watermark advances after EACH message, not only once the whole cursor
+ * completes. If the app is killed or backgrounded mid-import — routine Android OS
+ * behavior, not an edge case — the previous once-at-the-end watermark meant the
+ * entire historical backlog was reprocessed from scratch on the next launch. That
+ * reprocessing wasn't a pure function of the SMS data alone: AccountIdentityResolver's
+ * repeated-observation counter depends on what's already in the database at each
+ * step, so replaying the same batch could cross the auto-creation threshold at a
+ * different message than the first (interrupted) pass did, producing a different
+ * set of accounts from identical input. Advancing per-message bounds an
+ * interruption to reprocessing at most the one message in flight.
  */
 @Singleton
 class SmsImporter @Inject constructor(
@@ -27,7 +38,6 @@ class SmsImporter @Inject constructor(
 
     suspend fun importHistoricalSms(): ImportResult = withContext(Dispatchers.IO) {
         val lastImportDate = userPreferencesRepository.lastSmsImportDate.first()
-        var maxDate = lastImportDate
         LedgerLogger.d("SmsImporter: Historical Import Started. LastImportDate=$lastImportDate")
 
         val resolver = context.contentResolver
@@ -59,7 +69,6 @@ class SmsImporter @Inject constructor(
             while (it.moveToNext()) {
                 processedCount++
                 val date = it.getLong(dateIndex)
-                if (date > maxDate) maxDate = date
 
                 val row = SmsImportSourceAdapter.ImportedSms(
                     id = it.getString(idIndex),
@@ -76,13 +85,21 @@ class SmsImporter @Inject constructor(
                 } catch (e: Exception) {
                     LedgerLogger.e("SmsImporter: Failed to process SMS from ${row.sender}", e)
                 }
+
+                // Advance the watermark now that this specific message has been
+                // through the pipeline (success or handled failure) — not only
+                // after the whole cursor completes. Bounds reprocessing on
+                // interruption to at most this one message, not the full backlog.
+                userPreferencesRepository.setLastSmsImportDate(date)
             }
         }
 
-        LedgerLogger.d("SmsImporter: Import Cycle Finished. MaxDate=$maxDate")
-        userPreferencesRepository.setLastSmsImportDate(maxDate)
+        LedgerLogger.d("SmsImporter: Import Cycle Finished.")
         ImportResult(found = count)
     }
 
     data class ImportResult(val found: Int)
 }
+
+
+
