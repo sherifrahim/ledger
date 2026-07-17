@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -15,14 +17,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sherif.ledger.core.designsystem.component.*
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.feature.settings.presentation.viewmodel.UserProfileViewModel
 
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToDebugConsole: () -> Unit = {},
+    onNavigateToAdjustBalance: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -38,11 +44,11 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.SectionGap)
         ) {
             item {
-                UserProfileHeader()
+                UserProfileHeader(onEditClick = onNavigateToEditProfile)
             }
 
             item {
-                PreferencesSection(onNavigateToDebugConsole)
+                PreferencesSection(onNavigateToDebugConsole, onNavigateToAdjustBalance)
             }
 
             item {
@@ -88,7 +94,9 @@ private fun ProfileTopBar(onSettingsClick: () -> Unit) {
 }
 
 @Composable
-private fun UserProfileHeader() {
+private fun UserProfileHeader(onEditClick: () -> Unit, viewModel: UserProfileViewModel = hiltViewModel()) {
+    val profile by viewModel.uiState.collectAsState()
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -101,28 +109,28 @@ private fun UserProfileHeader() {
                 .background(LedgerTheme.colors.surfaceInset),
             contentAlignment = Alignment.Center
         ) {
-            Text("SR", style = LedgerTheme.typography.headlineLarge, color = LedgerTheme.colors.textPrimary)
+            Text(profile.initials, style = LedgerTheme.typography.headlineLarge, color = LedgerTheme.colors.textPrimary)
         }
-        
+
         Spacer(Modifier.height(LedgerSpacing.Medium))
-        
-        Text("Sherif Rahim", style = LedgerTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text("sherif.rahim@gmail.com", style = LedgerTheme.typography.bodySmall, color = LedgerTheme.colors.textSecondary)
-        
+
+        Text(profile.name, style = LedgerTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(profile.email, style = LedgerTheme.typography.bodySmall, color = LedgerTheme.colors.textSecondary)
+
         Spacer(Modifier.height(LedgerSpacing.Small))
-        
-        TextButton(onClick = { /* TODO */ }) {
+
+        TextButton(onClick = onEditClick) {
             Text("Edit Profile", color = LedgerTheme.colors.system, fontWeight = FontWeight.Bold)
         }
     }
 }
 
 @Composable
-private fun PreferencesSection(onDebugConsoleClick: () -> Unit) {
+private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceClick: () -> Unit) {
     Column {
         Text("PREFERENCES", style = LedgerTheme.typography.labelLarge.copy(letterSpacing = 1.sp), color = LedgerTheme.colors.textTertiary)
         Spacer(Modifier.height(LedgerSpacing.Small))
-        
+
         LedgerSurface(
             level = com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel.Inset,
             shape = com.sherif.ledger.core.designsystem.tokens.LedgerRadius.Large,
@@ -137,7 +145,9 @@ private fun PreferencesSection(onDebugConsoleClick: () -> Unit) {
             PreferenceRow(icon = Icons.Default.Notifications, label = "Notifications")
             LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.Security, label = "Data & Privacy")
-            
+            LedgerDivider(alpha = 0.05f)
+            PreferenceRow(icon = Icons.Default.AccountBalanceWallet, label = "Adjust Starting Balance", onClick = onAdjustBalanceClick)
+
             if (com.sherif.ledger.BuildConfig.DEBUG) {
                 LedgerDivider(alpha = 0.05f)
                 PreferenceRow(icon = Icons.Default.BugReport, label = "Developer Console", onClick = onDebugConsoleClick)

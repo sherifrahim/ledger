@@ -14,6 +14,7 @@ import com.sherif.ledger.core.domain.model.TrendPoint
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.service.transaction.AccountBalanceService
 import com.sherif.ledger.core.domain.service.transaction.FinancialStoryPresenter
+import com.sherif.ledger.feature.merchant.GenericCategoryKeywords
 import com.sherif.ledger.feature.merchant.MerchantResolution
 import com.sherif.ledger.feature.merchant.MerchantResolver
 import com.sherif.ledger.feature.relationship.FinancialRelationship
@@ -147,7 +148,9 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
         return transactions.associate { t ->
             val explanation = storyPresenter.format(t, core.relationships)
             val resolution = merchantResolver.resolve(t.rawText)
-            val category = (resolution as? MerchantResolution.Resolved)?.category?.name ?: "UNKNOWN"
+            val category = (resolution as? MerchantResolution.Resolved)?.category?.name
+                ?: GenericCategoryKeywords.classify(t.rawText)?.name
+                ?: "UNKNOWN"
             t.id to TransactionStory(explanation, category)
         }
     }
@@ -256,7 +259,9 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
                             dailyNet[day] = (dailyNet[day] ?: 0L) + effective
 
                             val resolution = merchantResolver.resolve(t.rawText)
-                            val category = (resolution as? MerchantResolution.Resolved)?.category?.name ?: "UNKNOWN"
+                            val category = (resolution as? MerchantResolution.Resolved)?.category?.name
+                ?: GenericCategoryKeywords.classify(t.rawText)?.name
+                ?: "UNKNOWN"
                             val merchantName = resolution.displayName
                             categoryAgg.getOrPut(category) { mutableListOf() }.add(effective)
                             merchantAgg.getOrPut(merchantName) { mutableListOf() }.add(effective)

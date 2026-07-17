@@ -22,6 +22,13 @@ class MainViewModel @Inject constructor(
             initialValue = true
         )
 
+    val isProfileSetup: StateFlow<Boolean> = userPreferencesRepository.isProfileSetup
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
     val themeType: StateFlow<LedgerThemeType> = userPreferencesRepository.themeType
         .stateIn(
             scope = viewModelScope,

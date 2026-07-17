@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import com.sherif.ledger.core.common.util.PermissionUtils
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.onboarding.presentation.NotificationAccessScreen
+import com.sherif.ledger.feature.onboarding.presentation.ProfileSetupScreen
 import com.sherif.ledger.feature.onboarding.presentation.SmsOnboardingScreen
 import com.sherif.ledger.presentation.navigation.LedgerBottomBar
 import com.sherif.ledger.presentation.navigation.LedgerNavHost
@@ -57,9 +58,10 @@ class MainActivity : ComponentActivity() {
             LedgerTheme(themeType = themeType) {
                 val context = LocalContext.current
                 val isSmsImported by mainViewModel.isSmsImported.collectAsState()
+                val isProfileSetup by mainViewModel.isProfileSetup.collectAsState()
 
-                var isPermissionGranted by remember { 
-                    mutableStateOf(PermissionUtils.isNotificationServiceEnabled(context)) 
+                var isPermissionGranted by remember {
+                    mutableStateOf(PermissionUtils.isNotificationServiceEnabled(context))
                 }
 
                 // Refresh state when returning from settings
@@ -71,7 +73,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = LedgerTheme.colors.surfaceLevel0
                 ) {
-                    if (isPermissionGranted) {
+                    if (!isProfileSetup) {
+                        com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: Profile not set up. Launching Profile Setup.")
+                        ProfileSetupScreen(onComplete = {
+                            // No-op, isProfileSetup will update automatically
+                        })
+                    } else if (isPermissionGranted) {
                         if (isSmsImported) {
                             com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=true. Launching Dashboard.")
                             LedgerApp(deepLinkTransactionId = deepLinkTransactionId)

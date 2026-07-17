@@ -4,6 +4,12 @@ import com.sherif.ledger.feature.transactions.presentation.MerchantCategory
 
 data class DashboardUiState(
     val totalBalance: String = "0.00",
+    // MoneyFormatter.format() always renders a magnitude (never a "-" sign) —
+    // see its own doc comment. Net worth, unlike a transaction amount, has no
+    // separate isExpense-style field to carry direction, so this flag is the
+    // ONLY place the sign survives on its way to the UI. Set from the raw
+    // (signed) minor-units total in DashboardViewModel, before formatting.
+    val isNegativeBalance: Boolean = false,
     // Null when a month-over-month comparison genuinely can't be computed (no
     // prior-period data, or a non-finite result) — never a fabricated fallback
     // value. The UI hides the change badge entirely when this is null.

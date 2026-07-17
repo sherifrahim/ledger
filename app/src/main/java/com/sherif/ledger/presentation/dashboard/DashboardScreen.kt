@@ -10,6 +10,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,11 +19,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sherif.ledger.core.designsystem.component.*
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+import com.sherif.ledger.feature.settings.presentation.viewmodel.UserProfileViewModel
 
 @Composable
 fun DashboardScreen(
@@ -44,7 +48,7 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.SectionGap)
         ) {
             item {
-                TotalBalanceSection(state.totalBalance, state.balanceChangePercentage)
+                TotalBalanceSection(state.totalBalance, state.isNegativeBalance, state.balanceChangePercentage)
             }
 
             item {
@@ -93,7 +97,9 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DashboardTopBar() {
+private fun DashboardTopBar(userProfileViewModel: UserProfileViewModel = hiltViewModel()) {
+    val profile by userProfileViewModel.uiState.collectAsState()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,7 +116,7 @@ private fun DashboardTopBar() {
                 .background(LedgerTheme.colors.surfaceInset),
             contentAlignment = Alignment.Center
         ) {
-            Text("SR", style = LedgerTheme.typography.labelLarge)
+            Text(profile.initials, style = LedgerTheme.typography.labelLarge)
         }
 
         Text(
@@ -131,33 +137,45 @@ private fun DashboardTopBar() {
 }
 
 @Composable
-private fun TotalBalanceSection(balance: String, change: String?) {
+private fun TotalBalanceSection(balance: String, isNegativeBalance: Boolean, change: String?) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Financial State",
             style = LedgerTheme.typography.labelLarge,
             color = LedgerTheme.colors.textSecondary
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = balance,
-                style = LedgerTheme.typography.displayLarge,
-                color = LedgerTheme.colors.textPrimary
-            )
-            Spacer(Modifier.width(LedgerSpacing.Small))
-            if (change != null) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(LedgerTheme.colors.positive.copy(alpha = 0.1f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = change,
-                        style = LedgerTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = LedgerTheme.colors.positive
-                    )
-                }
+        // A wide balance string (long digit runs, real device data rather than
+        // short preview text) can consume the Row's full width on its own; a
+        // badge sharing that same Row with no width floor then gets squeezed
+        // into almost no space, and Compose's default Text wrapping stacks it
+        // one character per line. Stacking the badge below — never sharing a
+        // Row with the balance text — removes the horizontal contention
+        // entirely regardless of how wide the number is.
+        Text(
+            text = balance,
+            style = LedgerTheme.typography.displayLarge,
+            color = if (isNegativeBalance) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary
+        )
+        if (change != null) {
+            Spacer(Modifier.height(LedgerSpacing.Small))
+            // change carries its own sign (e.g. "-81%" vs "+12%") from
+            // GetFinancialAnalyticsUseCase.computeMonthOverMonthChange —
+            // a negative change is a worse-than-last-month figure and must
+            // not be styled with the same "positive" green used for gains.
+            val isNegativeChange = change.startsWith("-")
+            val changeColor = if (isNegativeChange) LedgerTheme.colors.negative else LedgerTheme.colors.positive
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(changeColor.copy(alpha = 0.1f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = change,
+                    style = LedgerTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = changeColor,
+                    softWrap = false,
+                )
             }
         }
     }

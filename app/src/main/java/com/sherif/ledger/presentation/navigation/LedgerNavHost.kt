@@ -15,8 +15,10 @@ import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
 import com.sherif.ledger.feature.accounts.presentation.viewmodel.AccountsViewModel
 import com.sherif.ledger.feature.analytics.presentation.InsightsScreen
 import com.sherif.ledger.feature.analytics.presentation.viewmodel.InsightsViewModel
+import com.sherif.ledger.feature.onboarding.presentation.ProfileSetupScreen
 import com.sherif.ledger.feature.onboarding.presentation.SmsOnboardingScreen
 import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
+import com.sherif.ledger.feature.settings.presentation.AdjustBalanceScreen
 import com.sherif.ledger.feature.settings.presentation.ProfileScreen
 import com.sherif.ledger.feature.settings.presentation.SettingsScreen
 import com.sherif.ledger.feature.transactions.presentation.TransactionsScreen
@@ -79,12 +81,28 @@ fun LedgerNavHost(
         composable(LedgerRoute.Profile.route) {
             ProfileScreen(
                 onNavigateToSettings = { navController.navigate(LedgerRoute.Settings.route) },
-                onNavigateToDebugConsole = { navController.navigate(LedgerRoute.DebugConsole.route) }
+                onNavigateToDebugConsole = { navController.navigate(LedgerRoute.DebugConsole.route) },
+                onNavigateToAdjustBalance = { navController.navigate(LedgerRoute.AdjustBalance.route) },
+                onNavigateToEditProfile = { navController.navigate(LedgerRoute.EditProfile.route) },
+            )
+        }
+
+        composable(LedgerRoute.EditProfile.route) {
+            ProfileSetupScreen(
+                onComplete = { navController.popBackStack() },
+                isEditMode = true,
+                onBackClick = { navController.popBackStack() },
             )
         }
 
         composable(LedgerRoute.Settings.route) {
             SettingsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(LedgerRoute.AdjustBalance.route) {
+            AdjustBalanceScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

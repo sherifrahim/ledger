@@ -3,13 +3,16 @@ package com.sherif.ledger.feature.capture.sms
 import android.content.Context
 import android.provider.Telephony
 import com.sherif.ledger.core.common.logging.LedgerLogger
+import com.sherif.ledger.core.datastore.ImportSummary
 import com.sherif.ledger.core.datastore.UserPreferencesRepository
+import com.sherif.ledger.core.domain.usecase.transaction.ProcessNotificationOutcome
 import com.sherif.ledger.core.domain.usecase.transaction.ProcessNotificationUseCase
 import com.sherif.ledger.feature.capture.source.SmsImportSourceAdapter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,6 +30,13 @@ import javax.inject.Singleton
  * different message than the first (interrupted) pass did, producing a different
  * set of accounts from identical input. Advancing per-message bounds an
  * interruption to reprocessing at most the one message in flight.
+ *
+ * [importStartDate]/[importEndDate] bound WHICH messages this run considers at
+ * all (Part 2/3: user-chosen onboarding range, e.g. "This Week" vs "Last 12
+ * Months") — never hardcoded here. [lastSmsImportDate] remains a separate,
+ * narrower watermark so a second call (e.g. a retry after interruption) never
+ * reprocesses messages already handled, even if called again with the same
+ * (or a wider) date range.
  */
 @Singleton
 class SmsImporter @Inject constructor(
@@ -36,11 +46,32 @@ class SmsImporter @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
 ) {
 
-    suspend fun importHistoricalSms(): ImportResult = withContext(Dispatchers.IO) {
+    suspend fun importHistoricalSms(
+        importStartDate: Instant,
+        importEndDate: Instant = Instant.now(),
+        windowLabel: String = "",
+    ): ImportResult = withContext(Dispatchers.IO) {
         val lastImportDate = userPreferencesRepository.lastSmsImportDate.first()
-        LedgerLogger.d("SmsImporter: Historical Import Started. LastImportDate=$lastImportDate")
+        val effectiveStartMillis = maxOf(importStartDate.toEpochMilli(), lastImportDate)
+        val endMillis = importEndDate.toEpochMilli()
+        LedgerLogger.d(
+            "SmsImporter: Historical Import Started. window=[$importStartDate, $importEndDate] " +
+                "lastImportDate=$lastImportDate effectiveStart=$effectiveStartMillis",
+        )
 
         val resolver = context.contentResolver
+
+        // Total inbox size, unfiltered — the denominator for "SMS Ignored
+        // (Outside Window)" in Developer Console diagnostics (Part 4). A
+        // separate, cheap projection-only query; never loaded into memory.
+        val totalScanned = resolver.query(
+            Telephony.Sms.CONTENT_URI,
+            arrayOf(Telephony.Sms._ID),
+            null,
+            null,
+            null,
+        )?.use { it.count } ?: 0
+
         val cursor = resolver.query(
             Telephony.Sms.CONTENT_URI,
             arrayOf(
@@ -50,13 +81,18 @@ class SmsImporter @Inject constructor(
                 Telephony.Sms.BODY,
                 Telephony.Sms.DATE,
             ),
-            "${Telephony.Sms.DATE} > ?",
-            arrayOf(lastImportDate.toString()),
+            "${Telephony.Sms.DATE} > ? AND ${Telephony.Sms.DATE} <= ?",
+            arrayOf(effectiveStartMillis.toString(), endMillis.toString()),
             "${Telephony.Sms.DATE} ASC",
         )
 
         val count = cursor?.count ?: 0
-        LedgerLogger.d("SmsImporter: Messages Found = $count")
+        LedgerLogger.d("SmsImporter: Messages Found = $count (of $totalScanned total in inbox)")
+
+        var matched = 0
+        var created = 0
+        var merged = 0
+        var discarded = 0
 
         cursor?.use {
             val idIndex = it.getColumnIndex(Telephony.Sms._ID)
@@ -81,9 +117,16 @@ class SmsImporter @Inject constructor(
 
                 LedgerLogger.d("SmsImporter: Processing Envelope $processedCount/$count (Sender=${row.sender})")
                 try {
-                    processNotificationUseCase.execute(envelope, smsImportSourceAdapter.channel)
+                    val outcome = processNotificationUseCase.execute(envelope, smsImportSourceAdapter.channel)
+                    if (outcome.filterAccepted) matched++
+                    when (outcome.category) {
+                        ProcessNotificationOutcome.Category.CREATED -> created++
+                        ProcessNotificationOutcome.Category.MERGED -> merged++
+                        ProcessNotificationOutcome.Category.DISCARDED -> discarded++
+                    }
                 } catch (e: Exception) {
                     LedgerLogger.e("SmsImporter: Failed to process SMS from ${row.sender}", e)
+                    discarded++
                 }
 
                 // Advance the watermark now that this specific message has been
@@ -94,7 +137,22 @@ class SmsImporter @Inject constructor(
             }
         }
 
-        LedgerLogger.d("SmsImporter: Import Cycle Finished.")
+        userPreferencesRepository.setImportSummary(
+            ImportSummary(
+                windowLabel = windowLabel,
+                windowStartMillis = importStartDate.toEpochMilli(),
+                windowEndMillis = endMillis,
+                smsScanned = totalScanned.toLong(),
+                smsWithinWindow = count.toLong(),
+                smsIgnoredOutsideWindow = (totalScanned - count).toLong().coerceAtLeast(0L),
+                smsMatched = matched.toLong(),
+                transactionsCreated = created.toLong(),
+                transactionsMerged = merged.toLong(),
+                transactionsDiscarded = discarded.toLong(),
+            ),
+        )
+
+        LedgerLogger.d("SmsImporter: Import Cycle Finished. created=$created merged=$merged discarded=$discarded")
         ImportResult(found = count)
     }
 

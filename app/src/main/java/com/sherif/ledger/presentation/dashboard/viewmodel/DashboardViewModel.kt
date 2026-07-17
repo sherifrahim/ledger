@@ -113,6 +113,7 @@ class DashboardViewModel @Inject constructor(
 
         DashboardUiState(
             totalBalance = MoneyFormatter.format(Money(totalBalanceUnits, primaryCurrency), includeSymbol = true),
+            isNegativeBalance = totalBalanceUnits < 0,
             balanceChangePercentage = balanceChangePercentage,
             monthlyExpenses = MoneyFormatter.format(Money(analytics.netSpendMinor, primaryCurrency), includeSymbol = true),
             categories = analytics.categoryTotals.map { CategoryFilterUiModel(it.category, it.category) },

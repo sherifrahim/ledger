@@ -4,6 +4,14 @@ import com.sherif.ledger.core.domain.model.CurrencyRegistry
 import com.sherif.ledger.core.domain.model.Money
 import kotlin.math.abs
 
+/**
+ * Always formats a MAGNITUDE — the sign is discarded, never a leading "-".
+ * This is safe for transaction amounts, which pair with a separate
+ * isExpense/isIncome-style field the UI uses to color/prefix the number.
+ * It is NOT safe for a value whose sign IS the information (account balance,
+ * net worth) unless the caller separately threads that sign through to the
+ * UI — see [com.sherif.ledger.presentation.dashboard.DashboardUiState.isNegativeBalance].
+ */
 object MoneyFormatter {
     fun format(money: Money, includeSymbol: Boolean = true): String {
         val currency = CurrencyRegistry.get(money.currencyCode)

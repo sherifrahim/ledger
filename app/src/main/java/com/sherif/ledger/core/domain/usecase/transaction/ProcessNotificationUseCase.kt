@@ -30,6 +30,29 @@ import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 /**
+ * What [ProcessNotificationUseCase.execute] actually did with one envelope —
+ * additive to the existing [com.sherif.ledger.feature.diagnostics.PipelineTraceSink]
+ * telemetry, not a replacement for it. Exists so callers that process a BATCH
+ * (currently only [com.sherif.ledger.feature.capture.sms.SmsImporter]'s
+ * historical import) can tally real outcomes for diagnostics (Part 4) without
+ * re-deriving classification logic already computed here.
+ */
+data class ProcessNotificationOutcome(
+    /** True once the message passed [NotificationFilter] — "looked financial" at all. */
+    val filterAccepted: Boolean,
+    val category: Category,
+) {
+    enum class Category {
+        /** A genuinely new transaction was persisted. */
+        CREATED,
+        /** Recognized as relating to an existing transaction (duplicate or update) — nothing new persisted. */
+        MERGED,
+        /** Everything else: filtered out, a non-event intent, a failed insert, or the reconciliation engine's own Ignored verdict. */
+        DISCARDED,
+    }
+}
+
+/**
  * Orchestrates the end-to-end ingestion flow from a raw notification to a persisted transaction.
  *
  * Phase 7 (refined) shape:
@@ -66,7 +89,7 @@ class ProcessNotificationUseCase @Inject constructor(
     suspend fun execute(
         envelope: NotificationEnvelope,
         channel: SourceChannel = SourceChannel.NOTIFICATION,
-    ) {
+    ): ProcessNotificationOutcome {
         val traceId = envelope.notificationKey
         LedgerLogger.setTraceId(traceId)
 
@@ -87,7 +110,7 @@ class ProcessNotificationUseCase @Inject constructor(
             LedgerLogger.pipeline("Filter", "Ignored: ${envelope.packageName}")
             tracer.recordFilter(filterResult, 0)
             emitTrace(tracer, PipelineResult.REJECTED)
-            return
+            return ProcessNotificationOutcome(filterAccepted = false, category = ProcessNotificationOutcome.Category.DISCARDED)
         }
         LedgerLogger.d("ProcessNotificationUseCase: ACCEPTED by Filter")
         LedgerLogger.pipeline("Filter", "Accepted: ${envelope.packageName}")
@@ -147,17 +170,17 @@ class ProcessNotificationUseCase @Inject constructor(
                         LedgerLogger.pipeline("Confirmation", "Unmatched confirmation: ${outcome.reason}; no insert")
                 }
                 emitTrace(tracer, PipelineResult.CONFIRMED)
-                return
+                return ProcessNotificationOutcome(filterAccepted = true, category = ProcessNotificationOutcome.Category.DISCARDED)
             }
             FinancialIntent.FINANCIAL_INFORMATION -> {
                 LedgerLogger.pipeline("Intent", "Information; ignored after diagnostics")
                 emitTrace(tracer, PipelineResult.IGNORED)
-                return
+                return ProcessNotificationOutcome(filterAccepted = true, category = ProcessNotificationOutcome.Category.DISCARDED)
             }
             FinancialIntent.UNKNOWN -> {
                 LedgerLogger.pipeline("Intent", "Unknown intent; diagnostics only, no insert")
                 emitTrace(tracer, PipelineResult.NOT_APPLICABLE)
-                return
+                return ProcessNotificationOutcome(filterAccepted = true, category = ProcessNotificationOutcome.Category.DISCARDED)
             }
             FinancialIntent.FINANCIAL_EVENT -> {
                 // Money moved. This is the ONLY class that reaches persistence, and
@@ -168,7 +191,7 @@ class ProcessNotificationUseCase @Inject constructor(
                     // Never fabricate a candidate. Surfaced in diagnostics.
                     LedgerLogger.pipeline("Router", "Event intent but no extracted candidate; no insert")
                     emitTrace(tracer, PipelineResult.REJECTED)
-                    return
+                    return ProcessNotificationOutcome(filterAccepted = true, category = ProcessNotificationOutcome.Category.DISCARDED)
                 }
                 candidate = extracted
             }
@@ -194,6 +217,7 @@ class ProcessNotificationUseCase @Inject constructor(
 
         // 6. Persistence
         var pipelineResult = PipelineResult.NOT_APPLICABLE
+        var outcomeCategory = ProcessNotificationOutcome.Category.DISCARDED
         when (reconciliationResult) {
             is ReconciliationResult.New -> {
                 LedgerLogger.pipeline("Reconciliation", "Classified as NEW transaction")
@@ -225,6 +249,7 @@ class ProcessNotificationUseCase @Inject constructor(
                     LedgerLogger.pipeline("Persistence", "Transaction inserted successfully: ${result.data.id}")
                     tracer.recordPersistence(true, "Transaction inserted: ${result.data.id}", 0)
                     pipelineResult = PipelineResult.PERSISTED
+                    outcomeCategory = ProcessNotificationOutcome.Category.CREATED
 
                     // Never let a notification-posting issue undermine an
                     // already-successful persist — this is purely a UX
@@ -243,27 +268,32 @@ class ProcessNotificationUseCase @Inject constructor(
                     LedgerLogger.e("Persistence failed: ${result.error}")
                     tracer.recordPersistence(false, "Persistence failed: ${result.error}", 0)
                     pipelineResult = PipelineResult.REJECTED
+                    outcomeCategory = ProcessNotificationOutcome.Category.DISCARDED
                 }
             }
             is ReconciliationResult.Updated -> {
                 LedgerLogger.pipeline("Reconciliation", "Classified as UPDATE for ${reconciliationResult.existingTransactionId}")
                 tracer.recordPersistence(true, "Updated existing #${reconciliationResult.existingTransactionId}", 0)
                 pipelineResult = PipelineResult.PERSISTED
+                outcomeCategory = ProcessNotificationOutcome.Category.MERGED
             }
             is ReconciliationResult.Duplicate -> {
                 LedgerLogger.pipeline("Reconciliation", "Ignored: Duplicate of ${reconciliationResult.existingTransactionId}")
                 tracer.recordPersistenceNotReached("Duplicate of #${reconciliationResult.existingTransactionId}")
                 pipelineResult = PipelineResult.IGNORED
+                outcomeCategory = ProcessNotificationOutcome.Category.MERGED
             }
             ReconciliationResult.Ignored -> {
                 LedgerLogger.pipeline("Reconciliation", "Ignored by engine")
                 tracer.recordPersistenceNotReached("Ignored by reconciliation engine")
                 pipelineResult = PipelineResult.IGNORED
+                outcomeCategory = ProcessNotificationOutcome.Category.DISCARDED
             }
         }
 
         emitTrace(tracer, pipelineResult)
         LedgerLogger.setTraceId(null)
+        return ProcessNotificationOutcome(filterAccepted = true, category = outcomeCategory)
     }
 
     /**
