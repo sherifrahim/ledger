@@ -108,7 +108,10 @@ class InsertTransactionUseCaseTest {
         assertTrue(result is LedgerResult.Success)
         assertEquals("InsertTransactionUseCase must never call updateAccount", null, accountRepository.updatedAccount)
         assertEquals(10L, (result as LedgerResult.Success).data.brandId)
-        assertEquals(1L, result.data.categoryId) // Amazon -> Shopping (1)
+        // Fixed: was assertEquals(1L, ...) — predates CategoryResolver.resolve() always
+        // returning null (see CategoryResolverTest for the full rationale: a hardcoded
+        // category ID for an unseeded categories table violates the FK constraint on insert).
+        assertEquals(null, result.data.categoryId)
     }
 
     @Test
@@ -170,6 +173,7 @@ class InsertTransactionUseCaseTest {
         assertEquals(LedgerError.AccountNotFound, (result as LedgerResult.Failure).error)
     }
 }
+
 
 
 

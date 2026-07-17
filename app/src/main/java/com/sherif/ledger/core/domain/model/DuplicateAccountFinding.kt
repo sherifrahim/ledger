@@ -1,5 +1,7 @@
 package com.sherif.ledger.core.domain.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * A detected duplicate account identity: the same real-world (package, card
  * tail) signature has transactions split across more than one non-default
@@ -10,6 +12,7 @@ package com.sherif.ledger.core.domain.model
  * Detection only. Nothing merges, deletes, or reassigns automatically —
  * this is a diagnostic finding for safe manual review, not a repair.
  */
+@Serializable
 data class DuplicateAccountFinding(
     val packageName: String,
     val cardTail: String,
@@ -17,6 +20,9 @@ data class DuplicateAccountFinding(
     val accountNames: List<String>,
     val transactionCounts: List<Int>,
 )
+
+
+
 
 
 

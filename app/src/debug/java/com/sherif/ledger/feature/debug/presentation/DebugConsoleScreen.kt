@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ fun DebugConsoleScreen(
     dbSummary: DatabaseSummary,
     onAction: (DebugAction) -> Unit,
     onNavigateToDiagnostics: () -> Unit,
+    onNavigateToLedgerDiagnostics: () -> Unit,
     onBackClick: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -62,7 +64,14 @@ fun DebugConsoleScreen(
                         IconButton(onClick = onNavigateToDiagnostics) {
                             Icon(
                                 imageVector = Icons.Filled.BugReport,
-                                contentDescription = "Diagnostics",
+                                contentDescription = "Pipeline Diagnostics",
+                                tint = LedgerTheme.colors.tint
+                            )
+                        }
+                        IconButton(onClick = onNavigateToLedgerDiagnostics) {
+                            Icon(
+                                imageVector = Icons.Filled.Assessment,
+                                contentDescription = "Ledger Diagnostics",
                                 tint = LedgerTheme.colors.tint
                             )
                         }
@@ -376,3 +385,6 @@ private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = LedgerTheme.colors.label,
     unfocusedTextColor = LedgerTheme.colors.label
 )
+
+
+

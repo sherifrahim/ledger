@@ -12,3 +12,5 @@ keystore/
 keystore.properties
 *.sh
 *.patch
+app/release/
+app/debug/

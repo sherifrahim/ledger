@@ -41,8 +41,19 @@ class RoomTransactionRepositoryTest {
         override fun observeTransactionsForAccount(accountId: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())
         override fun observeAllTransactions(): Flow<List<TransactionEntity>> = flowOf(emptyList())
         override fun observeTransactionsBetween(start: Long, end: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())
-        override suspend fun getTransactionById(id: Long): TransactionEntity? = null
-        override suspend fun insertTransaction(transaction: TransactionEntity): Long = 1L
+        // Fixed: was `= null` unconditionally. RoomTransactionRepository.insertTransaction()
+        // has an "Integrity Check: Reload and Verify" step (unchanged since the original Phase
+        // 10 base) that re-fetches the just-inserted row via getTransactionById and compares it
+        // against what was inserted -- a null reload always fails that check, regardless of
+        // anything else in the test. This fake now actually remembers what it "inserted," the
+        // same way a real DAO would.
+        private var lastInserted: TransactionEntity? = null
+        override suspend fun getTransactionById(id: Long): TransactionEntity? =
+            lastInserted?.takeIf { id == 1L }
+        override suspend fun insertTransaction(transaction: TransactionEntity): Long {
+            lastInserted = transaction.copy(id = 1L)
+            return 1L
+        }
         override suspend fun softDeleteTransaction(id: Long, timestamp: Long): Int = 1
         override suspend fun updateNote(id: Long, note: String?, timestamp: Long): Int = 1
         override suspend fun countByOriginSignature(packageName: String, cardTail: String): List<com.sherif.ledger.core.database.dao.AccountOriginCountRow> = emptyList()
@@ -83,5 +94,6 @@ class RoomTransactionRepositoryTest {
         assertEquals(1L, (result as LedgerResult.Success).data)
     }
 }
+
 
 

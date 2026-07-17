@@ -51,7 +51,14 @@ class LiveCaptureIntegrationTest {
     }
 
     private val accountRepository = object : AccountRepository {
-        override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf()
+        // Fixed: was flowOf() (truly empty, zero emissions). DeterministicAccountIdentityResolver
+        // calls observeAllAccounts().first() unconditionally (unchanged since the original
+        // Phase 10 base) -- an empty flow throws NoSuchElementException immediately, before
+        // this test's own logic ever runs. Kept consistent with getAccountById below rather
+        // than an arbitrary empty list, matching what a real repository would present.
+        override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(
+            LedgerResult.Success(listOf(Account(1L, "Primary", AccountType.CHECKING, Money(500000L, CurrencyCode.AED), null, null)))
+        )
         override suspend fun getAccountById(id: Long): LedgerResult<Account> = LedgerResult.Success(
             Account(1L, "Primary", AccountType.CHECKING, Money(500000L, CurrencyCode.AED), null, null)
         )
@@ -128,5 +135,6 @@ private object FakeTransactionNotifier : com.sherif.ledger.feature.notification.
         // scope for these plain JVM tests
     }
 }
+
 
 

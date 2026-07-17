@@ -7,7 +7,7 @@ import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
-import com.sherif.ledger.core.domain.service.diagnostic.BalanceTraceDiagnostic
+import com.sherif.ledger.core.domain.service.diagnostic.FinancialTraceCollector
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.presentation.dashboard.*
@@ -38,7 +38,7 @@ class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
-    private val balanceTraceDiagnostic: BalanceTraceDiagnostic, // TEMPORARY — see class KDoc. Remove after this investigation.
+    private val financialTraceCollector: FinancialTraceCollector, // RC4: permanent, replaces the disposable RC2/RC3 BalanceTraceDiagnostic
 ) : ViewModel() {
 
     // TEMPORARY: runs the diagnostic exactly once per ViewModel lifetime, purely
@@ -62,9 +62,9 @@ class DashboardViewModel @Inject constructor(
         if (!diagnosticHasRun) {
             diagnosticHasRun = true
             try {
-                balanceTraceDiagnostic.run() // TEMPORARY — logs a structured report, changes nothing displayed
+                financialTraceCollector.buildReport() // logs a structured report via LedgerLogger, changes nothing displayed
             } catch (e: Exception) {
-                com.sherif.ledger.core.common.logging.LedgerLogger.e("BalanceTraceDiagnostic failed", e)
+                com.sherif.ledger.core.common.logging.LedgerLogger.e("FinancialTraceCollector failed", e)
             }
         }
 
@@ -138,6 +138,9 @@ class DashboardViewModel @Inject constructor(
         )
     }
 }
+
+
+
 
 
 

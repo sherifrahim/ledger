@@ -72,6 +72,12 @@ class HeuristicIntentTest {
         assertEquals(300000L, e.candidate.amountMinor)
     }
 
+    @Test fun `amount extraction ignores an account digit run that precedes the currency amount`() {
+        val e = assertExtracted("Your card ending in 1234 was used for a purchase of AED 1,250.50 at Amazon.ae")
+        assertEquals(125050L, e.candidate.amountMinor)
+        assertEquals("1234", e.candidate.accountHint)
+    }
+
     // ---- MUST IGNORE ----
 
     @Test fun `emi offer ignored`() {

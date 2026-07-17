@@ -46,7 +46,12 @@ class ProcessNotificationUseCaseTest {
     }
 
     private val accountRepository = object : AccountRepository {
-        override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf()
+        // Fixed: was flowOf() (truly empty, zero emissions). See LiveCaptureIntegrationTest
+        // for the identical fix and full rationale -- DeterministicAccountIdentityResolver
+        // calls observeAllAccounts().first() unconditionally, throwing on an empty flow.
+        override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(
+            LedgerResult.Success(listOf(Account(1L, "Primary", AccountType.CHECKING, Money(500000L, CurrencyCode.AED), null, null)))
+        )
         override suspend fun getAccountById(id: Long): LedgerResult<Account> = LedgerResult.Success(
             Account(1L, "Primary", AccountType.CHECKING, Money(500000L, CurrencyCode.AED), null, null)
         )
@@ -109,15 +114,8 @@ class ProcessNotificationUseCaseTest {
     private fun createCandidate() = TransactionCandidate(IngestionSource.SMS, "raw", "Amazon", 1000L, CurrencyCode.AED, Instant.now(), null, 1L, TransactionType.EXPENSE)
 }
 
-private object FakeTransactionNotifier : com.sherif.ledger.feature.notification.TransactionNotifier {
-    override fun notifyCaptured(
-        transaction: com.sherif.ledger.core.domain.model.Transaction,
-        merchantOrDescription: String,
-        formattedAmount: String,
-    ) {
-        // no-op: notification posting requires the Android framework, out of
-        // scope for these plain JVM tests
-    }
-}
+
+
+
 
 

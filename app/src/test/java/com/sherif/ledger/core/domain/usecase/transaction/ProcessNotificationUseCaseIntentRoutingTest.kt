@@ -215,15 +215,8 @@ class ProcessNotificationUseCaseIntentRoutingTest {
     }
 }
 
-private object FakeTransactionNotifier : com.sherif.ledger.feature.notification.TransactionNotifier {
-    override fun notifyCaptured(
-        transaction: com.sherif.ledger.core.domain.model.Transaction,
-        merchantOrDescription: String,
-        formattedAmount: String,
-    ) {
-        // no-op: notification posting requires the Android framework, out of
-        // scope for these plain JVM tests
-    }
-}
+
+
+
 
 

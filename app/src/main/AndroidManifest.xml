@@ -61,8 +61,24 @@
             android:name=".feature.notification.AddNoteReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <!-- Shares the generated diagnostic bundle (a zip in cacheDir/diagnostics)
+             with whatever app the user picks — Android requires this for any
+             file:// content shared across apps since API 24. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.diagnosticfileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
+
+
+
 
 
