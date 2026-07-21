@@ -267,3 +267,39 @@ schema or keep balance as a documented legacy read). No unexplained differences.
 
 Gate met: **parity is objectively proven** → P7 (Event-first Reads) is unblocked with the
 balance transfer/cross-account caveat documented.
+
+---
+
+## P7 — Event-first Read Migration  ·  `feat(migration): P7 — event-first reads`
+
+_Completes Phase A: the FinancialEvent architecture now backs production reads._
+
+**Reuse question:** *extend existing engines?* → **Yes.** Every engine is unchanged; a new
+`TransactionReadSource` interface swaps the *source* feeding them. No engine rewritten.
+
+**Reads now originate from FinancialEvent.** The product list reads (Dashboard, Insights,
+Accounts activity, Merchant, Review, Search, Transactions) go through `TransactionReadSource`,
+bound to `EventSourcedTransactionReadSource` (ACTIVE events → `toMirrorTransaction()` → same
+engines). **Legacy Transaction reads remain only where intentionally documented**
+(`docs/EVENT_FIRST_READS.md`): balance/net-worth (`AccountBalanceService`, needs
+`transferDirection`/`origin`/`cardTail`; frozen Balance Engine), the transaction-detail
+record view, and the month-over-month internal helper. **Soft-delete → event VOID** wired in
+`RoomTransactionRepository` so event reads match the legacy `is_deleted` filter.
+
+**No functional regression.** The P6 parity harness runs at every startup as the guard.
+
+**Verification (Definition of Done).**
+- **Architecture review:** ADR-0000 (Balance Engine untouched) + ADR-0001 preserved; reads
+  behind an interface; legacy reads documented, not hidden.
+- **Compile:** debug + release green.
+- **Tests:** `testDebugUnitTest` green incl. new `EventSourcedTransactionReadSourceTest`
+  (ACTIVE→transactions ascending; **VOID/soft-deleted excluded**; recent descending+limited;
+  between-window filter). Existing `RoomTransactionRepositoryTest` updated for the new dep.
+- **Emulator:** startup parity **`proven=true` (6/6)** with reads now event-sourced;
+  Dashboard renders identical real data (AED 2,405.00, "1 Financial Story matched",
+  event-sourced recent activity). Light + dark screenshots in `docs/design/screenshots`.
+- **Performance:** in-memory map/sort over the active set; off-thread; negligible.
+- **Accessibility:** no UI change (same screens, same data).
+
+Commit says it plainly: **reads now originate from FinancialEvent; legacy Transaction reads
+remain only where intentionally documented; no functional regression.** ADR-0001 realized.

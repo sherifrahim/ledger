@@ -8,7 +8,7 @@ import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionType
-import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.merchant.presentation.CategorySlice
@@ -33,13 +33,13 @@ import kotlin.math.absoluteValue
 @HiltViewModel
 class MerchantViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    transactionRepository: TransactionRepository,
+    transactionReadSource: TransactionReadSource,
     private val analytics: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
     private val merchantKey: String = savedStateHandle.get<String>("merchantKey").orEmpty()
 
-    val uiState: StateFlow<MerchantUiState> = transactionRepository.observeAllTransactions()
+    val uiState: StateFlow<MerchantUiState> = transactionReadSource.observeAllTransactions()
         .map { result -> build(result) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MerchantUiState(name = merchantKey))
 

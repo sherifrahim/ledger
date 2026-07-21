@@ -7,7 +7,7 @@ import com.sherif.ledger.core.domain.model.CategoryTotal
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
-import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.analytics.presentation.CategoryInsightUi
@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InsightsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
+    private val transactionReadSource: TransactionReadSource,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
@@ -33,7 +33,7 @@ class InsightsViewModel @Inject constructor(
         start to end
     }
 
-    val uiState: StateFlow<InsightsUiState> = transactionRepository
+    val uiState: StateFlow<InsightsUiState> = transactionReadSource
         .observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second)
         .map { result ->
             val transactions = (result as? LedgerResult.Success)?.data ?: emptyList()

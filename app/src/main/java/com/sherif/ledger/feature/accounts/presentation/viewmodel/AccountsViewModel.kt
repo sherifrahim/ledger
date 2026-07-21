@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
-import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.accounts.presentation.AccountSectionUi
@@ -27,7 +27,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class AccountsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
+    private val transactionReadSource: TransactionReadSource,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
@@ -46,7 +46,7 @@ class AccountsViewModel @Inject constructor(
     // recompute" (reusing the existing repository stream, no new query) — the
     // actual balance/net-worth figures always come from computeNetWorth(), a full
     // replay, never from anything cached in this flow's emitted list.
-    val uiState: StateFlow<AccountsUiState> = transactionRepository
+    val uiState: StateFlow<AccountsUiState> = transactionReadSource
         .observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second)
         .map { monthResult -> buildUiState(monthResult) }
         .stateIn(

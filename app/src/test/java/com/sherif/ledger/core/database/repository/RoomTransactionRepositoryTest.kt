@@ -60,7 +60,7 @@ class RoomTransactionRepositoryTest {
         override suspend fun reassignByOriginSignature(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
     }
 
-    private val repository = RoomTransactionRepository(fakeDao)
+    private val repository = RoomTransactionRepository(fakeDao, com.sherif.ledger.testsupport.FakeFinancialEventRepository())
 
     @Test
     fun `observeRecentTransactions maps entities correctly`() = runBlocking {

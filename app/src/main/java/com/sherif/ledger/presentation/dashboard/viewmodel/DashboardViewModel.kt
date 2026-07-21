@@ -6,7 +6,7 @@ import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
-import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.service.diagnostic.FinancialTraceCollector
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
@@ -35,7 +35,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
+    private val transactionReadSource: TransactionReadSource,
     private val accountRepository: AccountRepository,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
     private val financialTraceCollector: FinancialTraceCollector, // RC4: permanent, replaces the disposable RC2/RC3 BalanceTraceDiagnostic
@@ -54,8 +54,8 @@ class DashboardViewModel @Inject constructor(
     }
 
     val uiState: StateFlow<DashboardUiState> = combine(
-        transactionRepository.observeRecentTransactions(20),
-        transactionRepository.observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second),
+        transactionReadSource.observeRecentTransactions(20),
+        transactionReadSource.observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second),
         accountRepository.observeAllAccounts()
     ) { recentResult, monthResult, _ ->
 

@@ -29,5 +29,12 @@ interface FinancialEventRepository {
      */
     suspend fun supersede(supersededEventId: String, correction: FinancialEvent)
 
+    /**
+     * Voids the mirror event of a soft-deleted transaction (lifecycle flag → VOID) so
+     * event-first reads exclude it, matching the legacy `is_deleted = 0` filter. History
+     * is preserved (the row stays); only its status changes.
+     */
+    suspend fun voidByTransactionId(transactionId: Long)
+
     suspend fun count(): Int
 }

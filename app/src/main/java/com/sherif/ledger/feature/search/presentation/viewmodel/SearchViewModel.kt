@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.TransactionType
-import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.search.presentation.SearchResultUi
@@ -21,14 +21,14 @@ import javax.inject.Inject
 
 /**
  * Universal search over the user's real captured data. Reuses
- * [TransactionRepository] (and the analytics story layer for the category label)
+ * [TransactionReadSource] (and the analytics story layer for the category label)
  * — no separate search engine, no fabricated results (Product Hardening, PART 1).
  * Matches merchant text and amount; empty query yields no results (the screen
  * shows quick-access to real destinations instead).
  */
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
+    private val transactionReadSource: TransactionReadSource,
     private val analytics: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
@@ -39,7 +39,7 @@ class SearchViewModel @Inject constructor(
 
     val uiState: StateFlow<SearchUiState> = combine(
         query,
-        transactionRepository.observeAllTransactions(),
+        transactionReadSource.observeAllTransactions(),
     ) { q, result ->
         val term = q.trim()
         if (term.isBlank()) return@combine SearchUiState(query = q)

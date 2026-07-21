@@ -1,5 +1,6 @@
 package com.sherif.ledger.core.di
 
+import com.sherif.ledger.core.database.repository.EventSourcedTransactionReadSource
 import com.sherif.ledger.core.database.repository.RoomAccountRepository
 import com.sherif.ledger.core.database.repository.RoomFinancialEventRepository
 import com.sherif.ledger.core.database.repository.RoomInsightsRepository
@@ -14,6 +15,7 @@ import com.sherif.ledger.core.domain.repository.InsightsRepository
 import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.ParticipantRepository
 import com.sherif.ledger.core.domain.repository.SplitRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.repository.TransactionRunner
 import dagger.Binds
@@ -57,6 +59,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindFinancialEventRepository(repo: RoomFinancialEventRepository): FinancialEventRepository
+
+    // ADR-0001 P7 — production list reads originate from FinancialEvent.
+    @Binds
+    @Singleton
+    abstract fun bindTransactionReadSource(source: EventSourcedTransactionReadSource): TransactionReadSource
 }
 
 

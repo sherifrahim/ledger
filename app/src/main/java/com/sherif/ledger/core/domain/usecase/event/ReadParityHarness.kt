@@ -7,6 +7,7 @@ import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.FinancialEventRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.service.event.toMirrorTransaction
 import com.sherif.ledger.core.domain.service.transaction.BalanceCalculator
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import kotlinx.coroutines.flow.first
@@ -36,7 +37,7 @@ class ReadParityHarness @Inject constructor(
     suspend fun execute(): ParityReport {
         val transactions = (transactionRepository.observeAllTransactions().first() as? LedgerResult.Success)?.data ?: emptyList()
         val events = financialEventRepository.observeActive().first()
-        val eventTxns = events.map { it.toTransaction() }
+        val eventTxns = events.map { it.toMirrorTransaction() }
 
         val accountType = ((accountRepository.observeAllAccounts().first() as? LedgerResult.Success)?.data ?: emptyList())
             .associate { it.id to it.type }
@@ -114,30 +115,6 @@ class ReadParityHarness @Inject constructor(
         report.features.forEach { LedgerLogger.d("Read parity · ${it.line()}") }
         return report
     }
-
-    /**
-     * Lossy reconstruction of a [Transaction] from a mirror [FinancialEvent]. The event
-     * intentionally does NOT carry `cardTail`, `transferDirection`, `origin` or `note`;
-     * these become null here. Only `transferDirection` affects a read (BalanceCalculator,
-     * TRANSFER items) — surfaced by the harness as a classified difference.
-     */
-    private fun FinancialEvent.toTransaction(): Transaction = Transaction(
-        id = transactionId ?: 0L,
-        accountId = accountId,
-        brandId = brandId,
-        categoryId = categoryId,
-        amount = amount,
-        type = type,
-        timestamp = timestamp,
-        source = source,
-        rawText = rawText,
-        cardTail = null,
-        fingerprint = fingerprint,
-        transferDirection = null,
-        origin = null,
-        note = null,
-        noteUpdatedAt = null,
-    )
 }
 
 data class FeatureParity(

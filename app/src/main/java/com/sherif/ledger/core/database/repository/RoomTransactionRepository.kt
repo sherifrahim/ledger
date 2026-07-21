@@ -8,6 +8,7 @@ import com.sherif.ledger.core.domain.model.LedgerError
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.repository.AccountOriginCount
+import com.sherif.ledger.core.domain.repository.FinancialEventRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -17,7 +18,8 @@ import java.time.Instant
 import javax.inject.Inject
 
 class RoomTransactionRepository @Inject constructor(
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val financialEventRepository: FinancialEventRepository,
 ) : TransactionRepository {
 
     init {
@@ -122,8 +124,16 @@ class RoomTransactionRepository @Inject constructor(
         val rowsUpdated = transactionDao.softDeleteTransaction(id)
         
         LedgerLogger.d("Repository: softDeleteTransaction PK: $id, Rows Updated: $rowsUpdated")
-        
+
         if (rowsUpdated == 1) {
+            // Event-first coexistence (ADR-0001, P7): void the mirror event so
+            // event-sourced reads exclude this deleted transaction, matching the
+            // legacy is_deleted filter. Best-effort — never fails the delete.
+            try {
+                financialEventRepository.voidByTransactionId(id)
+            } catch (e: Exception) {
+                LedgerLogger.e("deleteTransaction: could not void mirror event for tx=$id (transaction deleted regardless)", e)
+            }
             LedgerResult.Success(Unit)
         } else {
             LedgerLogger.e("Repository: softDeleteTransaction FAILED. Affected rows: $rowsUpdated (Expected: 1)")

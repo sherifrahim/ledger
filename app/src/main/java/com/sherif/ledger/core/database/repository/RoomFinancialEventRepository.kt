@@ -39,5 +39,9 @@ class RoomFinancialEventRepository @Inject constructor(
         dao.markSuperseded(supersededEventId)
     }
 
+    override suspend fun voidByTransactionId(transactionId: Long) {
+        dao.voidByTransactionId(transactionId)
+    }
+
     override suspend fun count(): Int = dao.count()
 }

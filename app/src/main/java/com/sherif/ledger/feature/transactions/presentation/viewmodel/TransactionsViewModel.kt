@@ -3,7 +3,7 @@ package com.sherif.ledger.feature.transactions.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
-import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.transactions.presentation.*
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
+    private val transactionReadSource: TransactionReadSource,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
@@ -27,7 +27,7 @@ class TransactionsViewModel @Inject constructor(
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: TransactionsViewModel")
     }
 
-    val uiState: StateFlow<TransactionsUiState> = transactionRepository.observeRecentTransactions(100)
+    val uiState: StateFlow<TransactionsUiState> = transactionReadSource.observeRecentTransactions(100)
         .map { result ->
             if (result is LedgerResult.Success) {
                 // Single relationship-analysis pass over the whole fetched list, so

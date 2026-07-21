@@ -38,6 +38,11 @@ interface FinancialEventDao {
     @Query("UPDATE financial_events SET status = 'SUPERSEDED' WHERE id = :id")
     suspend fun markSuperseded(id: String): Int
 
+    /** Voids the mirror event(s) of a soft-deleted transaction so event-first reads
+     *  exclude it, matching the legacy `is_deleted = 0` filter. Lifecycle flag only. */
+    @Query("UPDATE financial_events SET status = 'VOID' WHERE transaction_id = :transactionId")
+    suspend fun voidByTransactionId(transactionId: Long): Int
+
     @Query("SELECT COUNT(*) FROM financial_events")
     suspend fun count(): Int
 }

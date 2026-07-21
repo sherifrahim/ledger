@@ -39,5 +39,11 @@ internal class FakeFinancialEventRepository : FinancialEventRepository {
         }
     }
 
+    override suspend fun voidByTransactionId(transactionId: Long) {
+        state.value = state.value.map {
+            if (it.transactionId == transactionId) it.copy(status = FinancialEventStatus.VOID) else it
+        }
+    }
+
     override suspend fun count(): Int = state.value.size
 }

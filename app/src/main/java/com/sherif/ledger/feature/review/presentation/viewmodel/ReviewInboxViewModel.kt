@@ -7,7 +7,7 @@ import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
-import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.merchant.LearnedMerchantCategoryStore
@@ -39,7 +39,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ReviewInboxViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
+    private val transactionReadSource: TransactionReadSource,
     private val accountRepository: AccountRepository,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
     private val merchantResolver: MerchantResolver,
@@ -52,7 +52,7 @@ class ReviewInboxViewModel @Inject constructor(
     private val ignoredIds = MutableStateFlow<Set<Long>>(emptySet())
 
     val uiState: StateFlow<ReviewInboxUiState> = combine(
-        transactionRepository.observeAllTransactions(),
+        transactionReadSource.observeAllTransactions(),
         accountRepository.observeAllAccounts(),
         ignoredIds,
     ) { transactionsResult, accountsResult, ignored ->

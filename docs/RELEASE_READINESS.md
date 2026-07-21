@@ -8,7 +8,7 @@ Standing rules in force: reuse-before-new-engine; treat every screen as a produc
 ADR-0000 (brownfield) + ADR-0001 (Financial Event); never fabricate — honest empty state
 when an engine is absent.
 
-_Last updated: after P6 (FinancialEvent read parity proven)._
+_Last updated: after P7 (event-first reads — Phase A architecture complete)._
 
 ---
 
@@ -44,8 +44,11 @@ identified. (Continued vigilance in PART 4 screen-by-screen polish.)
   version is not yet embedded on the Dashboard ("Balance Trend" in the reference).
 - ~~**Read-parity harness** (P6)~~ ✅ done — `proven=true`, 6/6 features PASS
   (`docs/READ_PARITY_REPORT.md`); transferDirection/origin/cardTail balance gaps documented.
-- **Event-first read migration** (P7): unblocked; handle the balance transfer/cross-account
-  caveat explicitly (extend event schema or documented legacy read).
+- ~~**Event-first read migration** (P7)~~ ✅ done — product list reads originate from
+  FinancialEvent via `TransactionReadSource`; balance/detail documented legacy;
+  soft-delete voids the mirror; parity re-checked `proven=true`. `docs/EVENT_FIRST_READS.md`.
+  **Phase A (finish the architecture) is complete.** Remaining balance-event-first work
+  (extend event schema with `transferDirection`) is optional/Medium, not a blocker.
 - **Legacy / V2 compatibility surface**: `LedgerColors`/`LedgerSpacing`/`LedgerTextStyles`
   carry "V2 Compatibility" aliases; `core.common.diagnostics.PipelineTracker` family is
   confirmed dead but retained so `app/src/debug` compiles. → PART 2 (prove-then-delete).
