@@ -12,7 +12,7 @@ data class BrandEntity(
     val name: String,
     
     @ColumnInfo(name = "brand_key")
-    val brandKey: String, // Matches LedgerBrandRegistry
+    val brandKey: String, // System B brand key; currently always "manual" (set by core.domain.service.transaction.MerchantResolver). NOT read by the UI-only LedgerBrandRegistry — see MERCHANT_ARCHITECTURE.md.
     
     @ColumnInfo(name = "default_category_id")
     val defaultCategoryId: Long?,

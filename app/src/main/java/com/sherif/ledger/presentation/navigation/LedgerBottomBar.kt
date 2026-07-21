@@ -3,11 +3,11 @@ package com.sherif.ledger.presentation.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.RateReview
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,16 +26,20 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
+// The five primary destinations, per spec Chapter 34: Dashboard, Story, Review,
+// Search, Settings. Secondary experiences (Accounts, Transactions/Activity,
+// Insights, Merchant, Institution, Forecast, …) are reached from these, not from
+// the bottom bar. The Settings destination is served by the existing Profile hub.
 private enum class BottomTab(
     val route: String,
     val label: String,
     val icon: ImageVector,
 ) {
-    Home(LedgerRoute.Home.route, "Home", Icons.Filled.Home),
-    Accounts(LedgerRoute.Accounts.route, "Accounts", Icons.Filled.AccountBalanceWallet),
-    Activity(LedgerRoute.Transactions.route, "Activity", Icons.AutoMirrored.Filled.List),
-    Insights(LedgerRoute.Insights.route, "Insights", Icons.Filled.PieChart),
-    Profile(LedgerRoute.Profile.route, "Profile", Icons.Filled.Person),
+    Dashboard(LedgerRoute.Home.route, "Dashboard", Icons.Filled.Dashboard),
+    Story(LedgerRoute.Story.route, "Story", Icons.AutoMirrored.Filled.MenuBook),
+    Review(LedgerRoute.ReviewInbox.route, "Review", Icons.Filled.RateReview),
+    Search(LedgerRoute.Search.route, "Search", Icons.Filled.Search),
+    Settings(LedgerRoute.Profile.route, "Settings", Icons.Filled.Settings),
 }
 
 /**

@@ -31,6 +31,9 @@ fun ProfileScreen(
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToReviewInbox: () -> Unit = {},
     onNavigateToAiSettings: () -> Unit = {},
+    onNavigateToAccounts: () -> Unit = {},
+    onNavigateToActivity: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -47,6 +50,13 @@ fun ProfileScreen(
         ) {
             item {
                 UserProfileHeader(onEditClick = onNavigateToEditProfile)
+            }
+
+            // Overview: secondary financial destinations, kept reachable here after
+            // the bottom bar was reduced to the five primary destinations. Their
+            // proper home is the Dashboard; this section is an interim access point.
+            item {
+                OverviewSection(onNavigateToAccounts, onNavigateToActivity, onNavigateToInsights)
             }
 
             item {
@@ -123,6 +133,30 @@ private fun UserProfileHeader(onEditClick: () -> Unit, viewModel: UserProfileVie
 
         TextButton(onClick = onEditClick) {
             Text("Edit Profile", color = LedgerTheme.colors.system, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun OverviewSection(
+    onAccountsClick: () -> Unit,
+    onActivityClick: () -> Unit,
+    onInsightsClick: () -> Unit,
+) {
+    Column {
+        Text("OVERVIEW", style = LedgerTheme.typography.labelLarge.copy(letterSpacing = 1.sp), color = LedgerTheme.colors.textTertiary)
+        Spacer(Modifier.height(LedgerSpacing.Small))
+
+        LedgerSurface(
+            level = com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel.Inset,
+            shape = com.sherif.ledger.core.designsystem.tokens.LedgerRadius.Large,
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            PreferenceRow(icon = Icons.Default.AccountBalanceWallet, label = "Accounts", onClick = onAccountsClick)
+            LedgerDivider(alpha = 0.05f)
+            PreferenceRow(icon = Icons.Default.ReceiptLong, label = "Activity", onClick = onActivityClick)
+            LedgerDivider(alpha = 0.05f)
+            PreferenceRow(icon = Icons.Default.PieChart, label = "Insights", onClick = onInsightsClick)
         }
     }
 }

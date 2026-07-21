@@ -4,7 +4,13 @@ package com.sherif.ledger.presentation.navigation
  * All navigation destinations in Ledger.
  */
 sealed class LedgerRoute(val route: String) {
+    // Primary destinations (spec Chapter 34): Dashboard, Story, Review, Search, Settings.
+    // `Home` is the Dashboard destination (route id kept as "home" to avoid churn).
     data object Home : LedgerRoute("home")
+    data object Story : LedgerRoute("story")
+    data object Search : LedgerRoute("search")
+    // Settings hub is served by the Profile destination (the existing control hub).
+    // Secondary destinations, reachable from primary destinations (not on the bottom bar):
     data object Accounts : LedgerRoute("accounts")
     data object Transactions : LedgerRoute("transactions")
     data object Insights : LedgerRoute("insights")

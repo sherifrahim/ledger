@@ -19,6 +19,8 @@ import com.sherif.ledger.feature.analytics.presentation.viewmodel.InsightsViewMo
 import com.sherif.ledger.feature.onboarding.presentation.ProfileSetupScreen
 import com.sherif.ledger.feature.onboarding.presentation.SmsOnboardingScreen
 import com.sherif.ledger.feature.review.presentation.ReviewInboxScreen
+import com.sherif.ledger.feature.search.presentation.UniversalSearchScreen
+import com.sherif.ledger.feature.story.presentation.FinancialStoryScreen
 import com.sherif.ledger.feature.settings.presentation.AdjustBalanceScreen
 import com.sherif.ledger.feature.settings.presentation.ProfileScreen
 import com.sherif.ledger.feature.settings.presentation.SettingsScreen
@@ -56,8 +58,21 @@ fun LedgerNavHost(
                 },
                 onNavigateToInsights = {
                     navController.navigate(LedgerRoute.Insights.route)
+                },
+                onSearchClick = {
+                    navController.navigate(LedgerRoute.Search.route) { launchSingleTop = true }
                 }
             )
+        }
+
+        // Primary destination: Financial Story (Milestone 1 navigation scaffold).
+        composable(LedgerRoute.Story.route) {
+            FinancialStoryScreen()
+        }
+
+        // Primary destination: Universal Search (Milestone 1 navigation scaffold).
+        composable(LedgerRoute.Search.route) {
+            UniversalSearchScreen()
         }
 
         composable(LedgerRoute.Accounts.route) {
@@ -79,6 +94,11 @@ fun LedgerNavHost(
             InsightsScreen(state = state)
         }
 
+        // Settings hub (served by the Profile control hub). Also carries the entry
+        // points to the secondary financial destinations (Accounts, Activity,
+        // Insights) so they remain reachable now that they are off the bottom bar.
+        // Their proper home is the Dashboard's Accounts/Recent-Activity/Insights
+        // sections — that integration is later product-experience work.
         composable(LedgerRoute.Profile.route) {
             ProfileScreen(
                 onNavigateToSettings = { navController.navigate(LedgerRoute.Settings.route) },
@@ -87,6 +107,9 @@ fun LedgerNavHost(
                 onNavigateToEditProfile = { navController.navigate(LedgerRoute.EditProfile.route) },
                 onNavigateToReviewInbox = { navController.navigate(LedgerRoute.ReviewInbox.route) },
                 onNavigateToAiSettings = { navController.navigate(LedgerRoute.AiSettings.route) },
+                onNavigateToAccounts = { navController.navigate(LedgerRoute.Accounts.route) },
+                onNavigateToActivity = { navController.navigate(LedgerRoute.Transactions.route) },
+                onNavigateToInsights = { navController.navigate(LedgerRoute.Insights.route) },
             )
         }
 
