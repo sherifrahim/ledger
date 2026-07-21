@@ -3,16 +3,17 @@ package com.sherif.ledger.feature.accounts.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,124 +24,155 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
+/**
+ * Accounts — wired to live data (Milestone P1).
+ *
+ * Every figure is real: net worth, assets, liabilities and each account's balance
+ * come from [com.sherif.ledger.feature.accounts.presentation.viewmodel.AccountsViewModel],
+ * which replays persisted transactions via AccountBalanceService (Financial Truth,
+ * ADR-0000 — no stored/cached balance). Styling follows DESIGN_REFERENCE: a Total
+ * Balance hero over grouped account rows. No fabricated content.
+ */
 @Composable
 fun AccountsScreen(
     state: AccountsUiState,
     onNavigateToInsights: () -> Unit = {},
 ) {
-    Scaffold(
-        topBar = {
-            AccountsTopBar()
-        },
-        containerColor = LedgerTheme.colors.surfaceBase
-    ) { padding ->
+    val currency = state.netWorthCurrency
+    val hasAccounts = state.sections.any { it.accounts.isNotEmpty() }
+
+    Scaffold(containerColor = LedgerTheme.colors.surfaceBase) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(horizontal = LedgerSpacing.ScreenPadding),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(
+                start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
+                bottom = LedgerSpacing.ScreenBottom + 100.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {
-            state.sections.forEach { section ->
-                items(section.accounts, key = { it.id }) { account ->
-                    AccountItemRow(account)
-                    LedgerDivider(alpha = 0.05f)
+            item { AccountsHeader() }
+
+            item { TotalBalanceCard(currency, state.netWorth, state.assetsTotal, state.liabilitiesTotal) }
+
+            if (hasAccounts) {
+                state.sections.forEach { section ->
+                    item {
+                        Column {
+                            SectionLabel(section.title.uppercase())
+                            Spacer(Modifier.height(LedgerSpacing.Small))
+                            LedgerSurface(level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large, contentPadding = PaddingValues(0.dp)) {
+                                section.accounts.forEachIndexed { i, account ->
+                                    AccountRow(account, currency)
+                                    if (i < section.accounts.lastIndex) LedgerDivider(alpha = 0.05f)
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-
-            item {
-                Spacer(Modifier.height(LedgerSpacing.Large))
-                LedgerButton(
-                    text = "Add Account",
-                    onClick = { /* TODO */ },
-                    style = LedgerButtonStyle.Ghost,
-                    icon = Icons.Default.Add,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            
-            item {
-                Spacer(Modifier.height(100.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun AccountsTopBar() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Medium),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Spacer(Modifier.width(44.dp)) // Offset for center title
-
-        Text(
-            text = "Accounts",
-            style = LedgerTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = LedgerTheme.colors.textPrimary
-        )
-
-        LedgerIconButton(
-            icon = Icons.Default.Add,
-            onClick = { /* TODO */ },
-            tint = LedgerTheme.colors.textPrimary
-        )
-    }
-}
-
-@Composable
-private fun AccountItemRow(account: AccountUi) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = LedgerSpacing.Medium),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)
-    ) {
-        // Bank Icon
-        LedgerBrandIcon(
-            name = account.name,
-            size = 40.dp
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = account.name,
-                style = LedgerTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = LedgerTheme.colors.textPrimary
-            )
-            Text(
-                text = account.subtitle,
-                style = LedgerTheme.typography.bodySmall,
-                color = LedgerTheme.colors.textSecondary
-            )
-            
-            // Mock payment due for credit cards to match mock 1:1
-            if (account.subtitle.lowercase().contains("credit")) {
-                Spacer(Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(LedgerTheme.colors.attention.copy(alpha = 0.1f))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "Payment due in 5 days",
-                        style = LedgerTextStyles.Caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
-                        color = LedgerTheme.colors.attention
+            } else {
+                item {
+                    LedgerEmptyState(
+                        title = "No accounts yet",
+                        subtitle = "Ledger creates an account automatically from your first captured " +
+                            "bank message, then tracks its balance for you. You can also add one manually.",
+                        icon = Icons.Outlined.AccountBalanceWallet,
+                        modifier = Modifier.padding(top = LedgerSpacing.Large),
                     )
                 }
             }
-        }
 
+            state.insight?.let { insight ->
+                item {
+                    LedgerCard(elevation = LedgerCardDefaults.ElevationLow, onClick = onNavigateToInsights) {
+                        Text(insight.title, style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
+                        Spacer(Modifier.height(LedgerSpacing.Tiny))
+                        Text(insight.subtitle, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary)
+                    }
+                }
+            }
+
+            item {
+                LedgerButton(
+                    text = "Add Account",
+                    onClick = { /* TODO: manual account creation */ },
+                    style = LedgerButtonStyle.Tonal,
+                    icon = Icons.Default.Add,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountsHeader() {
+    Row(
+        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = LedgerSpacing.Small),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Accounts", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
+        LedgerIconButton(icon = Icons.Default.Add, onClick = { }, tint = LedgerTheme.colors.textPrimary)
+    }
+}
+
+@Composable
+private fun TotalBalanceCard(currency: String, netWorth: String, assets: String, liabilities: String) {
+    LedgerCard(elevation = LedgerCardDefaults.Elevation) {
+        Text("Total Balance", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        Text("$currency $netWorth", style = LedgerTextStyles.Hero, color = LedgerTheme.colors.textPrimary)
+        Spacer(Modifier.height(LedgerSpacing.Medium))
+        Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
+            Breakdown("Assets", "$currency $assets", LedgerTheme.colors.positive)
+            Breakdown("Liabilities", "$currency $liabilities", LedgerTheme.colors.textSecondary)
+        }
+    }
+}
+
+@Composable
+private fun Breakdown(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color) {
+    Column {
+        Text(label, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+        Spacer(Modifier.height(2.dp))
+        Text(value, style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = valueColor)
+    }
+}
+
+@Composable
+private fun AccountRow(account: AccountUi, currency: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(LedgerSpacing.Medium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
+    ) {
+        LedgerBrandIcon(name = account.name, size = 40.dp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                account.name,
+                style = LedgerTextStyles.BodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = LedgerTheme.colors.textPrimary,
+            )
+            Text(
+                account.subtitle.lowercase().replaceFirstChar { it.uppercase() },
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.textTertiary,
+            )
+        }
         LedgerAmount(
             amount = account.balance,
+            currency = currency,
             style = LedgerAmountStyle.Regular,
-            color = if (account.isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary
+            color = if (account.isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,
         )
     }
+}
+
+@Composable
+private fun SectionLabel(title: String) {
+    Text(
+        title,
+        style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+        color = LedgerTheme.colors.textTertiary,
+    )
 }
