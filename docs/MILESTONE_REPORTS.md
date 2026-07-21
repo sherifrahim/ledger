@@ -44,3 +44,37 @@ and the real figures are surfaced. Balance Engine / Financial Truth untouched (A
 **Follow-ups.** Account number tail isn't in the net-worth summary, so the row subtitle
 shows the account type only; manual "Add Account" is still a stub (no manual-entry flow
 yet). Neither blocks P2.
+
+---
+
+## P2 — Merchant Intelligence (live data)  ·  `feat(merchant): P2 — live merchant intelligence`
+
+**What changed.** The Merchant page is now driven by real per-merchant intelligence
+instead of the `MerchantShowcase` placeholder. The tapped merchant's identity travels
+through the nav route (`merchant/{merchantKey}`, URL-encoded); `MerchantViewModel`
+aggregates that merchant's real transactions (matched by extracted `rawText`) into:
+relationship tenure ("Since …", from first-seen), **Total Spent**, **Transactions**,
+**Avg. Monthly**, **Largest**, a real category mix (via the analytics story layer), real
+derived insights, and related merchants sharing the top category. The **fabricated
+5-star rating is removed** (no real backing); sections with no data are omitted, and an
+honest empty state covers a merchant with no captured transactions. Read-only over
+persisted data — no writes, Financial Truth untouched (ADR-0000).
+
+**Verification.**
+- **Compile:** debug + release green.
+- **Tests:** `testDebugUnitTest` green (read-only presentation/VM; existing suite intact).
+- **Emulator:** tapped Costa Coffee on the live Dashboard → real page: **Since Jul 2026**,
+  **Total Spent AED 50.00**, **1** transaction, **Dining 100%**, insights derived from the
+  real transaction. Route arg threading verified (title is the tapped merchant, not a
+  hardcoded name).
+- **Screenshots:** `docs/design/screenshots/merchant-live-light.png`, `…-dark.png`.
+- **Performance:** `gfxinfo` on the merchant page — **20.4% janky** over 88 frames, 90th
+  %ile **48ms**, 95th **97ms** (representative, no cold-start inflation); acceptable for a
+  debug/emulator build.
+- **Accessibility:** both themes styled, tabular figures, category % always shown as text.
+  Same standing finding: the back `LedgerIconButton` needs a `contentDescription`
+  (app-wide, tracked from P1).
+
+**Follow-ups.** Merchant matching is by extracted `rawText`; once the merchant/brand
+identity is unified (ADR-0009 convergence) matching should key off `brandId`. "Avg.
+Monthly" over a sub-month span equals total (expected). Neither blocks P3.

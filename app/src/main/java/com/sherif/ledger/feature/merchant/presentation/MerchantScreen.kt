@@ -16,12 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
 import com.sherif.ledger.core.designsystem.component.LedgerCard
 import com.sherif.ledger.core.designsystem.component.LedgerCardDefaults
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerIconButton
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
@@ -43,19 +41,18 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 /**
- * Merchant relationship page (Milestone 1.5).
+ * Merchant relationship page (P2), wired to live data.
  *
- * Ledger treats a merchant as a *relationship*, not a string: how long you've
- * transacted, how much, how often, and what it means. This milestone designs the
- * page; the figures are placeholder until the Merchant Intelligence / Relationship
- * engines feed it in a later milestone. [merchantName] lets the caller title it.
+ * Ledger treats a merchant as a relationship: how long you've transacted, how
+ * much, how often, and what it means — all computed from the user's real
+ * transactions ([com.sherif.ledger.feature.merchant.presentation.viewmodel.MerchantViewModel]).
+ * No fabricated ratings or figures.
  */
 @Composable
 fun MerchantScreen(
-    merchantName: String = "Amazon.ae",
+    state: MerchantUiState,
     onBackClick: () -> Unit = {},
 ) {
-    val d = MerchantShowcase
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceBase),
         contentPadding = PaddingValues(
@@ -70,56 +67,81 @@ fun MerchantScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 LedgerIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackClick)
-                Text(merchantName, style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary, modifier = Modifier.weight(1f))
+                Text(
+                    state.name,
+                    style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold),
+                    color = LedgerTheme.colors.textPrimary,
+                    modifier = Modifier.weight(1f).padding(start = LedgerSpacing.Small),
+                )
                 Spacer(Modifier.width(44.dp))
             }
         }
 
-        item { RelationshipHeader(merchantName, d.rating, d.since) }
+        if (state.txCount == 0) {
+            item {
+                LedgerEmptyState(
+                    title = state.name,
+                    subtitle = if (state.loaded)
+                        "No transactions with this merchant yet. Once Ledger captures one, its " +
+                            "relationship — spend, frequency and categories — appears here."
+                    else "Loading…",
+                    modifier = Modifier.padding(top = LedgerSpacing.XLarge),
+                )
+            }
+            return@LazyColumn
+        }
+
+        item { RelationshipHeader(state) }
 
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
-                StatCard("Total Spent", d.totalSpent, Modifier.weight(1f))
-                StatCard("Transactions", d.txCount, Modifier.weight(1f))
+                StatCard("Total Spent", "${state.currency} ${state.totalSpent}", Modifier.weight(1f))
+                StatCard("Transactions", state.txCount.toString(), Modifier.weight(1f))
             }
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
-                StatCard("Avg. Monthly", d.avgMonthly, Modifier.weight(1f))
-                StatCard("Largest Purchase", d.largest, Modifier.weight(1f))
+                StatCard("Avg. Monthly", "${state.currency} ${state.avgMonthly}", Modifier.weight(1f))
+                StatCard("Largest", "${state.currency} ${state.largest}", Modifier.weight(1f))
             }
         }
 
-        item {
-            Section("Insights") {
-                LedgerSurface(level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large) {
-                    d.insights.forEachIndexed { i, s ->
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 6.dp)) {
-                            Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(LedgerTheme.colors.positive))
-                            Spacer(Modifier.width(LedgerSpacing.Small))
-                            Text(s, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary)
+        if (state.insights.isNotEmpty()) {
+            item {
+                Section("Insights") {
+                    LedgerSurface(level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large) {
+                        state.insights.forEach { s ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 6.dp)) {
+                                Box(Modifier.size(6.dp).clip(CircleShape).background(LedgerTheme.colors.positive))
+                                Spacer(Modifier.width(LedgerSpacing.Small))
+                                Text(s, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary)
+                            }
                         }
                     }
                 }
             }
         }
 
-        item {
-            Section("Top categories") {
-                Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
-                    d.categories.forEach { CategoryBar(it.first, it.second) }
+        if (state.categories.isNotEmpty()) {
+            item {
+                Section("Top categories") {
+                    Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)) {
+                        state.categories.forEach { CategoryBar(it.label, it.fraction) }
+                    }
                 }
             }
         }
 
-        item {
-            Section("Related merchants") {
-                Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Large)) {
-                    d.related.forEach { name ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            LedgerBrandIcon(name = name, size = 52.dp)
-                            Spacer(Modifier.height(LedgerSpacing.Tiny))
-                            Text(name, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textSecondary)
+        if (state.related.isNotEmpty()) {
+            item {
+                Section("Related merchants") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Large)) {
+                        state.related.forEach { name ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                LedgerBrandIcon(name = name, size = 52.dp)
+                                Spacer(Modifier.height(LedgerSpacing.Tiny))
+                                Text(name, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textSecondary)
+                            }
                         }
                     }
                 }
@@ -129,26 +151,18 @@ fun MerchantScreen(
 }
 
 @Composable
-private fun RelationshipHeader(name: String, rating: Float, since: String) {
+private fun RelationshipHeader(state: MerchantUiState) {
     LedgerCard(elevation = LedgerCardDefaults.ElevationLow) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            LedgerBrandIcon(name = name, size = 64.dp)
+            LedgerBrandIcon(name = state.name, size = 64.dp)
             Spacer(Modifier.width(LedgerSpacing.Medium))
             Column {
                 Text("Relationship", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
                 Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    (1..5).forEach { i ->
-                        val icon = when {
-                            rating >= i -> Icons.Filled.Star
-                            rating >= i - 0.5f -> Icons.Filled.StarHalf
-                            else -> Icons.Outlined.StarOutline
-                        }
-                        Icon(icon, null, tint = LedgerTheme.colors.attention, modifier = Modifier.size(18.dp))
-                    }
+                Text(state.name, style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary)
+                if (state.since.isNotBlank()) {
+                    Text(state.since, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
                 }
-                Spacer(Modifier.height(4.dp))
-                Text(since, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
             }
         }
     }
@@ -189,20 +203,4 @@ private fun Section(title: String, content: @Composable () -> Unit) {
         Spacer(Modifier.height(LedgerSpacing.Small))
         content()
     }
-}
-
-private object MerchantShowcase {
-    const val rating = 4.5f
-    const val since = "Since 2021"
-    const val totalSpent = "AED 14,280"
-    const val txCount = "137"
-    const val avgMonthly = "AED 580"
-    const val largest = "AED 2,100"
-    val insights = listOf(
-        "Most purchases are electronics",
-        "Spending increases every November",
-        "Prime membership detected",
-    )
-    val categories = listOf("Shopping" to 0.68f, "Electronics" to 0.24f, "Books" to 0.08f)
-    val related = listOf("Amazon Prime", "Noon", "Apple")
 }

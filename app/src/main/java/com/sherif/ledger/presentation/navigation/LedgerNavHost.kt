@@ -62,17 +62,24 @@ fun LedgerNavHost(
                 onSearchClick = {
                     navController.navigate(LedgerRoute.Search.route) { launchSingleTop = true }
                 },
-                onMerchantClick = {
-                    navController.navigate(LedgerRoute.Merchant.route) { launchSingleTop = true }
+                onMerchantClick = { merchant ->
+                    navController.navigate(LedgerRoute.Merchant.create(merchant)) { launchSingleTop = true }
                 }
             )
         }
 
-        // Merchant relationship page (Milestone 1.5 layout; reached by tapping a
-        // merchant in Recent Activity). Wired to real merchant intelligence later.
-        composable(LedgerRoute.Merchant.route) {
+        // Merchant relationship page (P2) — real merchant intelligence, reached by
+        // tapping a merchant in Recent Activity; the merchant identity travels as a
+        // nav argument and MerchantViewModel aggregates that merchant's transactions.
+        composable(
+            route = LedgerRoute.Merchant.route,
+            arguments = listOf(navArgument("merchantKey") { type = NavType.StringType }),
+        ) {
+            val viewModel: com.sherif.ledger.feature.merchant.presentation.viewmodel.MerchantViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
             com.sherif.ledger.feature.merchant.presentation.MerchantScreen(
-                onBackClick = { navController.popBackStack() }
+                state = state,
+                onBackClick = { navController.popBackStack() },
             )
         }
 
