@@ -8,7 +8,7 @@ Standing rules in force: reuse-before-new-engine; treat every screen as a produc
 ADR-0000 (brownfield) + ADR-0001 (Financial Event); never fabricate — honest empty state
 when an engine is absent.
 
-_Last updated: after P5 (FinancialEvent backfill migration)._
+_Last updated: after P6 (FinancialEvent read parity proven)._
 
 ---
 
@@ -42,7 +42,10 @@ identified. (Continued vigilance in PART 4 screen-by-screen polish.)
 
 - **Analytics on Dashboard** (PART 3): trend + breakdown live on Insights; a compact
   version is not yet embedded on the Dashboard ("Balance Trend" in the reference).
-- **Read-parity harness + event-first read migration** (P6/P7): not started.
+- ~~**Read-parity harness** (P6)~~ ✅ done — `proven=true`, 6/6 features PASS
+  (`docs/READ_PARITY_REPORT.md`); transferDirection/origin/cardTail balance gaps documented.
+- **Event-first read migration** (P7): unblocked; handle the balance transfer/cross-account
+  caveat explicitly (extend event schema or documented legacy read).
 - **Legacy / V2 compatibility surface**: `LedgerColors`/`LedgerSpacing`/`LedgerTextStyles`
   carry "V2 Compatibility" aliases; `core.common.diagnostics.PipelineTracker` family is
   confirmed dead but retained so `app/src/debug` compiles. → PART 2 (prove-then-delete).

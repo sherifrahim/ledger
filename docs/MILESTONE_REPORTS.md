@@ -232,3 +232,38 @@ history recorded before dual-write existed:
 **Follow-ups.** A debug-console trigger + on-screen report could add manual observability
 (logcat/unit-test statistics suffice for now). Next: **P6 read-parity** proving old vs new
 reads match across Dashboard/Accounts/Merchant/Review/Search before any switch.
+
+---
+
+## P6 — FinancialEvent Read Parity (architectural verification)  ·  `feat(migration): P6 — read-parity harness`
+
+**Reuse question:** *extend an existing engine?* → **Yes.** `ReadParityHarness` maps ACTIVE
+events back to `Transaction`-shaped objects and runs the **same** engines
+(`GetFinancialAnalyticsUseCase`, `transactionStories`, `BalanceCalculator`) on both — no
+new analytics engine.
+
+**Objectively proves** FinancialEvent reads reproduce Transaction reads at the **domain
+level** (not UI). Full report in `docs/READ_PARITY_REPORT.md`.
+
+**Result (on-device, real data):** `total=6 passed=6 failed=0 intentional=0 unexpected=0
+proven=true`. Balance (240500), Analytics (netSpend/income/categories/merchants/trend),
+Stories, Merchant, Review (uncategorized), Search — all **PASS**.
+
+**Documented structural differences (classified, not manifest on current data):** the event
+mirror omits `transferDirection` (→ `BalanceCalculator` for TRANSFER items) and
+`origin`/`cardTail` (→ `AccountBalanceService` credit-card cross-account replay). Both
+confined to **balance**; both **Intentional/known gaps** to address in P7 (extend event
+schema or keep balance as a documented legacy read). No unexplained differences.
+
+**Verification (Definition of Done).**
+- **Architecture review:** read-only harness; no engine rewritten; ADR-0000/0001 preserved.
+- **Compile:** debug + release green.
+- **Tests:** `testDebugUnitTest` green incl. `ReadParityHarnessTest` — `ParityReport`
+  aggregation (intentional vs unexpected → `proven`), and proof that dropping
+  `transferDirection` changes balance **only** for TRANSFER items (the classified gap).
+- **Parity harness + emulator:** runs at startup; logged report shows 6/6 PASS, proven.
+- **Screenshots:** N/A (architectural verification, no UI).
+- **Performance:** in-memory comparison over the captured set; negligible, off-thread.
+
+Gate met: **parity is objectively proven** → P7 (Event-first Reads) is unblocked with the
+balance transfer/cross-account caveat documented.
