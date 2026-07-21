@@ -12,6 +12,7 @@ sealed class LedgerRoute(val route: String) {
     // Settings hub is served by the Profile destination (the existing control hub).
     // Secondary destinations, reachable from primary destinations (not on the bottom bar):
     data object Accounts : LedgerRoute("accounts")
+    data object Merchant : LedgerRoute("merchant")
     data object Transactions : LedgerRoute("transactions")
     data object Insights : LedgerRoute("insights")
     data object Profile : LedgerRoute("profile")

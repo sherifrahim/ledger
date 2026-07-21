@@ -11,24 +11,29 @@ import androidx.compose.ui.graphics.Color
  * Retiring Emerald identity. Moving to semantic, architectural colors.
  */
 object LedgerV3Palette {
-    // Light Core
+    // Light Core — editorial paper. Page and cards are both near-white; card
+    // separation comes from a soft shadow + whisper hairline (see LedgerCard),
+    // not from a grey fill. Inset is a cool off-white for chips/nested rows.
     val Paper = Color(0xFFFFFFFF)
-    val Snow = Color(0xFFF7F7F7)
-    val Ink = Color(0xFF0F0F0F)
-    val Slate = Color(0xFF6E6E6E)
-    val Smoke = Color(0xFFE0E0E0)
+    val Snow = Color(0xFFF5F5F6)
+    val Ink = Color(0xFF0A0A0B)
+    val Slate = Color(0xFF6B7076)
+    val Smoke = Color(0xFFECEDEE)
 
-    // Dark Core
-    val Obsidian = Color(0xFF0F0F0F)
-    val Charcoal = Color(0xFF191919)
-    val Cloud = Color(0xFFE8E8E8)
-    val Graphite = Color(0xFFA0A0A0)
-    val Jet = Color(0xFF222222)
+    // Dark Core — premium near-black with a faint cool cast (echoes the brand
+    // panel). Cards sit one step lighter than the page; separation is by
+    // lightness, not shadow.
+    val Obsidian = Color(0xFF0E1013)   // page base
+    val Charcoal = Color(0xFF181B20)   // elevated card / inset
+    val Cloud = Color(0xFFEDEEF0)
+    val Graphite = Color(0xFF9A9FA7)
+    val Jet = Color(0xFF262A30)
 
-    // Semantic
-    val Mint = Color(0xFF22C55E)  // Positive / Growth
-    val Rose = Color(0xFFEF4444)  // Negative / Reduction
-    val Azure = Color(0xFF3B82F6) // Intelligence / System
+    // Semantic accents — restrained. Green is the brand accent (growth/positive
+    // and primary CTAs); the rest are reserved for their meaning only.
+    val Mint = Color(0xFF22C55E)  // Positive / Growth / Brand accent
+    val Rose = Color(0xFFF04438)  // Negative / Reduction
+    val Azure = Color(0xFF3B82F6) // Intelligence / System / Links
     val Amber = Color(0xFFF59E0B) // Warning / Attention
 }
 
@@ -63,6 +68,17 @@ data class LedgerColors(
     val system: Color,
     val attention: Color,
 ) {
+    // Card philosophy: the primary content surface. In light it is pure paper
+    // (separated from the page by a soft shadow); in dark it steps one level
+    // lighter than the page so it reads without a shadow. See LedgerCard.
+    val surfaceCard: Color get() = if (isDark) LedgerV3Palette.Charcoal else LedgerV3Palette.Paper
+    /** Colour for the soft card shadow (light theme only — near-zero effect in dark). */
+    val shadowColor: Color get() = if (isDark) Color(0xFF000000) else Color(0xFF101828)
+    /** Whisper hairline on card edges, softer than the standard content [border]. */
+    val cardBorder: Color get() = if (isDark) LedgerV3Palette.Jet else LedgerV3Palette.Smoke
+    /** Brand accent — the single saturated colour used for primary emphasis. */
+    val accent: Color get() = positive
+
     // V2 Compatibility Aliases
     val label: Color get() = textPrimary
     val secondaryLabel: Color get() = textSecondary

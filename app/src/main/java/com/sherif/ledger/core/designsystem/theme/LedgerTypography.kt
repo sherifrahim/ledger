@@ -20,6 +20,17 @@ private val Inter = FontFamily(
  */
 object LedgerTextStyles {
 
+    // Hero financial figure — the single largest number on a screen (e.g. Safe to
+    // Spend). Tabular so digits never shift width as the value animates.
+    val Hero = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Bold,
+        fontSize = 52.sp,
+        lineHeight = 56.sp,
+        letterSpacing = (-1.5).sp,
+        fontFeatureSettings = "tnum",
+    )
+
     // Authoritative Financial Figures
     val Display = TextStyle(
         fontFamily = Inter,
@@ -93,8 +104,11 @@ val LedgerTypography = Typography(
     displayLarge = LedgerTextStyles.Display,
     headlineLarge = LedgerTextStyles.Headline,
     headlineMedium = LedgerTextStyles.Title,
+    titleLarge = LedgerTextStyles.Title,
+    titleMedium = LedgerTextStyles.BodyLarge.copy(fontWeight = FontWeight.SemiBold),
     bodyLarge = LedgerTextStyles.BodyLarge,
     bodyMedium = LedgerTextStyles.BodyMedium,
     labelLarge = LedgerTextStyles.Label,
+    labelMedium = LedgerTextStyles.Narrative,
     bodySmall = LedgerTextStyles.Caption,
 )

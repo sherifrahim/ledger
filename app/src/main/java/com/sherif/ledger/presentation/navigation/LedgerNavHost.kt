@@ -61,7 +61,18 @@ fun LedgerNavHost(
                 },
                 onSearchClick = {
                     navController.navigate(LedgerRoute.Search.route) { launchSingleTop = true }
+                },
+                onMerchantClick = {
+                    navController.navigate(LedgerRoute.Merchant.route) { launchSingleTop = true }
                 }
+            )
+        }
+
+        // Merchant relationship page (Milestone 1.5 layout; reached by tapping a
+        // merchant in Recent Activity). Wired to real merchant intelligence later.
+        composable(LedgerRoute.Merchant.route) {
+            com.sherif.ledger.feature.merchant.presentation.MerchantScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 

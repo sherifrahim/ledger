@@ -4,10 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.RateReview
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,13 +39,17 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 private enum class BottomTab(
     val route: String,
     val label: String,
-    val icon: ImageVector,
+    val iconOutlined: ImageVector,
+    val iconFilled: ImageVector,
 ) {
-    Dashboard(LedgerRoute.Home.route, "Dashboard", Icons.Filled.Dashboard),
-    Story(LedgerRoute.Story.route, "Story", Icons.AutoMirrored.Filled.MenuBook),
-    Review(LedgerRoute.ReviewInbox.route, "Review", Icons.Filled.RateReview),
-    Search(LedgerRoute.Search.route, "Search", Icons.Filled.Search),
-    Settings(LedgerRoute.Profile.route, "Settings", Icons.Filled.Settings),
+    // Glyphs follow the visual reference: a house for Dashboard, an open book for
+    // Story, a review/inbox tray, a magnifier, and a gear. Each tab is outlined
+    // when idle and fills in when selected — the reference's selected treatment.
+    Dashboard(LedgerRoute.Home.route, "Dashboard", Icons.Outlined.Home, Icons.Filled.Home),
+    Story(LedgerRoute.Story.route, "Story", Icons.AutoMirrored.Outlined.MenuBook, Icons.AutoMirrored.Filled.MenuBook),
+    Review(LedgerRoute.ReviewInbox.route, "Review", Icons.Outlined.Inbox, Icons.Filled.Inbox),
+    Search(LedgerRoute.Search.route, "Search", Icons.Outlined.Search, Icons.Filled.Search),
+    Settings(LedgerRoute.Profile.route, "Settings", Icons.Outlined.Settings, Icons.Filled.Settings),
 }
 
 /**
@@ -66,7 +76,7 @@ fun LedgerBottomBar(navController: NavHostController) {
             BottomTab.entries.forEach { tab ->
                 val isSelected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
                 LedgerTabItem(
-                    icon = tab.icon,
+                    icon = if (isSelected) tab.iconFilled else tab.iconOutlined,
                     label = tab.label,
                     isSelected = isSelected,
                     onClick = {
@@ -90,14 +100,17 @@ private fun LedgerTabItem(
     onClick: () -> Unit,
 ) {
     val colors = LedgerTheme.colors
-    val color = if (isSelected) colors.textPrimary else colors.textTertiary
+    val color by animateColorAsState(
+        targetValue = if (isSelected) colors.textPrimary else colors.textTertiary,
+        label = "tabColor",
+    )
 
     Column(
         modifier = Modifier
             .ledgerClickable(onClick = onClick)
-            .padding(horizontal = LedgerSpacing.Small),
+            .padding(horizontal = LedgerSpacing.Small, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         Icon(
             imageVector = icon,
@@ -107,7 +120,10 @@ private fun LedgerTabItem(
         )
         Text(
             text = label,
-            style = LedgerTextStyles.Caption,
+            style = LedgerTextStyles.Caption.copy(
+                fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.SemiBold
+                             else androidx.compose.ui.text.font.FontWeight.Normal,
+            ),
             color = color
         )
     }

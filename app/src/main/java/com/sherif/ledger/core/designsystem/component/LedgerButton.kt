@@ -13,10 +13,11 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 enum class LedgerButtonStyle {
-    Solid, // Principal action, high contrast
-    Tonal, // Secondary action, low contrast
-    Ghost; // Subtle action, no background
-    
+    Solid,  // Principal action, high contrast (ink on paper)
+    Accent, // Principal affirmative action — brand green (e.g. Approve)
+    Tonal,  // Secondary action, low contrast
+    Ghost;  // Subtle action, no background
+
     companion object {
         val Primary = Solid
         val Secondary = Tonal
@@ -42,9 +43,11 @@ fun LedgerButton(
     
     val (backgroundColor, contentColor) = when (style) {
         LedgerButtonStyle.Solid -> colors.textPrimary to colors.surfaceBase
+        LedgerButtonStyle.Accent -> colors.accent to Color.White
         LedgerButtonStyle.Tonal -> colors.surfaceInset to colors.textPrimary
         LedgerButtonStyle.Ghost -> Color.Transparent to colors.textPrimary
     }
+    val borderless = style == LedgerButtonStyle.Solid || style == LedgerButtonStyle.Accent
 
     val finalContentColor = if (enabled) contentColor else colors.textTertiary
     val finalBackgroundColor = if (enabled) backgroundColor else {
@@ -55,7 +58,7 @@ fun LedgerButton(
         modifier = modifier
             .ledgerSurface(
                 backgroundColor = finalBackgroundColor,
-                borderColor = if (style == LedgerButtonStyle.Solid) Color.Transparent else colors.border,
+                borderColor = if (borderless) Color.Transparent else colors.border,
                 onClick = onClick,
                 enabled = enabled,
                 shape = LedgerRadius.Medium
@@ -77,7 +80,7 @@ fun LedgerButton(
             }
             Text(
                 text = text,
-                style = LedgerTheme.typography.bodyMedium,
+                style = LedgerTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 color = finalContentColor,
             )
         }
