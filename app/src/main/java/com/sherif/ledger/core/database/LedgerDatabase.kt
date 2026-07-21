@@ -8,6 +8,7 @@ import com.sherif.ledger.core.database.dao.AccountDao
 import com.sherif.ledger.core.database.dao.AiAuditLogDao
 import com.sherif.ledger.core.database.dao.BrandDao
 import com.sherif.ledger.core.database.dao.CategoryDao
+import com.sherif.ledger.core.database.dao.FinancialEventDao
 import com.sherif.ledger.core.database.dao.LearnedDecisionDao
 import com.sherif.ledger.core.database.dao.MerchantCategoryOverrideDao
 import com.sherif.ledger.core.database.dao.ParticipantDao
@@ -17,6 +18,7 @@ import com.sherif.ledger.core.database.entity.AccountEntity
 import com.sherif.ledger.core.database.entity.AiAuditLogEntity
 import com.sherif.ledger.core.database.entity.BrandEntity
 import com.sherif.ledger.core.database.entity.CategoryEntity
+import com.sherif.ledger.core.database.entity.FinancialEventEntity
 import com.sherif.ledger.core.database.entity.LearnedDecisionEntity
 import com.sherif.ledger.core.database.entity.MerchantAliasEntity
 import com.sherif.ledger.core.database.entity.MerchantCategoryOverrideEntity
@@ -38,8 +40,9 @@ import com.sherif.ledger.core.database.entity.TransactionEntity
         MerchantCategoryOverrideEntity::class,
         AiAuditLogEntity::class,
         LearnedDecisionEntity::class,
+        FinancialEventEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)
@@ -53,13 +56,14 @@ abstract class LedgerDatabase : RoomDatabase() {
     abstract fun merchantCategoryOverrideDao(): MerchantCategoryOverrideDao
     abstract fun aiAuditLogDao(): AiAuditLogDao
     abstract fun learnedDecisionDao(): LearnedDecisionDao
+    abstract fun financialEventDao(): FinancialEventDao
 
     companion object {
         const val DATABASE_NAME = "ledger_db"
         // Kept in sync with the @Database(version = ...) annotation above by
         // hand — Room doesn't expose that value as a runtime constant, and
         // AppInfoCollector needs a real number for its diagnostic bundle.
-        const val DATABASE_VERSION = 10
+        const val DATABASE_VERSION = 11
     }
 }
 

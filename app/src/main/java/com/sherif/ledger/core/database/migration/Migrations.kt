@@ -157,4 +157,46 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
+/**
+ * Milestone 2 / ADR-0001 — the canonical `financial_events` table, introduced
+ * ADDITIVELY alongside `transactions`. One new table with a single foreign key to
+ * `transactions` (the originating record during coexistence), plus indices. No
+ * existing row is read, touched, or transformed, and nothing writes to this table
+ * yet — this is pure, reversible foundation. Column names/types/nullability and
+ * index names must match FinancialEventEntity exactly (Room validates the migrated
+ * schema against the entity at first open).
+ */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS financial_events (
+                id TEXT NOT NULL PRIMARY KEY,
+                transaction_id INTEGER,
+                account_id INTEGER NOT NULL,
+                brand_id INTEGER,
+                category_id INTEGER,
+                amount_minor INTEGER NOT NULL,
+                currency_code TEXT NOT NULL,
+                type TEXT NOT NULL,
+                timestamp_millis INTEGER NOT NULL,
+                source TEXT NOT NULL,
+                confidence INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                supersedes_event_id TEXT,
+                fingerprint TEXT NOT NULL,
+                raw_text TEXT,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_financial_events_transaction_id ON financial_events(transaction_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_financial_events_account_id ON financial_events(account_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_financial_events_timestamp_millis ON financial_events(timestamp_millis)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_financial_events_fingerprint ON financial_events(fingerprint)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_financial_events_status ON financial_events(status)")
+    }
+}
+
 
