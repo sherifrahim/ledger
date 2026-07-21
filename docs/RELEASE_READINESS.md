@@ -8,7 +8,7 @@ Standing rules in force: reuse-before-new-engine; treat every screen as a produc
 ADR-0000 (brownfield) + ADR-0001 (Financial Event); never fabricate — honest empty state
 when an engine is absent.
 
-_Last updated: after H2 (PART 1 — Search made real)._
+_Last updated: after P5 (FinancialEvent backfill migration)._
 
 ---
 
@@ -35,8 +35,8 @@ identified. (Continued vigilance in PART 4 screen-by-screen polish.)
 - **Accessibility** (PART 5): `LedgerIconButton` passes `contentDescription = null`
   app-wide; touch targets (44dp vs 48dp); tertiary-on-inset contrast; dynamic text; screen
   reader ordering.
-- **FinancialEvent backfill** (Track B / P5): mirror events exist only for
-  post-dual-write inserts; pre-existing transactions need an idempotent backfill.
+- ~~**FinancialEvent backfill** (P5)~~ ✅ done — idempotent, resumable, safe, observable
+  (`BackfillFinancialEventsUseCase`, auto-run at startup, on-device `verified=true`).
 
 ## Medium
 

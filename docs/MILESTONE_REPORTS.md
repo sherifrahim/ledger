@@ -190,3 +190,45 @@ label) — a ViewModel doing real filtering, **not** a new search subsystem.
 
 Opens the Release Readiness report (`docs/RELEASE_READINESS.md`): **no production screen
 renders fabricated data** as of H2. Closes P4 (Search).
+
+---
+
+## P5 — FinancialEvent Backfill (data migration)  ·  `feat(migration): P5 — idempotent FinancialEvent backfill`
+
+_Phase A (finish the FinancialEvent architecture) begins here._
+
+**Reuse question:** *extend an existing engine?* → **Yes.** The backfill orchestrates the
+existing `FinancialEventFactory` + `FinancialEventRepository` + `TransactionRepository`;
+the only new thing is the migration orchestrator (there was no backfill) — not a new engine.
+
+**Treated as a migration, not a feature.** `BackfillFinancialEventsUseCase` reconciles
+history recorded before dual-write existed:
+- **Idempotent** — skips any transaction whose fingerprint already has an event (also
+  guarded by the DAO's unique fingerprint + IGNORE-on-conflict); a re-run creates nothing.
+- **Resumable** — being idempotent, a re-run continues where a partial run stopped.
+- **Safe** — read-only over transactions, append-only on events, per-row isolation (one
+  failure never aborts the run); never touches Financial Truth / the Balance Engine (ADR-0000).
+- **Observable** — returns a `BackfillReport` (scanned / skipped / created /
+  duplicatesIgnored / failures / durationMs / eventsAfter / transactionsActive / **verified**)
+  and logs it. Runs automatically off-thread at startup (`LedgerApplication`), self-healing.
+
+**Verification (Definition of Done).**
+- **Architecture review:** additive; no Balance-Engine/Financial-Truth change; dual-write
+  path untouched; ADR-0000/0001 preserved.
+- **Compile:** debug + release green. **Tests:** `testDebugUnitTest` green incl. new
+  `BackfillFinancialEventsUseCaseTest` — proves creation (empty → N created), idempotency
+  /resumability (re-run → 0 created, N skipped), partial (only missing created), verified
+  no-op on empty input.
+- **Emulator (statistics report):** startup backfill on real data →
+  `scanned=9 skipped=9 created=0 duplicatesIgnored=0 failures=0 durationMs=212
+  eventsAfter=9 transactionsActive=9 **verified=true**` — parity confirmed (dual-write had
+  already mirrored every transaction, so backfill is a verified no-op here; creation is
+  covered by the unit test).
+- **Screenshots:** N/A — backend migration with no UI surface; the report is the artifact.
+- **Performance:** 212ms for 9 rows, off the main thread; O(n) with an indexed fingerprint
+  lookup per row.
+- **Accessibility:** N/A (no UI).
+
+**Follow-ups.** A debug-console trigger + on-screen report could add manual observability
+(logcat/unit-test statistics suffice for now). Next: **P6 read-parity** proving old vs new
+reads match across Dashboard/Accounts/Merchant/Review/Search before any switch.
