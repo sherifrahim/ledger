@@ -3,184 +3,158 @@ package com.sherif.ledger.feature.analytics.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sherif.ledger.core.designsystem.component.*
+import com.sherif.ledger.core.designsystem.component.LedgerCard
+import com.sherif.ledger.core.designsystem.component.LedgerCardDefaults
+import com.sherif.ledger.core.designsystem.component.LedgerDonutChart
+import com.sherif.ledger.core.designsystem.component.LedgerDonutSlice
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
+import com.sherif.ledger.core.designsystem.component.LedgerLineChart
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
+import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
+/**
+ * Insights — the analytics home, wired to real data (P-Analytics).
+ *
+ * Two first-class analytics components live here, integrated into the calm
+ * editorial language rather than presented as reporting widgets: a **Financial
+ * Trend** (this month's real daily spending, a single quiet line) and a **Spending
+ * Breakdown** (real category composition as a restrained donut with a plain
+ * legend). Every figure comes from the existing analytics
+ * (`FinancialAnalytics.trendPoints` / `categoryTotals`) — no new engine, no
+ * fabricated progress. Honest empty state until there's activity.
+ */
 @Composable
-fun InsightsScreen(
-    state: InsightsUiState
-) {
-    Scaffold(
-        topBar = {
-            InsightsTopBar()
-        },
-        containerColor = LedgerTheme.colors.surfaceBase
-    ) { padding ->
+fun InsightsScreen(state: InsightsUiState) {
+    val hasTrend = state.chartPoints.size >= 2 && state.chartPoints.any { it != 0f }
+    val hasBreakdown = state.categories.isNotEmpty()
+
+    Scaffold(containerColor = LedgerTheme.colors.surfaceBase) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(horizontal = LedgerSpacing.ScreenPadding),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.SectionGap)
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(
+                start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
+                bottom = LedgerSpacing.ScreenBottom + 100.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {
             item {
-                InsightsSegmentedControl()
+                Column(Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small)) {
+                    Text("Insights", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
+                    if (state.dateRange.isNotBlank()) {
+                        Text(state.dateRange, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textSecondary)
+                    }
+                }
             }
 
-            item {
-                ThisMonthSection(state.spentTotal)
-            }
+            item { CashflowCard(state.incomeTotal, state.spentTotal) }
 
-            item {
-                CashflowSection(state.incomeTotal, state.spentTotal)
-            }
+            if (hasTrend) item { TrendCard(state.chartPoints) }
 
-            item {
-                TopCategoriesSection(state.categories)
-            }
-            
-            item {
-                Spacer(Modifier.height(100.dp))
+            if (hasBreakdown) item { BreakdownCard(state) }
+
+            if (!hasTrend && !hasBreakdown) {
+                item {
+                    LedgerEmptyState(
+                        title = "Insights are on their way",
+                        subtitle = "As your transactions are captured, your spending trend and " +
+                            "category breakdown for the month build here automatically.",
+                        icon = Icons.Outlined.Insights,
+                        modifier = Modifier.padding(top = LedgerSpacing.XLarge),
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun InsightsTopBar() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Medium),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Spacer(Modifier.width(44.dp))
-
-        Text(
-            text = "Insights",
-            style = LedgerTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = LedgerTheme.colors.textPrimary
-        )
-
-        LedgerIconButton(
-            icon = Icons.Default.CalendarToday,
-            onClick = { /* TODO */ },
-            tint = LedgerTheme.colors.textPrimary
-        )
-    }
-}
-
-@Composable
-private fun InsightsSegmentedControl() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(CircleShape)
-            .background(LedgerTheme.colors.surfaceInset)
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .clip(CircleShape)
-                .background(LedgerTheme.colors.surfaceBase)
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Overview", style = LedgerTheme.typography.labelLarge, color = LedgerTheme.colors.textPrimary)
-        }
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Breakdown", style = LedgerTheme.typography.labelLarge, color = LedgerTheme.colors.textSecondary)
+private fun CashflowCard(income: String, spent: String) {
+    LedgerCard(elevation = LedgerCardDefaults.Elevation) {
+        Text("This month", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
+        Spacer(Modifier.height(LedgerSpacing.Medium))
+        Row(Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) {
+                Text("Income", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+                Spacer(Modifier.height(2.dp))
+                Text(income, style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.positive)
+            }
+            Column(Modifier.weight(1f)) {
+                Text("Spent", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+                Spacer(Modifier.height(2.dp))
+                Text(spent, style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary)
+            }
         }
     }
 }
 
 @Composable
-private fun ThisMonthSection(spent: String) {
+private fun TrendCard(points: List<Float>) {
     Column {
-        Text("This Month", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        Text("Spent", style = LedgerTheme.typography.bodySmall, color = LedgerTheme.colors.textSecondary)
-        Spacer(Modifier.height(8.dp))
-        Text(text = spent, style = LedgerTheme.typography.headlineLarge, fontWeight = FontWeight.Black)
-        
-        Spacer(Modifier.height(16.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            LinearProgressIndicator(
-                progress = { 0.62f },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(8.dp)
-                    .clip(CircleShape),
-                color = LedgerTheme.colors.system,
-                trackColor = LedgerTheme.colors.border
+        SectionLabel("SPENDING TREND")
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        LedgerCard(elevation = LedgerCardDefaults.ElevationLow) {
+            Text("Daily spending this month", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+            Spacer(Modifier.height(LedgerSpacing.Medium))
+            LedgerLineChart(
+                data = points,
+                modifier = Modifier.fillMaxWidth().height(120.dp),
+                lineColor = LedgerTheme.colors.textSecondary,
+                fill = true,
             )
-            Spacer(Modifier.width(16.dp))
-            Text("12 days left", style = LedgerTheme.typography.bodySmall, color = LedgerTheme.colors.textTertiary)
         }
     }
 }
 
 @Composable
-private fun CashflowSection(income: String, spent: String) {
+private fun BreakdownCard(state: InsightsUiState) {
     Column {
-        Text("Cashflow", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(16.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Income", style = LedgerTheme.typography.bodySmall, color = LedgerTheme.colors.textTertiary)
-                Text(text = income, style = LedgerTheme.typography.titleLarge, color = LedgerTheme.colors.positive, fontWeight = FontWeight.Bold)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Expenses", style = LedgerTheme.typography.bodySmall, color = LedgerTheme.colors.textTertiary)
-                Text(text = spent, style = LedgerTheme.typography.titleLarge, color = LedgerTheme.colors.textPrimary, fontWeight = FontWeight.Bold)
+        SectionLabel("SPENDING BREAKDOWN")
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        LedgerCard(elevation = LedgerCardDefaults.ElevationLow) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LedgerDonutChart(
+                    slices = state.categories.map { LedgerDonutSlice(it.percentageValue.toFloat().coerceAtLeast(0.5f), it.color) },
+                    modifier = Modifier.size(132.dp),
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Spent", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+                        Text(state.spentTotal, style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary)
+                    }
+                }
+                Spacer(Modifier.width(LedgerSpacing.Large))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
+                    state.categories.take(5).forEach { category ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(8.dp).clip(CircleShape).background(category.color))
+                            Spacer(Modifier.width(LedgerSpacing.Small))
+                            Text(category.name, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary, modifier = Modifier.weight(1f))
+                            Text("${category.percentageValue}%", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TopCategoriesSection(categories: List<CategoryInsightUi>) {
-    Column {
-        Text("Top Categories", style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(16.dp))
-        categories.forEach { category ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(category.name, modifier = Modifier.width(100.dp), style = LedgerTheme.typography.bodySmall)
-                LinearProgressIndicator(
-                    progress = { category.percentageValue / 100f },
-                    modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
-                    color = category.color,
-                    trackColor = LedgerTheme.colors.border
-                )
-                Spacer(Modifier.width(16.dp))
-                Text(category.amount, style = LedgerTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(8.dp))
-                Text("${category.percentageValue}%", style = LedgerTheme.typography.bodySmall, color = LedgerTheme.colors.textTertiary)
-            }
-        }
-    }
+private fun SectionLabel(title: String) {
+    Text(
+        title,
+        style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+        color = LedgerTheme.colors.textTertiary,
+    )
 }

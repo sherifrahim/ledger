@@ -114,3 +114,46 @@ state. No button is a no-op: the chips are the action.
 group categories. Retiring the last debug showcase (Search) is P4.
 
 **Release-checklist delta:** "No debug showcase screens remain" now only Search (P4).
+
+---
+
+## P-Analytics — Financial Trend + Spending Breakdown (Insights, live)  ·  `feat(insights): P-Analytics — Financial Trend + Spending Breakdown`
+
+**Reuse question:** *extend existing analytics, not a new engine?* → **Yes.** The data
+already exists: `FinancialAnalytics.trendPoints` (real daily net-spend series) and
+`categoryTotals` (already surfaced as `InsightsUiState.chartPoints` / `categories`). No
+new analytics engine and **no separate charting subsystem** — refined the existing
+`LedgerLineChart` and added one restrained donut primitive.
+
+**What changed.** Insights is now a product, not a report:
+- **Financial Trend** — `LedgerLineChart` refined to calm/editorial: single thin line,
+  min…max range so movement (incl. declines) shows, no gridlines, no bright colour, no
+  per-point dots (only a quiet last-point marker), gradient off by default. Renders the
+  real daily spend for the month.
+- **Spending Breakdown** — new `LedgerDonutChart`: soft rounded arcs over a quiet track,
+  gaps, a single calm centre figure, **no in-chart legend / no 3D / no gradient**; the
+  legend is a plain list beside it. Fed by the real category composition; the bright
+  category palette was **desaturated** to soft tones per the design brief.
+- **Removed** the "easy" artifacts that failed the product gate: the fabricated `0.62`
+  progress bar, the fake "12 days left", and the non-functional Overview/Breakdown
+  segmented control. Honest empty state when there's no month activity.
+
+**Verification.**
+- **Compile:** debug + release green. **Tests:** `testDebugUnitTest` green.
+- **Emulator:** seeded known-merchant SMS → Insights shows **Income AED 6,000 / Spent
+  AED 595**, a real daily-spend trend line, and a donut: Shopping 35 / Groceries 20 /
+  Dining 15 / Unknown 12 / Entertainment 10 (pipeline auto-categorised the merchants).
+- **Screenshots:** `docs/design/screenshots/insights-live-light.png`, `…-dark.png`.
+- **Performance:** `gfxinfo` on Insights (two Canvas charts) — **18.8% janky** / 90th %ile
+  **48ms**; acceptable for debug/emulator.
+- **Accessibility:** breakdown is colour **and** text (name + %); soft palette keeps
+  contrast reasonable; both themes verified. Standing icon-button finding still open.
+- **Product gate:** (1) *Use daily?* yes — trend + breakdown are the two things one checks.
+  (2) *Worthy of Ledger?* yes — calm, soft, information-first. (3) *Anything only there
+  because easy?* the previous version's fake progress/segmented control were exactly that
+  and are now removed.
+
+**Follow-ups.** The daily-spend trend is spiky when spending is concentrated on few days
+(honest). A compact trend/donut could later be embedded on the Dashboard/Accounts
+("Balance Trend" in the reference). Net-worth-over-time trend needs historical snapshots
+(future).

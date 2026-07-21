@@ -75,10 +75,12 @@ class InsightsViewModel @Inject constructor(
     }
 
     companion object {
+        // Soft, desaturated palette — the design language asks for restrained,
+        // calm colour, not bright category chips (DESIGN_REFERENCE / P-Analytics).
         private val CATEGORY_COLORS = listOf(
-            Color(0xFFFACC15), Color(0xFF10B981), Color(0xFF3B82F6),
-            Color(0xFFEF4444), Color(0xFF8B5CF6), Color(0xFFF97316),
-            Color(0xFF06B6D4), Color(0xFFEC4899),
+            Color(0xFF7FA183), Color(0xFF7E9CB8), Color(0xFFC9AE7C),
+            Color(0xFFB08FA0), Color(0xFF8A98A6), Color(0xFFBE977F),
+            Color(0xFF7EA3A1), Color(0xFF9A93B8),
         )
 
         private val EMPTY_STATE = InsightsUiState()
