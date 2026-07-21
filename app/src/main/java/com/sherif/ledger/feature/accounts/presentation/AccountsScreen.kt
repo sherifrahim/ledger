@@ -74,7 +74,7 @@ fun AccountsScreen(
                     LedgerEmptyState(
                         title = "No accounts yet",
                         subtitle = "Ledger creates an account automatically from your first captured " +
-                            "bank message, then tracks its balance for you. You can also add one manually.",
+                            "bank message, then tracks its balance for you.",
                         icon = Icons.Outlined.AccountBalanceWallet,
                         modifier = Modifier.padding(top = LedgerSpacing.Large),
                     )
@@ -90,16 +90,6 @@ fun AccountsScreen(
                     }
                 }
             }
-
-            item {
-                LedgerButton(
-                    text = "Add Account",
-                    onClick = { /* TODO: manual account creation */ },
-                    style = LedgerButtonStyle.Tonal,
-                    icon = Icons.Default.Add,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
         }
     }
 }
@@ -108,11 +98,9 @@ fun AccountsScreen(
 private fun AccountsHeader() {
     Row(
         modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = LedgerSpacing.Small),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Accounts", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-        LedgerIconButton(icon = Icons.Default.Add, onClick = { }, tint = LedgerTheme.colors.textPrimary)
     }
 }
 

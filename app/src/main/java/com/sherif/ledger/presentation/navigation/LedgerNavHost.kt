@@ -88,9 +88,15 @@ fun LedgerNavHost(
             FinancialStoryScreen()
         }
 
-        // Primary destination: Universal Search (Milestone 1 navigation scaffold).
+        // Primary destination: Universal Search — real search over captured data.
         composable(LedgerRoute.Search.route) {
-            UniversalSearchScreen()
+            UniversalSearchScreen(
+                onOpenTransactions = { navController.navigate(LedgerRoute.Transactions.route) },
+                onOpenAccounts = { navController.navigate(LedgerRoute.Accounts.route) },
+                onOpenInsights = { navController.navigate(LedgerRoute.Insights.route) },
+                onOpenStory = { navController.navigate(LedgerRoute.Story.route) { launchSingleTop = true } },
+                onResultClick = { id -> navController.navigate(LedgerRoute.TransactionDetails.create(id)) },
+            )
         }
 
         composable(LedgerRoute.Accounts.route) {

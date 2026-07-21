@@ -157,3 +157,36 @@ new analytics engine and **no separate charting subsystem** — refined the exis
 (honest). A compact trend/donut could later be embedded on the Dashboard/Accounts
 ("Balance Trend" in the reference). Net-worth-over-time trend needs historical snapshots
 (future).
+
+---
+
+## H2 — PART 1: Search made real + dead affordances removed  ·  `feat(search): H2 — real universal search, remove fake data`
+
+**Reuse question:** *extend an existing engine?* → **Yes.** No search engine existed, but
+Search now reuses `TransactionRepository` (+ analytics story layer for the category
+label) — a ViewModel doing real filtering, **not** a new search subsystem.
+
+**What changed (Product Hardening, PART 1).**
+- **Search is real**: `SearchViewModel` filters the user's actual captured transactions by
+  merchant text and amount; results are real rows (tap → transaction detail). The
+  **fabricated recent-searches and suggestion lists are deleted**; the empty-query state
+  shows quick-access to **real destinations only** (Transactions, Accounts, Insights,
+  Story) — wired in `LedgerNavHost`.
+- **Dead affordances removed**: Accounts "Add Account" button + header add icon (no-op
+  TODO; manual creation isn't built), and Profile "Log Out" (offline/local app has no
+  auth). Accounts empty-state copy no longer promises manual add.
+
+**Verification.**
+- **Compile:** debug + release green. **Tests:** `testDebugUnitTest` green.
+- **Emulator:** empty state → quick-access to real screens; "amazon" → **1 real result**
+  (Amazon · Shopping · −210.00); "car" → **2 results** (Careem · Transport · −30, Carrefour
+  · Groceries · −120). Real brand icons + categories.
+- **Screenshots:** `docs/design/screenshots/search-live-light.png` (empty + results),
+  `search-live-dark.png`.
+- **Performance:** field + list is a plain `LazyColumn`; no concern.
+- **Accessibility:** results are text + amount; standing `LedgerIconButton` finding open (PART 5).
+- **Product gate:** (1) use daily? yes — real search is a daily tool. (2) worthy of Ledger?
+  yes. (3) only there because easy? the removed fake recent/suggestions were exactly that.
+
+Opens the Release Readiness report (`docs/RELEASE_READINESS.md`): **no production screen
+renders fabricated data** as of H2. Closes P4 (Search).

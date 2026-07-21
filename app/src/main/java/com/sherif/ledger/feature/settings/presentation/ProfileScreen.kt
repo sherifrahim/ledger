@@ -64,15 +64,6 @@ fun ProfileScreen(
             }
 
             item {
-                TextButton(
-                    onClick = { /* TODO */ },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Log Out", color = LedgerTheme.colors.negative, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            item {
                 Spacer(Modifier.height(100.dp))
             }
         }

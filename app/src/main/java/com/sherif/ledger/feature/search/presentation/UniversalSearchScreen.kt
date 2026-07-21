@@ -15,20 +15,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +34,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.sherif.ledger.core.designsystem.component.LedgerAmount
+import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerBrandIcon
 import com.sherif.ledger.core.designsystem.component.LedgerDivider
+import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
+import com.sherif.ledger.core.designsystem.component.LedgerSearchBar
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
@@ -44,21 +48,35 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+import com.sherif.ledger.feature.search.presentation.viewmodel.SearchViewModel
 
 /**
- * Universal Search (Milestone 1.5).
+ * Universal Search (Product Hardening, PART 1) — real, not a resting mock.
  *
- * A calm, Spotlight-like entry point that searches *concepts* — merchants,
- * transactions, accounts, categories, story, forecast — not screens. This
- * milestone builds the resting experience (field, recent searches, quick access,
- * suggestions); the actual query engine is a later milestone, so the content
- * here is static scaffolding rather than live results.
+ * The field searches the user's actual captured transactions (merchant + amount)
+ * via [SearchViewModel]; results are real rows. With an empty query it shows
+ * quick access to real destinations only. There is no fabricated recent-search
+ * list or suggestion data.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun UniversalSearchScreen(modifier: Modifier = Modifier) {
+fun UniversalSearchScreen(
+    onOpenTransactions: () -> Unit = {},
+    onOpenAccounts: () -> Unit = {},
+    onOpenInsights: () -> Unit = {},
+    onOpenStory: () -> Unit = {},
+    onResultClick: (String) -> Unit = {},
+    viewModel: SearchViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsState()
+    val quickAccess = listOf(
+        QuickAccess("Transactions", Icons.AutoMirrored.Filled.ReceiptLong, onOpenTransactions),
+        QuickAccess("Accounts", Icons.Filled.AccountBalanceWallet, onOpenAccounts),
+        QuickAccess("Insights", Icons.Filled.PieChart, onOpenInsights),
+        QuickAccess("Financial Story", Icons.AutoMirrored.Filled.MenuBook, onOpenStory),
+    )
+
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(LedgerTheme.colors.surfaceBase),
+        modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceBase),
         contentPadding = PaddingValues(
             start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
             top = LedgerSpacing.Small, bottom = LedgerSpacing.ScreenBottom + 100.dp,
@@ -69,53 +87,95 @@ fun UniversalSearchScreen(modifier: Modifier = Modifier) {
             Column(Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small)) {
                 Text("Search", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
                 Spacer(Modifier.height(LedgerSpacing.Medium))
-                SearchField()
-            }
-        }
-
-        item {
-            Section("Recent") {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-                    listOf("electricity bill", "amazon", "salary", "netflix").forEach { Chip(it) }
+                Box(
+                    Modifier.clip(LedgerRadius.Full).background(LedgerTheme.colors.surfaceInset)
+                        .padding(horizontal = LedgerSpacing.Medium, vertical = 14.dp),
+                ) {
+                    LedgerSearchBar(
+                        query = state.query,
+                        onQueryChange = viewModel::onQueryChange,
+                        placeholder = "Search transactions and merchants",
+                    )
                 }
             }
         }
 
-        item {
-            Section("Quick access") {
-                LedgerSurface(level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large, contentPadding = PaddingValues(0.dp)) {
-                    QuickAccess.entries.forEachIndexed { i, q ->
-                        QuickRow(q.icon, q.label)
-                        if (i < QuickAccess.entries.lastIndex) LedgerDivider(alpha = 0.05f)
+        when {
+            state.query.isBlank() -> {
+                item {
+                    Section("Quick access") {
+                        LedgerSurface(level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large, contentPadding = PaddingValues(0.dp)) {
+                            quickAccess.forEachIndexed { i, q ->
+                                QuickRow(q.icon, q.label, q.onClick)
+                                if (i < quickAccess.lastIndex) LedgerDivider(alpha = 0.05f)
+                            }
+                        }
                     }
                 }
             }
-        }
-
-        item {
-            Section("Try searching") {
-                Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-                    listOf("coffee last week", "subscriptions this month", "transport in June", "dewa bill").forEach { Suggestion(it) }
+            state.results.isEmpty() -> {
+                item {
+                    LedgerEmptyState(
+                        title = "No matches",
+                        subtitle = "Nothing found for “${state.query}”. Try a merchant name or an amount.",
+                        icon = Icons.Outlined.SearchOff,
+                        modifier = Modifier.padding(top = LedgerSpacing.Large),
+                    )
+                }
+            }
+            else -> {
+                item {
+                    Text(
+                        "${state.results.size} result${if (state.results.size == 1) "" else "s"}",
+                        style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                        color = LedgerTheme.colors.textTertiary,
+                    )
+                }
+                items(state.results, key = { it.id }) { r ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().ledgerClickable { onResultClick(r.id) }.padding(vertical = LedgerSpacing.Small),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
+                    ) {
+                        LedgerBrandIcon(name = r.merchant, size = 40.dp)
+                        Column(Modifier.weight(1f)) {
+                            Text(r.merchant, style = LedgerTextStyles.BodyMedium.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary)
+                            if (r.category.isNotBlank()) {
+                                Text(r.category, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textSecondary)
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            LedgerAmount(
+                                amount = (if (r.isExpense) "-" else "+") + r.amount,
+                                style = LedgerAmountStyle.Regular,
+                                color = if (r.isExpense) LedgerTheme.colors.textPrimary else LedgerTheme.colors.positive,
+                            )
+                            Text(r.time, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+                        }
+                    }
+                    LedgerDivider(alpha = 0.05f)
                 }
             }
         }
     }
 }
 
+private data class QuickAccess(val label: String, val icon: ImageVector, val onClick: () -> Unit)
+
 @Composable
-private fun SearchField() {
+private fun QuickRow(icon: ImageVector, label: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(LedgerRadius.Full)
-            .background(LedgerTheme.colors.surfaceInset)
-            .padding(horizontal = LedgerSpacing.Medium, vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth().ledgerClickable(onClick = onClick).padding(LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.Search, null, tint = LedgerTheme.colors.textTertiary, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(LedgerSpacing.Small))
-        Text("Search anything…", style = LedgerTextStyles.BodyLarge, color = LedgerTheme.colors.textTertiary, modifier = Modifier.weight(1f))
-        Icon(Icons.Outlined.Mic, null, tint = LedgerTheme.colors.textTertiary, modifier = Modifier.size(20.dp))
+        Box(
+            modifier = Modifier.size(32.dp).clip(LedgerRadius.Small).background(LedgerTheme.colors.system.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = LedgerTheme.colors.system, modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.width(LedgerSpacing.Medium))
+        Text(label, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary, modifier = Modifier.weight(1f))
     }
 }
 
@@ -130,62 +190,4 @@ private fun Section(title: String, content: @Composable () -> Unit) {
         Spacer(Modifier.height(LedgerSpacing.Small))
         content()
     }
-}
-
-@Composable
-private fun Chip(label: String) {
-    Text(
-        label,
-        style = LedgerTextStyles.Label,
-        color = LedgerTheme.colors.textSecondary,
-        modifier = Modifier
-            .clip(LedgerRadius.Full)
-            .background(LedgerTheme.colors.surfaceInset)
-            .ledgerClickable {}
-            .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Tiny),
-    )
-}
-
-@Composable
-private fun QuickRow(icon: ImageVector, label: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().ledgerClickable {}.padding(LedgerSpacing.Medium),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(32.dp).clip(LedgerRadius.Small).background(LedgerTheme.colors.system.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, null, tint = LedgerTheme.colors.system, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(LedgerSpacing.Medium))
-        Text(label, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary, modifier = Modifier.weight(1f))
-        Icon(Icons.Filled.Search, null, tint = LedgerTheme.colors.textTertiary.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
-    }
-}
-
-@Composable
-private fun Suggestion(label: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(LedgerRadius.Medium)
-            .background(LedgerTheme.colors.surfaceInset.copy(alpha = 0.6f))
-            .ledgerClickable {}
-            .padding(LedgerSpacing.Medium),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Filled.Search, null, tint = LedgerTheme.colors.textTertiary, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(LedgerSpacing.Small))
-        Text(label, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textSecondary)
-    }
-}
-
-private enum class QuickAccess(val label: String, val icon: ImageVector) {
-    Merchants("Merchants", Icons.Filled.Store),
-    Transactions("Transactions", Icons.AutoMirrored.Filled.ReceiptLong),
-    Accounts("Accounts", Icons.Filled.AccountBalanceWallet),
-    Categories("Categories", Icons.Filled.Category),
-    Story("Financial Story", Icons.AutoMirrored.Filled.MenuBook),
-    Forecast("Forecast", Icons.Filled.ShowChart),
 }
