@@ -78,3 +78,39 @@ persisted data — no writes, Financial Truth untouched (ADR-0000).
 **Follow-ups.** Merchant matching is by extracted `rawText`; once the merchant/brand
 identity is unified (ADR-0009 convergence) matching should key off `brandId`. "Avg.
 Monthly" over a sub-month span equals total (expected). Neither blocks P3.
+
+---
+
+## P3 — Review Queue refinement (live)  ·  `feat(review): P3 — confidence-card refinement, retire showcase`
+
+**Reuse question:** *improve existing engine, not build new?* → **Yes.** Reused
+`ReviewInboxViewModel` (real) and refined the existing production `ReviewCard`; no new
+review system.
+
+**What changed.** The production `ReviewCard` now uses the confidence/evidence card
+language (`LedgerCard` + `LedgerConfidenceBadge`): it leads with the question ("Should
+this be …?" when a suggestion exists, else "Which category?"), shows the real confidence
+band, merchant/amount/time, evidence rows (account, why-review — real fields only), and
+the **real** decision mechanism — the category-chip picker that teaches
+`LearnedMerchantCategoryStore`. The suggested category (when present) is highlighted as
+the accented chip. The **DEBUG showcase is fully removed** from `ReviewInboxScreen`
+(placeholder items, `ReviewShowcase`, showcase card/evidence types all deleted) — the
+screen renders only real `ReviewInboxViewModel` items, with an honest "All clear" empty
+state. No button is a no-op: the chips are the action.
+
+**Verification.**
+- **Compile:** debug + release green.
+- **Tests:** `testDebugUnitTest` green.
+- **Emulator:** seeded an unknown-merchant SMS ("ZATURN GADGETS") → it landed in the real
+  queue as **0% Low confidence** with "No matching merchant — choose a category below"
+  and the live chip picker; 3 real items shown.
+- **Screenshots:** `docs/design/screenshots/review-live-light.png`, `…-dark.png`.
+- **Performance:** `gfxinfo` on Review — **16.0% janky** over 119 frames, 90th %ile
+  **34ms**, 95th **85ms** (representative). Uses `items(key = { it.id })`.
+- **Accessibility:** confidence is colour **and** text ("0% Low confidence"); both themes;
+  standing icon-button `contentDescription` finding still open.
+
+**Follow-ups.** The chip picker is a horizontally-scrolling `LazyRow`; a future pass could
+group categories. Retiring the last debug showcase (Search) is P4.
+
+**Release-checklist delta:** "No debug showcase screens remain" now only Search (P4).
