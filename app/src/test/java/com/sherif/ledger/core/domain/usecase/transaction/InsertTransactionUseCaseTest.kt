@@ -86,7 +86,8 @@ class InsertTransactionUseCaseTest {
         validator = com.sherif.ledger.core.domain.service.transaction.TransactionValidator(),
         fingerprintGenerator = com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator(),
         merchantResolver = com.sherif.ledger.core.domain.service.transaction.MerchantResolver(merchantRepository),
-        categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver()
+        categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver(),
+        financialEventRepository = com.sherif.ledger.testsupport.FakeFinancialEventRepository()
     )
 
     @Test
@@ -149,7 +150,8 @@ class InsertTransactionUseCaseTest {
             validator = com.sherif.ledger.core.domain.service.transaction.TransactionValidator(),
             fingerprintGenerator = com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator(),
             merchantResolver = com.sherif.ledger.core.domain.service.transaction.MerchantResolver(merchantRepository),
-            categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver()
+            categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver(),
+        financialEventRepository = com.sherif.ledger.testsupport.FakeFinancialEventRepository()
         )
         
         val resultDuplicate = useCaseWithDuplicate.execute(params)

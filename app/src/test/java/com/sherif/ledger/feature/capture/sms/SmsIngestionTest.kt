@@ -80,6 +80,7 @@ class SmsIngestionTest {
             override suspend fun registerAlias(rawText: String, brandId: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
         }),
         CategoryResolver(),
+        com.sherif.ledger.testsupport.FakeFinancialEventRepository(),
     )
 
     private val parserRegistry = ParserRegistry(setOf(
