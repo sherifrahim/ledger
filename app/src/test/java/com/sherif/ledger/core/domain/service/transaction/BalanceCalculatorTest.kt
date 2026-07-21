@@ -64,6 +64,22 @@ class BalanceCalculatorTest {
         assertEquals(0L, calculator.effect(transaction, AccountType.CHECKING))
     }
 
+    // ---- Currency safety (found via a real diagnostic bundle: an INR
+    //      transaction logged against an AED account) — accountCurrencyCode is
+    //      optional so existing sign/type-only tests above are unaffected. ----
+
+    @Test
+    fun `mismatched transaction currency contributes zero effect rather than mixing units`() {
+        val transaction = createTransaction(1000L, TransactionType.EXPENSE, currency = CurrencyCode.INR)
+        assertEquals(0L, calculator.effect(transaction, AccountType.CHECKING, accountCurrencyCode = CurrencyCode.AED))
+    }
+
+    @Test
+    fun `matching transaction currency behaves exactly as when no currency is supplied`() {
+        val transaction = createTransaction(1000L, TransactionType.EXPENSE, currency = CurrencyCode.AED)
+        assertEquals(-1000L, calculator.effect(transaction, AccountType.CHECKING, accountCurrencyCode = CurrencyCode.AED))
+    }
+
     // ---- Liability accounts (Phase 9): the natural effect inverts, since balance
     //      here means amount owed, not amount held. ----
 
@@ -106,12 +122,13 @@ class BalanceCalculatorTest {
         amount: Long,
         type: TransactionType,
         direction: TransferDirection? = null,
+        currency: CurrencyCode = CurrencyCode.AED,
     ) = Transaction(
         id = 1,
         accountId = 1,
         brandId = null,
         categoryId = null,
-        amount = Money(amount, CurrencyCode.AED),
+        amount = Money(amount, currency),
         type = type,
         timestamp = Instant.now(),
         source = IngestionSource.MANUAL,

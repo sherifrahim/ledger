@@ -78,8 +78,12 @@ class ParserValidationRunner @Inject constructor(
         }
     }
 
+    // RC7: was "com.adcb.mobileapp" — a FOURTH independently-drifted copy of
+    // the same stale ADCB package found alongside InstitutionRegistry (fixed),
+    // AdcbParser (fixed), and DebugConsoleViewModel (fixed). The real value is
+    // "com.adcb.nexgen" (see InstitutionRegistry, the single source of truth).
     private fun getPackageForBank(bank: String): String = when (bank.uppercase()) {
-        "ADCB" -> "com.adcb.mobileapp"
+        "ADCB" -> "com.adcb.nexgen"
         else -> "unknown"
     }
 

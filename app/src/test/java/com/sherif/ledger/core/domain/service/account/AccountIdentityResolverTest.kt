@@ -39,6 +39,8 @@ class AccountIdentityResolverTest {
         }
         override suspend fun updateAccount(account: Account): LedgerResult<Unit> = LedgerResult.Success(Unit)
         override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override suspend fun getDeletedAccounts(): LedgerResult<List<Account>> = LedgerResult.Success(emptyList())
+        override fun observeCandidateAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.filter { it.isCandidate }))
     }
 
     private class FakeTransactionRepository : TransactionRepository {
@@ -61,13 +63,25 @@ class AccountIdentityResolverTest {
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
     }
 
+    private class FakeLearnedDecisionDao : com.sherif.ledger.core.database.dao.LearnedDecisionDao {
+        val entries = mutableListOf<com.sherif.ledger.core.database.entity.LearnedDecisionEntity>()
+        override suspend fun getAll() = entries.toList()
+        override suspend fun upsert(entity: com.sherif.ledger.core.database.entity.LearnedDecisionEntity) {
+            entries.removeAll { it.decisionType == entity.decisionType && it.subjectKey == entity.subjectKey }
+            entries += entity
+        }
+    }
+
     private val accountRepository = FakeAccountRepository()
     private val transactionRepository = FakeTransactionRepository()
+    private val learnedDecisionDao = FakeLearnedDecisionDao()
+    private val learnedDecisionStore = com.sherif.ledger.core.domain.service.intelligence.LearnedDecisionStore(learnedDecisionDao)
     private val resolver = DeterministicAccountIdentityResolver(
         InstitutionRegistry(),
         accountRepository,
         transactionRepository,
         EnsureDefaultAccountUseCase(accountRepository),
+        learnedDecisionStore,
     )
 
     private fun envelope(pkg: String) = NotificationEnvelope(pkg, "", "text", null, Instant.now(), "k")
@@ -83,10 +97,42 @@ class AccountIdentityResolverTest {
         transactionType = type,
     )
 
-    @Test fun `unknown institution falls back to default with zero confidence`() = runBlocking {
+    @Test fun `unknown institution is parked as a Candidate Account, never merged into the default account`() = runBlocking {
+        // RC7 Phase B: this replaces the old FALLBACK_DEFAULT behavior for an
+        // unrecognized institution — merging an unknown bank's transaction
+        // into the default account is exactly the shape of the confirmed
+        // HDFC Bank currency-mixing bug (RC6). It must land in its own,
+        // separate, currency-correct Candidate Account instead.
         val result = resolver.resolve(envelope("com.unknown.bank"), candidate("some text", "1234"))
-        assertEquals(AccountIdentityDecision.FALLBACK_DEFAULT, result.decision)
-        assertEquals(1L, result.accountId)
+        assertEquals(AccountIdentityDecision.CANDIDATE, result.decision)
+        assertTrue("Candidate account must never be the default account", result.accountId != 1L)
+        val created = accountRepository.accounts.first { it.id == result.accountId }
+        assertTrue(created.isCandidate)
+        assertEquals(CurrencyCode.AED, created.openingBalance.currencyCode)
+    }
+
+    @Test fun `a learned institution mapping binds directly instead of creating another candidate`() = runBlocking {
+        // Simulate: a Candidate Account for "com.unknown.bank" was already
+        // promoted once (PromoteCandidateAccountUseCase would have called
+        // learn() at that point) and a confirmed account with that name exists.
+        accountRepository.accounts += Account(
+            id = 99L, name = "SomeBank Account", type = AccountType.CHECKING,
+            openingBalance = Money.zero(CurrencyCode.AED), accountNumberTail = "1234", bankBrandId = null,
+        )
+        learnedDecisionStore.learn(com.sherif.ledger.core.domain.service.intelligence.DecisionType.INSTITUTION, "com.unknown.bank", "SomeBank Account")
+
+        val result = resolver.resolve(envelope("com.unknown.bank"), candidate("some text", "1234"))
+        assertEquals(AccountIdentityDecision.BOUND_EXISTING, result.decision)
+        assertEquals(99L, result.accountId)
+        assertTrue("No new candidate should be created once the institution is learned", accountRepository.accounts.none { it.isCandidate })
+    }
+
+    @Test fun `repeated messages from the same unrecognized institution reuse the same Candidate Account`() = runBlocking {
+        val first = resolver.resolve(envelope("com.unknown.bank"), candidate("some text", "1234"))
+        val second = resolver.resolve(envelope("com.unknown.bank"), candidate("more text", "1234"))
+        assertEquals(AccountIdentityDecision.CANDIDATE, second.decision)
+        assertEquals(first.accountId, second.accountId)
+        assertEquals(1, accountRepository.accounts.count { it.isCandidate })
     }
 
     @Test fun `known institution with no tail falls back`() = runBlocking {
@@ -173,6 +219,8 @@ class AccountIdentityResolverTest {
         }
         override suspend fun updateAccount(account: Account): LedgerResult<Unit> = LedgerResult.Success(Unit)
         override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override suspend fun getDeletedAccounts(): LedgerResult<List<Account>> = LedgerResult.Success(emptyList())
+        override fun observeCandidateAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.filter { it.isCandidate }))
     }
 
     @Test fun `concurrent resolution for the same new identity creates exactly one account`() = runBlocking {
@@ -182,6 +230,7 @@ class AccountIdentityResolverTest {
             delayedAccounts,
             transactionRepository,
             EnsureDefaultAccountUseCase(delayedAccounts),
+            com.sherif.ledger.core.domain.service.intelligence.LearnedDecisionStore(FakeLearnedDecisionDao()),
         )
         // Single-shot near-certainty: institution + tail + currency + explicit
         // type hint all agree, so this creates on the very first sighting --

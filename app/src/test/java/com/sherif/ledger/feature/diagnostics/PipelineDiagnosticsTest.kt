@@ -55,6 +55,7 @@ class PipelineDiagnosticsTest {
                     profile = MerchantProfile("Carrefour", emptyList(), MerchantCategory.GROCERIES),
                     matchedAlias = "CARREFOUR",
                     confidence = 97,
+                    reason = "Exact token match on alias \"CARREFOUR\" for Carrefour",
                 ),
                 1,
             )

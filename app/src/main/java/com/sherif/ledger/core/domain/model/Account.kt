@@ -18,6 +18,13 @@ data class Account(
     val type: AccountType,
     val openingBalance: Money,
     val accountNumberTail: String?,
-    val bankBrandId: Long?
+    val bankBrandId: Long?,
+    // RC7 Phase B: true for an account the Account Resolver created for an
+    // institution it could not recognize (see AccountIdentityDecision.CANDIDATE).
+    // Excluded from observeAllAccounts()/every balance and net-worth figure —
+    // the same exclusion mechanism soft-delete already uses — until a user
+    // promotes (Developer Console) or dismisses it. Never silently merged into
+    // an existing account; never silently included in totals either.
+    val isCandidate: Boolean = false,
 )
 

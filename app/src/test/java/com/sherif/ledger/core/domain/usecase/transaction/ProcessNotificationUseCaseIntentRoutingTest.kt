@@ -67,6 +67,8 @@ class ProcessNotificationUseCaseIntentRoutingTest {
         override suspend fun insertAccount(account: Account): LedgerResult<Long> = LedgerResult.Success(1L)
         override suspend fun updateAccount(account: Account): LedgerResult<Unit> = LedgerResult.Success(Unit)
         override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override suspend fun getDeletedAccounts() = LedgerResult.Success(emptyList<Account>())
+        override fun observeCandidateAccounts() = kotlinx.coroutines.flow.flowOf(LedgerResult.Success(emptyList<Account>()))
     }
 
     private val insertTransactionUseCase = InsertTransactionUseCase(
@@ -108,6 +110,12 @@ class ProcessNotificationUseCaseIntentRoutingTest {
                 accountRepository,
                 transactionRepository,
                 EnsureDefaultAccountUseCase(accountRepository),
+                com.sherif.ledger.core.domain.service.intelligence.LearnedDecisionStore(
+                    object : com.sherif.ledger.core.database.dao.LearnedDecisionDao {
+                        override suspend fun getAll() = emptyList<com.sherif.ledger.core.database.entity.LearnedDecisionEntity>()
+                        override suspend fun upsert(entity: com.sherif.ledger.core.database.entity.LearnedDecisionEntity) {}
+                    },
+                ),
             ),
             traceSink,
             DeterministicFinancialIntentClassifier(),

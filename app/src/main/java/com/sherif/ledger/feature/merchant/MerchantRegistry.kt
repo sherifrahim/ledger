@@ -40,6 +40,7 @@ class MerchantRegistry @Inject constructor() {
             website = "https://www.careem.com",
             country = "AE",
             knownConfidence = 97,
+            subcategory = "Ride-hailing",
         ),
         MerchantProfile(
             canonicalName = "Uber",
@@ -48,6 +49,7 @@ class MerchantRegistry @Inject constructor() {
             brandColor = "#000000",
             website = "https://www.uber.com",
             knownConfidence = 96,
+            subcategory = "Ride-hailing",
         ),
         MerchantProfile(
             canonicalName = "Carrefour",
@@ -142,6 +144,7 @@ class MerchantRegistry @Inject constructor() {
             category = MerchantCategory.ENTERTAINMENT,
             brandColor = "#E50914",
             knownConfidence = 97,
+            subcategory = "Streaming subscription",
         ),
         MerchantProfile(
             canonicalName = "Shein",

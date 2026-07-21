@@ -65,6 +65,8 @@ class LiveCaptureIntegrationTest {
         override suspend fun insertAccount(account: Account): LedgerResult<Long> = LedgerResult.Success(1L)
         override suspend fun updateAccount(account: Account): LedgerResult<Unit> = LedgerResult.Success(Unit)
         override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override suspend fun getDeletedAccounts() = LedgerResult.Success(emptyList<Account>())
+        override fun observeCandidateAccounts() = kotlinx.coroutines.flow.flowOf(LedgerResult.Success(emptyList<Account>()))
     }
 
     private val transactionRunner = object : TransactionRunner {
@@ -102,6 +104,12 @@ class LiveCaptureIntegrationTest {
             accountRepository,
             transactionRepository,
             EnsureDefaultAccountUseCase(accountRepository),
+            com.sherif.ledger.core.domain.service.intelligence.LearnedDecisionStore(
+                object : com.sherif.ledger.core.database.dao.LearnedDecisionDao {
+                    override suspend fun getAll() = emptyList<com.sherif.ledger.core.database.entity.LearnedDecisionEntity>()
+                    override suspend fun upsert(entity: com.sherif.ledger.core.database.entity.LearnedDecisionEntity) {}
+                },
+            ),
         ),
             PipelineTraceSink(),
             DeterministicFinancialIntentClassifier(),
@@ -111,7 +119,7 @@ class LiveCaptureIntegrationTest {
     @Test
     fun `notification flows end-to-end to repository`() = runBlocking {
         val envelope = NotificationEnvelope(
-            packageName = "com.adcb.mobileapp",
+            packageName = "com.adcb.nexgen", // RC7: was the stale "com.adcb.mobileapp", corrected alongside AdcbParser/InstitutionRegistry
             title = "Transaction",
             text = "Purchase of AED 50.00 at AMAZON AE with card ending 1234.",
             subText = null,

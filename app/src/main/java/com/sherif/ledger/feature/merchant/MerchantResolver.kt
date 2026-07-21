@@ -42,7 +42,7 @@ class MerchantResolver @Inject constructor(
 
     fun resolve(rawMerchant: String?): MerchantResolution {
         if (rawMerchant.isNullOrBlank()) {
-            return MerchantResolution.Unresolved(rawMerchant ?: "", "")
+            return MerchantResolution.Unresolved(rawMerchant ?: "", "", reason = "No merchant text extracted")
         }
         val normalized = rawMerchant.uppercase().replace(Regex("\\s+"), " ").trim()
 
@@ -54,6 +54,7 @@ class MerchantResolver @Inject constructor(
                 profile = it.profile,
                 matchedAlias = it.alias.pattern,
                 confidence = it.profile.knownConfidence,
+                reason = "Exact token match on alias \"${it.alias.pattern}\" for ${it.profile.canonicalName}",
             )
         }
 
@@ -63,16 +64,22 @@ class MerchantResolver @Inject constructor(
             val exactToken = normalized == it.norm
             val confidence = if (exactToken) it.profile.knownConfidence
             else (it.profile.knownConfidence - 3).coerceAtLeast(0)
+            val reason = if (exactToken) {
+                "Normalized text equals alias \"${it.alias.pattern}\" for ${it.profile.canonicalName}"
+            } else {
+                "Substring match on alias \"${it.alias.pattern}\" for ${it.profile.canonicalName}"
+            }
             return MerchantResolution.Resolved(
                 rawMerchant = rawMerchant,
                 profile = it.profile,
                 matchedAlias = it.alias.pattern,
                 confidence = confidence,
+                reason = reason,
             )
         }
 
         // 4. No match: keep raw, provide a display fallback, invent nothing.
-        return MerchantResolution.Unresolved(rawMerchant, titleCase(rawMerchant))
+        return MerchantResolution.Unresolved(rawMerchant, titleCase(rawMerchant), reason = "No registry alias matched \"$normalized\"")
     }
 
     /** True if [alias] appears as a whole whitespace-delimited token in [text]. */
@@ -100,6 +107,8 @@ sealed interface MerchantResolution {
         val profile: MerchantProfile,
         val matchedAlias: String,
         val confidence: Int,
+        /** RC8: human-readable explanation of why this profile matched — for the Intelligence Inspector, never for business logic. */
+        val reason: String,
     ) : MerchantResolution {
         override val displayName: String get() = profile.canonicalName
         val canonicalName: String get() = profile.canonicalName
@@ -109,6 +118,8 @@ sealed interface MerchantResolution {
     data class Unresolved(
         override val rawMerchant: String,
         val fallbackDisplay: String,
+        /** RC8: human-readable explanation of why nothing matched — for the Intelligence Inspector, never for business logic. */
+        val reason: String = "No registry alias matched",
     ) : MerchantResolution {
         override val displayName: String get() = fallbackDisplay
     }

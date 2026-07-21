@@ -10,4 +10,10 @@ interface AccountRepository {
     suspend fun insertAccount(account: Account): LedgerResult<Long>
     suspend fun updateAccount(account: Account): LedgerResult<Unit>
     suspend fun deleteAccount(id: Long): LedgerResult<Unit>
+
+    /** Soft-deleted accounts — invisible to [observeAllAccounts] and every balance computation. Diagnostics-only (Balance Inspector). */
+    suspend fun getDeletedAccounts(): LedgerResult<List<Account>>
+
+    /** RC7 Phase B: unresolved-institution accounts (Account.isCandidate) — invisible to [observeAllAccounts]/every balance figure until promoted or dismissed. Developer Console only. */
+    fun observeCandidateAccounts(): Flow<LedgerResult<List<Account>>>
 }

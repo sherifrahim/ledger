@@ -30,4 +30,8 @@ data class ReviewItemUi(
     val confidence: Int,
     val reason: String,
     val timestamp: String,
+    // The ORIGINAL raw SMS/notification text (not [merchant], which may be a
+    // title-cased display fallback) — the key a category correction must be
+    // learned against so MerchantResolver's own normalization matches it later.
+    val rawMerchantText: String? = null,
 )

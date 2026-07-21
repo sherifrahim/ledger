@@ -203,11 +203,22 @@ class DebugConsoleViewModel @Inject constructor(
         }
     }
 
+    // RC7: was its own independently-wrong copy of bank package names (none of
+    // which matched InstitutionRegistry's real values) — a THIRD drifted list
+    // on top of the two already fixed (InstitutionRegistry itself, AdcbParser).
+    // Now sourced from the same identifiers InstitutionRegistry seeds, so this
+    // debug-only injector actually exercises real institution resolution
+    // instead of always falling through to "unknown package".
     private fun getPackageForBank(bank: String): String = when (bank.uppercase()) {
-        "ADCB" -> "com.adcb.mobileapp"
-        "FAB" -> "com.fab.mobileapp"
-        "MASHREQ" -> "com.mashreq.mobile"
-        "ENBD" -> "com.emiratesnbd.mobile"
+        "ADCB" -> "com.adcb.nexgen"
+        "FAB" -> "com.fab.personalbanking"
+        "MASHREQ" -> "com.vipera.ts.starter.MashreqAE"
+        "ENBD" -> "com.emiratesnbd.android"
+        "HDFC" -> "HDFCBK"
+        "ICICI" -> "ICICIB"
+        "SBI" -> "SBIINB"
+        "AXIS" -> "AXISBK"
+        "KOTAK" -> "KOTAKB"
         else -> "com.google.android.apps.messaging"
     }
 }

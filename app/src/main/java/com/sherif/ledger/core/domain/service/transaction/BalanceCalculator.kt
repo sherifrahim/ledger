@@ -2,6 +2,7 @@ package com.sherif.ledger.core.domain.service.transaction
 
 import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.core.domain.model.AccountType
+import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionType
@@ -27,8 +28,32 @@ class BalanceCalculator @Inject constructor() {
     /**
      * The effect (signed minor units) of [transaction] on the balance of the
      * account it is recorded against, given that account's [accountType].
+     *
+     * [accountCurrencyCode], when supplied, guards a real found-in-production
+     * bug: this function used to add `transaction.amount.minorUnits` straight
+     * into the running total with NO check that the transaction's currency
+     * matches the account's — a foreign-currency transaction misattributed to
+     * the wrong account (confirmed via a real diagnostic bundle: an INR
+     * transaction logged against an AED account) would have its raw minor
+     * units treated as if they were the account's own currency, e.g. INR
+     * 50,000 silently becoming "AED 50,000" in the sum. "Every transaction
+     * carries its own Currency; there is no implicit app currency" is a
+     * stated project invariant — this enforces it instead of assuming it.
+     * Optional (defaults null → no check) so the many existing unit tests
+     * that only exercise the sign/type logic don't all need updating; every
+     * real call site (AccountBalanceService, FinancialTraceCollector) passes
+     * the account's actual currency.
      */
-    fun effect(transaction: Transaction, accountType: AccountType): Long {
+    fun effect(transaction: Transaction, accountType: AccountType, accountCurrencyCode: CurrencyCode? = null): Long {
+        if (accountCurrencyCode != null && transaction.amount.currencyCode != accountCurrencyCode) {
+            LedgerLogger.e(
+                "BalanceCalculator: transaction currency (${transaction.amount.currencyCode}) does not match " +
+                    "account currency ($accountCurrencyCode) for fingerprint=${transaction.fingerprint.take(8)}; " +
+                    "contributing zero effect rather than silently mixing units. This indicates an account-" +
+                    "identity gap upstream — a transaction was attributed to an account of the wrong currency."
+            )
+            return 0L
+        }
         val base = when (transaction.type) {
             TransactionType.INCOME -> transaction.amount.minorUnits
             TransactionType.EXPENSE -> -transaction.amount.minorUnits

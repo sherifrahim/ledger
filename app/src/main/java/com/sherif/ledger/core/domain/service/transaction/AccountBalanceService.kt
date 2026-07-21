@@ -56,7 +56,7 @@ class AccountBalanceService @Inject constructor(
         return accounts.map { account ->
             var minorUnits = account.openingBalance.minorUnits
             for (transaction in byAccount[account.id].orEmpty()) {
-                minorUnits += balanceCalculator.effect(transaction, account.type)
+                minorUnits += balanceCalculator.effect(transaction, account.type, account.openingBalance.currencyCode)
             }
             if (account.type.isLiability) {
                 for (relationship in creditCardPayments) {
@@ -83,14 +83,71 @@ class AccountBalanceService @Inject constructor(
     suspend fun currentBalance(accountId: Long): Money? =
         currentBalances().firstOrNull { it.account.id == accountId }?.balance
 
-    /** Assets - Liabilities, using the SAME replayed balances above. */
+    /**
+     * Assets - Liabilities, using the SAME replayed balances above.
+     *
+     * RC7 Phase C: previously summed every account's raw minor units
+     * regardless of currency, then stamped the result with whichever
+     * currency the first account in the list happened to have — a real,
+     * confirmed currency-mixing bug of the exact same shape as the one
+     * [BalanceCalculator.effect] already guards per-transaction (RC6), just
+     * never closed at this aggregation layer. Now uses [CurrencyGuard] to
+     * group by currency first: only accounts sharing the dominant ("primary")
+     * currency are summed into this figure. Any other-currency account is
+     * excluded here (see [nonPrimaryCurrencyBalances]) rather than silently
+     * corrupting the total — no exchange-rate conversion is performed
+     * anywhere in this codebase.
+     */
     suspend fun netWorth(): Money {
         val balances = currentBalances()
-        val currency = balances.firstOrNull()?.balance?.currencyCode
-            ?: com.sherif.ledger.core.domain.model.CurrencyCode.AED
-        val assets = balances.filter { !it.account.type.isLiability }.sumOf { it.balance.minorUnits }
-        val liabilities = balances.filter { it.account.type.isLiability }.sumOf { it.balance.minorUnits }
-        return Money(assets - liabilities, currency)
+        val grouped = CurrencyGuard.groupAndSum(
+            items = balances,
+            currencyOf = { it.balance.currencyCode },
+            amountOf = { if (it.account.type.isLiability) -it.balance.minorUnits else it.balance.minorUnits },
+        )
+        return Money(grouped.primaryTotalMinor, grouped.primaryCurrency)
+    }
+
+    /**
+     * RC7 Phase D: candidate accounts are deliberately absent from
+     * [currentBalances] (via [AccountRepository.observeAllAccounts] now
+     * excluding them) so they never appear in ordinary balance/net-worth
+     * figures. Developer Console still needs to show what's actually
+     * accumulating in each one before a user decides to promote or dismiss
+     * it — this replays the SAME [BalanceCalculator.effect] rule, scoped to
+     * candidates only. Deliberately skips the credit-card cross-account
+     * liability adjustment [currentBalances] applies to confirmed liability
+     * accounts — an unpromoted candidate has no established relationship to
+     * cross-reference yet.
+     */
+    suspend fun candidateBalances(): List<AccountBalance> {
+        val candidatesResult = accountRepository.observeCandidateAccounts().first()
+        val candidates = (candidatesResult as? LedgerResult.Success)?.data ?: return emptyList()
+        val allTransactions = (transactionRepository.observeAllTransactions().first() as? LedgerResult.Success)?.data ?: emptyList()
+        val byAccount = allTransactions.groupBy { it.accountId }
+        return candidates.map { account ->
+            var minorUnits = account.openingBalance.minorUnits
+            for (transaction in byAccount[account.id].orEmpty()) {
+                minorUnits += balanceCalculator.effect(transaction, account.type, account.openingBalance.currencyCode)
+            }
+            AccountBalance(account, Money(minorUnits, account.openingBalance.currencyCode))
+        }
+    }
+
+    /**
+     * Every account balance whose currency is NOT the primary currency
+     * [netWorth] reports in — real accounts, real balances, deliberately
+     * excluded from that single figure rather than mixed into it. Diagnostics
+     * only (Balance Inspector v2, Part D: "reason excluded").
+     */
+    suspend fun nonPrimaryCurrencyBalances(): List<AccountBalance> {
+        val balances = currentBalances()
+        val grouped = CurrencyGuard.groupAndSum(
+            items = balances,
+            currencyOf = { it.balance.currencyCode },
+            amountOf = { if (it.account.type.isLiability) -it.balance.minorUnits else it.balance.minorUnits },
+        )
+        return balances.filter { it.balance.currencyCode != grouped.primaryCurrency }
     }
 }
 

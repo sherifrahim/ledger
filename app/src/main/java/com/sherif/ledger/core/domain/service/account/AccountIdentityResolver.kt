@@ -19,6 +19,17 @@ enum class AccountIdentityDecision {
     /** Evidence was insufficient. The transaction is recorded against the default
      *  account. This is a visible, queryable state, not a silent guess. */
     FALLBACK_DEFAULT,
+
+    /** RC7 Phase B: the institution itself was not recognized by
+     *  [InstitutionRegistry] at all — never merged into the default account or
+     *  any other existing account, regardless of currency. Recorded instead
+     *  against a dedicated Candidate Account (Account.isCandidate = true),
+     *  correctly currency-tagged from the transaction's own extracted
+     *  currency, excluded from every balance/net-worth figure until a user
+     *  promotes or dismisses it in Developer Console. This is what closes the
+     *  class of bug behind the confirmed HDFC Bank currency-mixing incident
+     *  (RC6) at the source, for any future unrecognized institution too. */
+    CANDIDATE,
 }
 
 /**

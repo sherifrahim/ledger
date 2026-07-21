@@ -2,14 +2,12 @@ package com.sherif.ledger.core.database.mapper
 
 import com.sherif.ledger.core.database.entity.AccountEntity
 import com.sherif.ledger.core.database.entity.BrandEntity
-import com.sherif.ledger.core.database.entity.CategoryEntity
 import com.sherif.ledger.core.database.entity.ParticipantEntity
 import com.sherif.ledger.core.database.entity.SplitEntity
 import com.sherif.ledger.core.database.entity.SplitShareEntity
 import com.sherif.ledger.core.database.entity.TransactionEntity
 import com.sherif.ledger.core.domain.model.Account
 import com.sherif.ledger.core.domain.model.Brand
-import com.sherif.ledger.core.domain.model.Category
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.Participant
@@ -29,7 +27,8 @@ fun AccountEntity.toDomain(): Account = Account(
     type = type,
     openingBalance = Money(openingBalanceMinor, currencyCode),
     accountNumberTail = accountNumberTail,
-    bankBrandId = bankBrandId
+    bankBrandId = bankBrandId,
+    isCandidate = isCandidate,
 )
 
 fun Account.toEntity(): AccountEntity = AccountEntity(
@@ -39,7 +38,8 @@ fun Account.toEntity(): AccountEntity = AccountEntity(
     openingBalanceMinor = openingBalance.minorUnits,
     currencyCode = openingBalance.currencyCode,
     accountNumberTail = accountNumberTail,
-    bankBrandId = bankBrandId
+    bankBrandId = bankBrandId,
+    isCandidate = isCandidate,
 )
 
 fun BrandEntity.toDomain(): Brand = Brand(
@@ -54,22 +54,6 @@ fun Brand.toEntity(): BrandEntity = BrandEntity(
     name = name,
     brandKey = brandKey,
     defaultCategoryId = defaultCategoryId
-)
-
-fun CategoryEntity.toDomain(): Category = Category(
-    id = id,
-    name = name,
-    parentId = parentId,
-    iconKey = iconKey,
-    colorHue = colorHue
-)
-
-fun Category.toEntity(): CategoryEntity = CategoryEntity(
-    id = id,
-    name = name,
-    parentId = parentId,
-    iconKey = iconKey,
-    colorHue = colorHue
 )
 
 fun TransactionEntity.toDomain(): Transaction = Transaction(

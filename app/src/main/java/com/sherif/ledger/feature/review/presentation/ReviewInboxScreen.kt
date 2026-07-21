@@ -17,12 +17,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerHeader
 import com.sherif.ledger.core.designsystem.component.LedgerSurface
@@ -33,13 +35,14 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.review.presentation.components.ReviewCard
-import com.sherif.ledger.feature.review.presentation.preview.ReviewInboxPreviewData
+import com.sherif.ledger.feature.review.presentation.viewmodel.ReviewInboxViewModel
 
 @Composable
 fun ReviewInboxScreen(
-    state: ReviewInboxUiState = ReviewInboxPreviewData.state,
     onReviewItemClick: ((String) -> Unit)? = null,
+    viewModel: ReviewInboxViewModel = hiltViewModel(),
 ) {
+    val state by viewModel.uiState.collectAsState()
     var selectedFilter by remember { mutableStateOf(state.selectedFilter) }
     val filtered = when (selectedFilter) {
         ReviewFilter.All -> state.items
@@ -85,10 +88,11 @@ fun ReviewInboxScreen(
             items(filtered, key = { it.id }) { item ->
                 ReviewCard(
                     item = item,
-                    onConfirm = {},
-                    onEdit = {},
-                    onIgnore = {},
+                    onIgnore = { viewModel.ignore(item.id) },
                     onClick = { onReviewItemClick?.invoke(item.id) },
+                    onCategorySelected = { category ->
+                        viewModel.categorize(item.id, item.rawMerchantText, category)
+                    },
                 )
             }
         }
@@ -107,7 +111,7 @@ private fun SummaryCount(label: String, count: Int, color: androidx.compose.ui.g
 private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val bg = if (selected) LedgerTheme.colors.tint else LedgerTheme.colors.surfaceLevel1
     val fg = if (selected) LedgerTheme.colors.onTint else LedgerTheme.colors.secondaryLabel
-    
+
     Box(
         modifier = Modifier
             .clip(LedgerShapes.small)

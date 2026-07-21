@@ -29,6 +29,8 @@ fun ProfileScreen(
     onNavigateToDebugConsole: () -> Unit = {},
     onNavigateToAdjustBalance: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToReviewInbox: () -> Unit = {},
+    onNavigateToAiSettings: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -48,7 +50,7 @@ fun ProfileScreen(
             }
 
             item {
-                PreferencesSection(onNavigateToDebugConsole, onNavigateToAdjustBalance)
+                PreferencesSection(onNavigateToDebugConsole, onNavigateToAdjustBalance, onNavigateToReviewInbox, onNavigateToAiSettings)
             }
 
             item {
@@ -126,7 +128,7 @@ private fun UserProfileHeader(onEditClick: () -> Unit, viewModel: UserProfileVie
 }
 
 @Composable
-private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceClick: () -> Unit) {
+private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceClick: () -> Unit, onReviewInboxClick: () -> Unit, onAiSettingsClick: () -> Unit) {
     Column {
         Text("PREFERENCES", style = LedgerTheme.typography.labelLarge.copy(letterSpacing = 1.sp), color = LedgerTheme.colors.textTertiary)
         Spacer(Modifier.height(LedgerSpacing.Small))
@@ -147,6 +149,10 @@ private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceC
             PreferenceRow(icon = Icons.Default.Security, label = "Data & Privacy")
             LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.AccountBalanceWallet, label = "Adjust Starting Balance", onClick = onAdjustBalanceClick)
+            LedgerDivider(alpha = 0.05f)
+            PreferenceRow(icon = Icons.Default.RateReview, label = "Review Uncategorized Transactions", onClick = onReviewInboxClick)
+            LedgerDivider(alpha = 0.05f)
+            PreferenceRow(icon = Icons.Default.SmartToy, label = "AI Settings", onClick = onAiSettingsClick)
 
             if (com.sherif.ledger.BuildConfig.DEBUG) {
                 LedgerDivider(alpha = 0.05f)

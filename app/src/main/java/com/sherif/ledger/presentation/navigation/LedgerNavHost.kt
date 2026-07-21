@@ -13,6 +13,7 @@ import androidx.navigation.navArgument
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 import com.sherif.ledger.feature.accounts.presentation.AccountsScreen
 import com.sherif.ledger.feature.accounts.presentation.viewmodel.AccountsViewModel
+import com.sherif.ledger.feature.ai.presentation.AiSettingsScreen
 import com.sherif.ledger.feature.analytics.presentation.InsightsScreen
 import com.sherif.ledger.feature.analytics.presentation.viewmodel.InsightsViewModel
 import com.sherif.ledger.feature.onboarding.presentation.ProfileSetupScreen
@@ -84,6 +85,8 @@ fun LedgerNavHost(
                 onNavigateToDebugConsole = { navController.navigate(LedgerRoute.DebugConsole.route) },
                 onNavigateToAdjustBalance = { navController.navigate(LedgerRoute.AdjustBalance.route) },
                 onNavigateToEditProfile = { navController.navigate(LedgerRoute.EditProfile.route) },
+                onNavigateToReviewInbox = { navController.navigate(LedgerRoute.ReviewInbox.route) },
+                onNavigateToAiSettings = { navController.navigate(LedgerRoute.AiSettings.route) },
             )
         }
 
@@ -103,6 +106,12 @@ fun LedgerNavHost(
 
         composable(LedgerRoute.AdjustBalance.route) {
             AdjustBalanceScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(LedgerRoute.AiSettings.route) {
+            AiSettingsScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

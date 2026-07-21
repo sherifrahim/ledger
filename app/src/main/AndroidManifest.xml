@@ -8,6 +8,12 @@
          runtime; the app functions normally if the user declines it, just
          without this convenience. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- RC5: required for the AI infrastructure's provider calls (feature/ai/provider).
+         Ledger remains fully functional offline — nothing here is called unless the
+         user explicitly enables AI in Settings and configures a provider; see
+         AiSettingsRepository.isAiEnabled (defaults false) and AIOrchestrator, which
+         checks it before doing anything else. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 

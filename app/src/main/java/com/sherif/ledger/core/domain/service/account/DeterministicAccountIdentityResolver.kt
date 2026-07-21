@@ -8,6 +8,8 @@ import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.TransactionCandidate
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.service.intelligence.DecisionType
+import com.sherif.ledger.core.domain.service.intelligence.LearnedDecisionStore
 import com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import kotlinx.coroutines.flow.first
@@ -15,6 +17,22 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/**
+ * RC7's Candidate Account naming convention, shared (not private) so RC8's
+ * [com.sherif.ledger.core.domain.usecase.account.PromoteCandidateAccountUseCase]
+ * can recover the raw institution identifier a promoted account was created
+ * from, to record a learned mapping ([LearnedDecisionStore]).
+ */
+object CandidateAccountNaming {
+    private val pattern = Regex("^Unrecognized Institution \\((.+?)\\)(?: •(.+))?$")
+
+    fun nameFor(rawIdentifier: String, tail: String?): String =
+        "Unrecognized Institution ($rawIdentifier)" + (tail?.let { " •$it" } ?: "")
+
+    /** Null if [accountName] doesn't match the Candidate Account naming convention (e.g. already promoted/renamed). */
+    fun parseRawIdentifier(accountName: String): String? = pattern.matchEntire(accountName)?.groupValues?.get(1)
+}
 
 /**
  * Deterministic account identity resolution. No AI — every decision traces to
@@ -51,6 +69,7 @@ class DeterministicAccountIdentityResolver @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase,
+    private val learnedDecisionStore: LearnedDecisionStore,
 ) : AccountIdentityResolver {
 
     /** Shared across every caller because this class is @Singleton — serializes
@@ -117,9 +136,34 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         evidence += "Currency: $currency"
         typeHint?.let { evidence += "Type hint: $it" }
 
-        // No institution or no tail: nowhere near enough evidence to bind, create,
-        // or even meaningfully count an observation. Straight to fallback.
-        if (institution == null || tail == null) {
+        // RC7 Phase B: an institution InstitutionRegistry has never seen must
+        // NEVER silently merge into the default account — that's exactly the
+        // shape of the confirmed HDFC Bank currency-mixing bug (RC6): an
+        // unrecognized bank's transaction landing in an unrelated-currency
+        // account with no visible trace. Park it in a dedicated Candidate
+        // Account instead, correctly currency-tagged from this transaction's
+        // own data, reviewable in Developer Console.
+        //
+        // RC8 Phase B ("Ledger must learn"): before parking ANOTHER candidate
+        // for the same raw identifier, check whether a user already promoted
+        // one to a real account and confirmed its institution name — deterministic
+        // memory preferred before repeating the same unresolved state forever.
+        if (institution == null) {
+            val learnedName = learnedDecisionStore.valueFor(DecisionType.INSTITUTION, envelope.packageName)
+            if (learnedName != null) {
+                val bound = bindToLearnedInstitution(learnedName, tail, currency, typeHint, evidence)
+                if (bound != null) return bound
+            }
+            return resolveOrCreateCandidate(envelope, tail, currency, typeHint, evidence)
+        }
+
+        // Institution known, but no tail to disambiguate accounts within it:
+        // still not enough evidence to bind or create against a SPECIFIC
+        // account. The default account remains the right fallback here — same
+        // institution, and BalanceCalculator's currency guard (RC6) already
+        // protects against a currency mismatch if the default account happens
+        // to differ, contributing zero effect rather than mixing units.
+        if (tail == null) {
             return AccountIdentityResult(defaultAccountId, AccountIdentityDecision.FALLBACK_DEFAULT, 0, typeHint, evidence)
         }
 
@@ -233,6 +277,79 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         if (institution.defaultCurrency == currency) score += 15
         if (typeHint != null) score += 10 // an explicit type signal, not just an assumed default
         return score
+    }
+
+    /**
+     * RC8 Phase B: a raw identifier the registry still doesn't recognize, but
+     * a user already promoted a Candidate Account for it once and confirmed
+     * its real institution name ([LearnedDecisionStore]). Binds directly to
+     * that CONFIRMED account (by name-contains + tail + currency, the same
+     * convention [AccountMatching]/[scoreAgainstExisting] already use for
+     * registry-known institutions) instead of parking yet another candidate
+     * for a bank the user has already resolved once. Null (never a partial
+     * guess) if no matching confirmed account exists anymore — falls through
+     * to ordinary candidate creation, exactly as if nothing had been learned.
+     */
+    private suspend fun bindToLearnedInstitution(
+        learnedName: String,
+        tail: String?,
+        currency: CurrencyCode,
+        typeHint: AccountType?,
+        evidence: List<String>,
+    ): AccountIdentityResult? {
+        val existingAccounts = (accountRepository.observeAllAccounts().first() as? LedgerResult.Success)?.data ?: emptyList()
+        val match = existingAccounts.firstOrNull {
+            it.name.contains(learnedName, ignoreCase = true) &&
+                it.openingBalance.currencyCode == currency &&
+                (tail == null || it.accountNumberTail == tail)
+        } ?: return null
+        return AccountIdentityResult(
+            match.id,
+            AccountIdentityDecision.BOUND_EXISTING,
+            90,
+            typeHint,
+            evidence + "Learned institution mapping: '$learnedName' -> account '${match.name}' (previously promoted from a Candidate Account)",
+        )
+    }
+
+    private suspend fun resolveOrCreateCandidate(
+        envelope: NotificationEnvelope,
+        tail: String?,
+        currency: CurrencyCode,
+        typeHint: AccountType?,
+        evidence: List<String>,
+    ): AccountIdentityResult {
+        val expectedName = CandidateAccountNaming.nameFor(envelope.packageName, tail)
+        val existingCandidates = (accountRepository.observeCandidateAccounts().first() as? LedgerResult.Success)?.data ?: emptyList()
+        val existing = existingCandidates.firstOrNull { it.name == expectedName && it.openingBalance.currencyCode == currency }
+        if (existing != null) {
+            return AccountIdentityResult(
+                existing.id,
+                AccountIdentityDecision.CANDIDATE,
+                0,
+                typeHint,
+                evidence + "Matched existing Candidate Account '${existing.name}' — institution still unrecognized, awaiting review",
+            )
+        }
+
+        val account = Account(
+            id = 0,
+            name = expectedName,
+            type = typeHint ?: AccountType.CHECKING,
+            openingBalance = Money.zero(currency),
+            accountNumberTail = tail,
+            bankBrandId = null,
+            isCandidate = true,
+        )
+        val result = accountRepository.insertAccount(account)
+        val accountId = (result as? LedgerResult.Success)?.data ?: ensureDefaultAccountUseCase.execute()
+        return AccountIdentityResult(
+            accountId,
+            AccountIdentityDecision.CANDIDATE,
+            0,
+            typeHint,
+            evidence + "Unrecognized institution — created Candidate Account '$expectedName' pending review, currency preserved from the transaction ($currency), never merged into an existing account",
+        )
     }
 
     private suspend fun createAccount(

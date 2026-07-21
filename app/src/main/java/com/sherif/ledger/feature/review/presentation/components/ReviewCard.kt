@@ -1,5 +1,6 @@
 package com.sherif.ledger.feature.review.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,10 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -31,16 +36,25 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.feature.merchant.MerchantCategory
 import com.sherif.ledger.feature.review.presentation.ReviewItemUi
 
+/**
+ * [onCategorySelected] non-null switches the bottom row from the original
+ * Confirm/Edit/Ignore actions to a direct category-chip picker — there is no
+ * AI suggestion to "confirm" for a genuinely unresolved merchant, so the
+ * user picks the real category once, and it's remembered from then on (see
+ * LearnedMerchantCategoryStore).
+ */
 @Composable
 fun ReviewCard(
     item: ReviewItemUi,
-    onConfirm: () -> Unit,
-    onEdit: () -> Unit,
-    onIgnore: () -> Unit,
+    onConfirm: () -> Unit = {},
+    onEdit: () -> Unit = {},
+    onIgnore: () -> Unit = {},
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    onCategorySelected: ((MerchantCategory) -> Unit)? = null,
 ) {
     val amountColor = if (item.isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
     val sign = if (item.isIncome) "+" else "-"
@@ -80,11 +94,40 @@ fun ReviewCard(
         Spacer(Modifier.height(LedgerSpacing.Content))
         Text("\u26A0 ${item.reason}", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.pending)
         Spacer(Modifier.height(LedgerSpacing.Group))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Content)) {
-            LedgerButton("Ignore", onClick = onIgnore, style = LedgerButtonStyle.Text, modifier = Modifier.weight(1f))
-            LedgerButton("Edit", onClick = onEdit, style = LedgerButtonStyle.Secondary, modifier = Modifier.weight(1f))
-            LedgerButton("Confirm", onClick = onConfirm, style = LedgerButtonStyle.Primary, modifier = Modifier.weight(1f))
+        if (onCategorySelected != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Ignore", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.tertiaryLabel, modifier = Modifier.clickable(onClick = onIgnore))
+            }
+            Spacer(Modifier.height(LedgerSpacing.Inline))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Inline)) {
+                items(MerchantCategory.entries.filter { it != MerchantCategory.UNKNOWN }) { category ->
+                    CategoryChip(category, onClick = { onCategorySelected(category) })
+                }
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Content)) {
+                LedgerButton("Ignore", onClick = onIgnore, style = LedgerButtonStyle.Text, modifier = Modifier.weight(1f))
+                LedgerButton("Edit", onClick = onEdit, style = LedgerButtonStyle.Secondary, modifier = Modifier.weight(1f))
+                LedgerButton("Confirm", onClick = onConfirm, style = LedgerButtonStyle.Primary, modifier = Modifier.weight(1f))
+            }
         }
+    }
+}
+
+@Composable
+private fun CategoryChip(category: MerchantCategory, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(LedgerTheme.colors.surfaceInset)
+            .clickable(onClick = onClick)
+            .padding(horizontal = LedgerSpacing.Small, vertical = LedgerSpacing.Inline),
+    ) {
+        Text(
+            text = category.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' '),
+            style = LedgerTextStyles.Caption,
+            color = LedgerTheme.colors.textPrimary,
+        )
     }
 }
 

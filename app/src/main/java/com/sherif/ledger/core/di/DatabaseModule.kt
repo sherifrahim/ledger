@@ -4,12 +4,19 @@ import android.content.Context
 import androidx.room.Room
 import com.sherif.ledger.core.database.LedgerDatabase
 import com.sherif.ledger.core.database.dao.AccountDao
+import com.sherif.ledger.core.database.dao.AiAuditLogDao
 import com.sherif.ledger.core.database.dao.BrandDao
 import com.sherif.ledger.core.database.dao.CategoryDao
+import com.sherif.ledger.core.database.dao.LearnedDecisionDao
+import com.sherif.ledger.core.database.dao.MerchantCategoryOverrideDao
 import com.sherif.ledger.core.database.dao.ParticipantDao
 import com.sherif.ledger.core.database.dao.SplitDao
 import com.sherif.ledger.core.database.dao.TransactionDao
 import com.sherif.ledger.core.database.migration.MIGRATION_5_6
+import com.sherif.ledger.core.database.migration.MIGRATION_6_7
+import com.sherif.ledger.core.database.migration.MIGRATION_7_8
+import com.sherif.ledger.core.database.migration.MIGRATION_8_9
+import com.sherif.ledger.core.database.migration.MIGRATION_9_10
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +39,7 @@ object DatabaseModule {
             // Real migration, not a destructive fallback — this database now
             // holds real user financial history. Additive-only schema change
             // (nullable columns, new tables), so no data transform is needed.
-            .addMigrations(MIGRATION_5_6)
+            .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
             .build()
     }
 
@@ -53,6 +60,16 @@ object DatabaseModule {
 
     @Provides
     fun provideSplitDao(db: LedgerDatabase): SplitDao = db.splitDao()
+
+    @Provides
+    fun provideMerchantCategoryOverrideDao(db: LedgerDatabase): MerchantCategoryOverrideDao =
+        db.merchantCategoryOverrideDao()
+
+    @Provides
+    fun provideAiAuditLogDao(db: LedgerDatabase): AiAuditLogDao = db.aiAuditLogDao()
+
+    @Provides
+    fun provideLearnedDecisionDao(db: LedgerDatabase): LearnedDecisionDao = db.learnedDecisionDao()
 }
 
 

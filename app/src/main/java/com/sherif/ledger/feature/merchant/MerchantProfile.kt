@@ -65,5 +65,12 @@ data class MerchantProfile(
     val country: String? = null,
     /** Confidence that a match to this profile is correct, 0..100. */
     val knownConfidence: Int = 95,
+    /**
+     * RC8: a finer label under [category] (e.g. category TRANSPORT, subcategory
+     * "Ride-hailing"). Optional and not populated for every profile yet — never
+     * fabricated when absent; Category Intelligence (CategoryIntelligenceEngine)
+     * reports it as null rather than guessing one.
+     */
+    val subcategory: String? = null,
 )
 

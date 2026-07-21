@@ -34,6 +34,8 @@ class DetectDuplicateAccountIdentitiesUseCaseTest {
         override suspend fun insertAccount(account: Account) = LedgerResult.Success(1L)
         override suspend fun updateAccount(account: Account) = LedgerResult.Success(Unit)
         override suspend fun deleteAccount(id: Long) = LedgerResult.Success(Unit)
+        override suspend fun getDeletedAccounts() = LedgerResult.Success(emptyList<Account>())
+        override fun observeCandidateAccounts() = kotlinx.coroutines.flow.flowOf(LedgerResult.Success(emptyList<Account>()))
     }
 
     private class FakeTransactionRepository(

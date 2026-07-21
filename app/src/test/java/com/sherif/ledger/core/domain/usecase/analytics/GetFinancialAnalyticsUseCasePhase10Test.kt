@@ -61,6 +61,14 @@ class GetFinancialAnalyticsUseCasePhase10Test {
         override suspend fun insertAccount(account: Account) = throw NotImplementedError()
         override suspend fun updateAccount(account: Account) = throw NotImplementedError()
         override suspend fun deleteAccount(id: Long) = throw NotImplementedError()
+        override suspend fun getDeletedAccounts() = throw NotImplementedError()
+        override fun observeCandidateAccounts() = throw NotImplementedError()
+    }
+
+    /** getAll() IS invoked (LearnedMerchantCategoryStore's init block loads it eagerly); upsert() never invoked here. */
+    private object FakeMerchantCategoryOverrideDao : com.sherif.ledger.core.database.dao.MerchantCategoryOverrideDao {
+        override suspend fun getAll() = emptyList<com.sherif.ledger.core.database.entity.MerchantCategoryOverrideEntity>()
+        override suspend fun upsert(entity: com.sherif.ledger.core.database.entity.MerchantCategoryOverrideEntity) = throw NotImplementedError()
     }
 
     private fun useCase(byPeriod: Map<Pair<Instant, Instant>, List<Transaction>> = emptyMap()): GetFinancialAnalyticsUseCase {
@@ -73,6 +81,7 @@ class GetFinancialAnalyticsUseCasePhase10Test {
                 BalanceCalculator(), repo, FakeUnusedAccountRepository, RelationshipEngine.default(), InstitutionRegistry(),
             ),
             storyPresenter = FinancialStoryPresenter(),
+            learnedMerchantCategoryStore = com.sherif.ledger.feature.merchant.LearnedMerchantCategoryStore(FakeMerchantCategoryOverrideDao),
         )
     }
 

@@ -22,6 +22,40 @@ data class BalanceTraceReport(
     val duplicateAccountIdentities: List<com.sherif.ledger.core.domain.model.DuplicateAccountFinding>,
     val impossibleGrowthEvents: List<ImpossibleGrowthFinding>,
     val typeConflicts: List<TypeConflictFinding>,
+    // RC5 Part 3: accounts that exist in the database but are excluded from
+    // every balance/net-worth figure above, and why — currently the only
+    // exclusion mechanism in the codebase is soft-delete.
+    val excludedAccounts: List<ExcludedAccountTrace> = emptyList(),
+    // RC7 Phase D — Balance Inspector v2: every transaction that contributed
+    // (or was deliberately excluded from contributing) to an account's
+    // balance above, with source/currency/direction and the reason, so the
+    // whole report supports a real line-by-line comparison against SMS
+    // history. Nothing here is hidden — an excluded transaction still appears,
+    // with why.
+    val transactionContributions: List<TransactionContributionTrace> = emptyList(),
+)
+
+/** One transaction's contribution (or non-contribution) to one account's balance — RC7 Phase D. */
+@Serializable
+data class TransactionContributionTrace(
+    val transactionId: Long,
+    val accountId: Long,
+    val source: String,
+    val currency: String,
+    val direction: String,
+    val effectMinor: Long,
+    val included: Boolean,
+    val reason: String,
+    val warnings: List<String> = emptyList(),
+)
+
+/** An account invisible to AccountBalanceService/every balance figure above — with the reason, not just the fact. */
+@Serializable
+data class ExcludedAccountTrace(
+    val accountId: Long,
+    val accountName: String,
+    val accountType: String,
+    val reason: String,
 )
 
 /** One row per account — RC4 items 1 through 8. */

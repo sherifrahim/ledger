@@ -77,4 +77,84 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+/**
+ * Adds the learned merchant-category override table (Review Inbox teaching
+ * a category for a specific merchant string) — one new table, no existing
+ * data touched.
+ */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS merchant_category_overrides (
+                merchant_key TEXT NOT NULL PRIMARY KEY,
+                category TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+/**
+ * RC5 Part 9/"AI Audit Log" — one new table recording every AI call
+ * (provider/model/latency/tokens/confidence/outcome, never a prompt,
+ * response, or API key). Additive only.
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS ai_audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                timestamp_millis INTEGER NOT NULL,
+                capability TEXT NOT NULL,
+                provider_id TEXT NOT NULL,
+                model TEXT NOT NULL,
+                latency_ms INTEGER NOT NULL,
+                tokens_used INTEGER,
+                success INTEGER NOT NULL,
+                confidence_percent INTEGER,
+                error_summary TEXT
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+/**
+ * RC7 Phase B — one new nullable-default column: whether an account is a
+ * Candidate Account (created by the Account Resolver for an institution it
+ * could not recognize, per InstitutionRegistry). Additive only, defaults to 0
+ * (false) for every existing row, so no existing account silently becomes a
+ * candidate. See Account.isCandidate / AccountIdentityDecision.CANDIDATE.
+ */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE accounts ADD COLUMN is_candidate INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+/**
+ * RC8 Phase B: generic learned-decision memory table. Additive only — a new
+ * table, no existing data touched. See LearnedDecisionEntity's doc comment
+ * for why this is generic rather than one table per decision type.
+ */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS learned_decisions (
+                decision_type TEXT NOT NULL,
+                subject_key TEXT NOT NULL,
+                learned_value TEXT NOT NULL,
+                confidence INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                PRIMARY KEY(decision_type, subject_key)
+            )
+            """.trimIndent()
+        )
+    }
+}
+
 

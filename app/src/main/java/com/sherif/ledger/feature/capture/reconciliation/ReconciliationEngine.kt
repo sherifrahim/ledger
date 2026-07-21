@@ -80,7 +80,20 @@ class ReconciliationEngine @Inject constructor(
         }
     }
 
-    private data class ScoreResult(val score: Int, val details: String)
+    /** RC9 Phase C: exposed (was private) so Developer Console diagnostics can show duplicate-detection reasoning. Never consumed by [reconcile] logic itself — read-only. */
+    data class ScoreResult(val score: Int, val details: String)
+
+    /**
+     * RC9 Phase C — Explainability. Purely additive, read-only: reproduces
+     * the EXACT SAME scoring [reconcile] already computes internally, just
+     * returns the per-candidate breakdown instead of discarding it after
+     * picking a winner. Never used by [reconcile] itself, never changes a
+     * score or a threshold — this is diagnostics visibility for the
+     * Intelligence Inspector, not new duplicate-detection logic.
+     */
+    fun explainScoring(candidate: TransactionCandidate, existingTransactions: List<Transaction>): List<Pair<Transaction, ScoreResult>> =
+        existingTransactions.map { it to calculateConfidenceWithDetails(candidate, it) }
+            .sortedByDescending { it.second.score }
 
     /**
      * XDR-inspired: amount, account/card tail, and temporal proximity are the

@@ -9,6 +9,7 @@ import com.sherif.ledger.core.domain.service.account.AccountMatching
 import com.sherif.ledger.core.domain.service.account.InstitutionRegistry
 import com.sherif.ledger.core.domain.service.transaction.AccountBalanceService
 import com.sherif.ledger.core.domain.service.transaction.BalanceCalculator
+import com.sherif.ledger.core.domain.service.transaction.CurrencyGuard
 import com.sherif.ledger.core.domain.usecase.account.DetectDuplicateAccountIdentitiesUseCase
 import com.sherif.ledger.feature.relationship.RelationshipEngine
 import com.sherif.ledger.feature.relationship.RelationshipType
@@ -62,7 +63,7 @@ class FinancialTraceCollector @Inject constructor(
         val accountTraces = accounts.map { account ->
             var effectSum = 0L
             val ownTxns = byAccount[account.id].orEmpty()
-            ownTxns.forEach { effectSum += balanceCalculator.effect(it, account.type) }
+            ownTxns.forEach { effectSum += balanceCalculator.effect(it, account.type, account.openingBalance.currencyCode) }
 
             var liabilityAdjustmentSum = 0L
             if (account.type.isLiability) {
@@ -92,9 +93,32 @@ class FinancialTraceCollector @Inject constructor(
             )
         }
 
+        // RC7 Phase C: previously summed every account's finalBalanceMinor
+        // regardless of currency — the same unguarded cross-currency pattern
+        // found and fixed in AccountBalanceService.netWorth() and
+        // GetFinancialAnalyticsUseCase.computeNetWorth(). CurrencyGuard scopes
+        // this trace's assets/liabilities to the dominant ("primary")
+        // currency only; any other-currency account surfaces separately via
+        // nonPrimaryCurrencyAccounts below, never mixed into these totals.
         val accountById = accounts.associateBy { it.id }
-        val assets = accountTraces.filter { at -> accountById[at.accountId]?.type?.isLiability == false }.sumOf { it.finalBalanceMinor }
-        val liabilities = accountTraces.filter { at -> accountById[at.accountId]?.type?.isLiability == true }.sumOf { it.finalBalanceMinor }
+        val primaryCurrency = CurrencyGuard.groupAndSum(
+            items = accounts,
+            currencyOf = { it.openingBalance.currencyCode },
+            amountOf = { 0L },
+        ).primaryCurrency
+        val accountTracesInPrimaryCurrency = accountTraces.filter { at -> accountById[at.accountId]?.openingBalance?.currencyCode == primaryCurrency }
+        val assets = accountTracesInPrimaryCurrency.filter { at -> accountById[at.accountId]?.type?.isLiability == false }.sumOf { it.finalBalanceMinor }
+        val liabilities = accountTracesInPrimaryCurrency.filter { at -> accountById[at.accountId]?.type?.isLiability == true }.sumOf { it.finalBalanceMinor }
+        val nonPrimaryCurrencyAccounts = accountTraces
+            .filter { at -> accountById[at.accountId]?.openingBalance?.currencyCode != primaryCurrency }
+            .map { at ->
+                ExcludedAccountTrace(
+                    accountId = at.accountId,
+                    accountName = at.accountName,
+                    accountType = at.accountType,
+                    reason = "Currency (${accountById[at.accountId]?.openingBalance?.currencyCode}) differs from the primary currency ($primaryCurrency) — excluded from netWorthMinor/assetsMinor/liabilitiesMinor to avoid mixing currencies; no exchange-rate conversion is performed",
+                )
+            }
 
         val paymentToMatchedAccounts = mutableMapOf<Long, MutableList<Long>>()
         accounts.filter { it.type.isLiability }.forEach { account ->
@@ -118,12 +142,40 @@ class FinancialTraceCollector @Inject constructor(
         val duplicateAccountIdentities = detectDuplicateAccountIdentitiesUseCase.execute()
 
         val impossibleGrowth = mutableListOf<ImpossibleGrowthFinding>()
+        // RC7 Phase D — Balance Inspector v2: every transaction's contribution
+        // (or deliberate non-contribution) to its account's balance, so the
+        // report supports a real line-by-line comparison against SMS history.
+        // Nothing here is hidden: a currency-mismatched or impossible-growth
+        // transaction still appears, with why.
+        val transactionContributions = mutableListOf<TransactionContributionTrace>()
         accounts.forEach { account ->
             byAccount[account.id].orEmpty().forEach { txn ->
-                val effect = balanceCalculator.effect(txn, account.type)
+                val effect = balanceCalculator.effect(txn, account.type, account.openingBalance.currencyCode)
+                val warnings = mutableListOf<String>()
                 if (kotlin.math.abs(effect) > txn.amount.minorUnits) {
                     impossibleGrowth += ImpossibleGrowthFinding(account.id, txn.id, txn.amount.minorUnits, effect)
+                    warnings += "Effect magnitude exceeds the transaction's own amount — impossible under correct arithmetic"
                 }
+                val currencyMismatch = txn.amount.currencyCode != account.openingBalance.currencyCode
+                val direction = when (txn.type) {
+                    TransactionType.TRANSFER -> "TRANSFER (${txn.transferDirection ?: "direction unknown"})"
+                    else -> txn.type.name
+                }
+                transactionContributions += TransactionContributionTrace(
+                    transactionId = txn.id,
+                    accountId = account.id,
+                    source = txn.source.name,
+                    currency = txn.amount.currencyCode.name,
+                    direction = direction,
+                    effectMinor = effect,
+                    included = !currencyMismatch,
+                    reason = if (currencyMismatch) {
+                        "Currency mismatch: transaction is ${txn.amount.currencyCode}, account is ${account.openingBalance.currencyCode} — contributes zero effect rather than mixing units"
+                    } else {
+                        "Included in running balance"
+                    },
+                    warnings = warnings,
+                )
             }
         }
 
@@ -155,6 +207,32 @@ class FinancialTraceCollector @Inject constructor(
             }
         }
 
+        val softDeletedAccounts = ((accountRepository.getDeletedAccounts() as? LedgerResult.Success)?.data ?: emptyList())
+            .map {
+                ExcludedAccountTrace(
+                    accountId = it.id,
+                    accountName = it.name,
+                    accountType = it.type.name,
+                    reason = "Soft-deleted — excluded from every balance and net-worth figure",
+                )
+            }
+
+        // RC7 Phase B: candidate accounts (unrecognized institutions) are the
+        // other standing exclusion mechanism, alongside soft-delete — real
+        // rows, real balances, deliberately absent from every figure above
+        // until a user promotes or dismisses them.
+        val candidateAccounts = ((accountRepository.observeCandidateAccounts().first() as? LedgerResult.Success)?.data ?: emptyList())
+            .map {
+                ExcludedAccountTrace(
+                    accountId = it.id,
+                    accountName = it.name,
+                    accountType = it.type.name,
+                    reason = "Candidate Account — institution not recognized by InstitutionRegistry; excluded until promoted or dismissed in Developer Console",
+                )
+            }
+
+        val excludedAccounts = softDeletedAccounts + candidateAccounts + nonPrimaryCurrencyAccounts
+
         val report = BalanceTraceReport(
             accounts = accountTraces,
             netWorthMinor = assets - liabilities,
@@ -165,6 +243,8 @@ class FinancialTraceCollector @Inject constructor(
             duplicateAccountIdentities = duplicateAccountIdentities,
             impossibleGrowthEvents = impossibleGrowth,
             typeConflicts = typeConflicts,
+            excludedAccounts = excludedAccounts,
+            transactionContributions = transactionContributions,
         )
 
         logReport(report)
@@ -183,6 +263,9 @@ class FinancialTraceCollector @Inject constructor(
             )
         }
         LedgerLogger.d("NET WORTH = assets(${report.assetsMinor}) - liabilities(${report.liabilitiesMinor}) = ${report.netWorthMinor}")
+        report.excludedAccounts.forEach {
+            LedgerLogger.d("EXCLUDED ACCOUNT id=${it.accountId} name='${it.accountName}' type=${it.accountType} reason=${it.reason}")
+        }
         if (report.crossAccountContributions.isNotEmpty()) {
             report.crossAccountContributions.forEach {
                 LedgerLogger.e("CROSS-ACCOUNT: payment txn#${it.paymentTransactionId} matched accounts ${it.matchedAccountIds} — adjustment applied ${it.matchedAccountIds.size} times")

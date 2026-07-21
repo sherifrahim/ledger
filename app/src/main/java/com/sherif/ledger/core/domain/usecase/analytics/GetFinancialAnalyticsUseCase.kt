@@ -15,6 +15,7 @@ import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.service.transaction.AccountBalanceService
 import com.sherif.ledger.core.domain.service.transaction.FinancialStoryPresenter
 import com.sherif.ledger.feature.merchant.GenericCategoryKeywords
+import com.sherif.ledger.feature.merchant.LearnedMerchantCategoryStore
 import com.sherif.ledger.feature.merchant.MerchantResolution
 import com.sherif.ledger.feature.merchant.MerchantResolver
 import com.sherif.ledger.feature.relationship.FinancialRelationship
@@ -64,6 +65,7 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
     private val merchantResolver: MerchantResolver,
     private val accountBalanceService: AccountBalanceService,
     private val storyPresenter: FinancialStoryPresenter,
+    private val learnedMerchantCategoryStore: LearnedMerchantCategoryStore,
 ) {
 
     /** Relationship types whose SOURCE transaction is EXPENSE-typed but is
@@ -85,15 +87,22 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
      * Point-in-time net worth and every account's current balance. Delegates
      * entirely to [AccountBalanceService] — this use case never computes balance
      * arithmetic itself, only shapes that service's output for screens to consume.
+     *
+     * RC7 Phase C: this previously violated its own doc comment above — it
+     * recomputed assets-minus-liabilities itself (a second, independently
+     * drifting copy of [AccountBalanceService.netWorth]'s arithmetic) instead
+     * of calling it, and that duplicate summed raw minor units across every
+     * account regardless of currency, a real cross-currency corruption bug of
+     * the same shape [BalanceCalculator.effect] already guards per-transaction
+     * (RC6). Now genuinely delegates — this is what the Dashboard displays,
+     * so it is the most user-visible fix in Phase C.
      */
     suspend fun computeNetWorth(): NetWorthSnapshot {
         val balances = accountBalanceService.currentBalances()
-        val currency = balances.firstOrNull()?.balance?.currencyCode ?: CurrencyCode.AED
-        val assets = balances.filter { !it.account.type.isLiability }.sumOf { it.balance.minorUnits }
-        val liabilities = balances.filter { it.account.type.isLiability }.sumOf { it.balance.minorUnits }
+        val netWorth = accountBalanceService.netWorth()
         return NetWorthSnapshot(
-            netWorthMinor = assets - liabilities,
-            currency = currency,
+            netWorthMinor = netWorth.minorUnits,
+            currency = netWorth.currencyCode,
             accountBalances = balances.map {
                 AccountBalanceSummary(
                     accountId = it.account.id,
@@ -149,6 +158,7 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
             val explanation = storyPresenter.format(t, core.relationships)
             val resolution = merchantResolver.resolve(t.rawText)
             val category = (resolution as? MerchantResolution.Resolved)?.category?.name
+                ?: learnedMerchantCategoryStore.categoryFor(t.rawText)?.name
                 ?: GenericCategoryKeywords.classify(t.rawText)?.name
                 ?: "UNKNOWN"
             t.id to TransactionStory(explanation, category)
@@ -260,6 +270,7 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
 
                             val resolution = merchantResolver.resolve(t.rawText)
                             val category = (resolution as? MerchantResolution.Resolved)?.category?.name
+                ?: learnedMerchantCategoryStore.categoryFor(t.rawText)?.name
                 ?: GenericCategoryKeywords.classify(t.rawText)?.name
                 ?: "UNKNOWN"
                             val merchantName = resolution.displayName

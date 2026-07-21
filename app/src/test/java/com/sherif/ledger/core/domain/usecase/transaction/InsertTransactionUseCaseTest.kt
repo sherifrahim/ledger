@@ -11,7 +11,6 @@ import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
-import com.sherif.ledger.core.domain.repository.CategoryRepository
 import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.repository.TransactionRunner
@@ -59,6 +58,8 @@ class InsertTransactionUseCaseTest {
             return LedgerResult.Success(Unit)
         }
         override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        override suspend fun getDeletedAccounts() = LedgerResult.Success(emptyList<Account>())
+        override fun observeCandidateAccounts() = kotlinx.coroutines.flow.flowOf(LedgerResult.Success(emptyList<Account>()))
     }
 
     private val merchantRepository = object : MerchantRepository {

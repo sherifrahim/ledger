@@ -34,6 +34,9 @@ data class AccountEntity(
     @ColumnInfo(name = "is_deleted")
     val isDeleted: Boolean = false,
 
+    @ColumnInfo(name = "is_candidate", defaultValue = "0")
+    val isCandidate: Boolean = false,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis(),
     

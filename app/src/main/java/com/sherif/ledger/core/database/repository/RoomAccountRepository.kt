@@ -98,6 +98,21 @@ class RoomAccountRepository @Inject constructor(
         LedgerResult.Failure(LedgerError.DatabaseFailure)
     }
 
+    override suspend fun getDeletedAccounts(): LedgerResult<List<Account>> = try {
+        LedgerResult.Success(accountDao.getDeletedAccounts().map { it.toDomain() })
+    } catch (e: Exception) {
+        LedgerLogger.e("Repository: getDeletedAccounts Failure", e)
+        LedgerResult.Failure(LedgerError.DatabaseFailure)
+    }
+
+    override fun observeCandidateAccounts(): Flow<LedgerResult<List<Account>>> =
+        accountDao.observeCandidateAccounts()
+            .map { entities -> LedgerResult.Success(entities.map { it.toDomain() }) as LedgerResult<List<Account>> }
+            .catch { e ->
+                LedgerLogger.e("Repository: observeCandidateAccounts error", e)
+                emit(LedgerResult.Failure(LedgerError.Unknown(e.message ?: "Database error")))
+            }
+
     override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = try {
         val rowsUpdated = accountDao.softDeleteAccount(id)
         

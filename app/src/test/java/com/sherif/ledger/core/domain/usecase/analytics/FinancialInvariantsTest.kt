@@ -36,6 +36,7 @@ class FinancialInvariantsTest {
             com.sherif.ledger.core.domain.service.account.InstitutionRegistry(),
         ), // never exercised: compute() is called directly, computeNetWorth() is not under test here
         storyPresenter = com.sherif.ledger.core.domain.service.transaction.FinancialStoryPresenter(),
+        learnedMerchantCategoryStore = com.sherif.ledger.feature.merchant.LearnedMerchantCategoryStore(FakeMerchantCategoryOverrideDao),
     )
 
     private val periodStart = Instant.ofEpochSecond(0)
@@ -274,6 +275,8 @@ class FinancialInvariantsTest {
         override suspend fun insertAccount(account: com.sherif.ledger.core.domain.model.Account) = com.sherif.ledger.core.domain.model.LedgerResult.Success(1L)
         override suspend fun updateAccount(account: com.sherif.ledger.core.domain.model.Account) = com.sherif.ledger.core.domain.model.LedgerResult.Success(Unit)
         override suspend fun deleteAccount(id: Long) = com.sherif.ledger.core.domain.model.LedgerResult.Success(Unit)
+        override suspend fun getDeletedAccounts() = com.sherif.ledger.core.domain.model.LedgerResult.Success(emptyList<com.sherif.ledger.core.domain.model.Account>())
+        override fun observeCandidateAccounts() = kotlinx.coroutines.flow.flowOf(com.sherif.ledger.core.domain.model.LedgerResult.Success(emptyList<com.sherif.ledger.core.domain.model.Account>()))
     }
 
     private class FakeTransactionsRepository(
@@ -313,6 +316,14 @@ class FinancialInvariantsTest {
         override suspend fun insertAccount(account: com.sherif.ledger.core.domain.model.Account) = throw NotImplementedError()
         override suspend fun updateAccount(account: com.sherif.ledger.core.domain.model.Account) = throw NotImplementedError()
         override suspend fun deleteAccount(id: Long) = throw NotImplementedError()
+        override suspend fun getDeletedAccounts() = throw NotImplementedError()
+        override fun observeCandidateAccounts() = throw NotImplementedError()
+    }
+
+    /** getAll() IS invoked (LearnedMerchantCategoryStore's init block loads it eagerly); upsert() never invoked here. */
+    private object FakeMerchantCategoryOverrideDao : com.sherif.ledger.core.database.dao.MerchantCategoryOverrideDao {
+        override suspend fun getAll() = emptyList<com.sherif.ledger.core.database.entity.MerchantCategoryOverrideEntity>()
+        override suspend fun upsert(entity: com.sherif.ledger.core.database.entity.MerchantCategoryOverrideEntity) = throw NotImplementedError()
     }
 }
 

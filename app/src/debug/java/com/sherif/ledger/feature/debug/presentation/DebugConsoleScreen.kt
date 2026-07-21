@@ -20,6 +20,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.SmartToy
 import com.sherif.ledger.core.common.diagnostics.PipelineEvent
 import com.sherif.ledger.core.common.diagnostics.StageStatus
 import com.sherif.ledger.core.designsystem.component.LedgerTopBar
@@ -40,6 +44,10 @@ fun DebugConsoleScreen(
     onAction: (DebugAction) -> Unit,
     onNavigateToDiagnostics: () -> Unit,
     onNavigateToLedgerDiagnostics: () -> Unit,
+    onNavigateToBalanceInspector: () -> Unit,
+    onNavigateToAiMetrics: () -> Unit,
+    onNavigateToAiDebug: () -> Unit,
+    onNavigateToIntelligenceInspector: () -> Unit,
     onBackClick: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -72,6 +80,34 @@ fun DebugConsoleScreen(
                             Icon(
                                 imageVector = Icons.Filled.Assessment,
                                 contentDescription = "Ledger Diagnostics",
+                                tint = LedgerTheme.colors.tint
+                            )
+                        }
+                        IconButton(onClick = onNavigateToBalanceInspector) {
+                            Icon(
+                                imageVector = Icons.Filled.AccountBalance,
+                                contentDescription = "Balance Inspector",
+                                tint = LedgerTheme.colors.tint
+                            )
+                        }
+                        IconButton(onClick = onNavigateToAiMetrics) {
+                            Icon(
+                                imageVector = Icons.Filled.Insights,
+                                contentDescription = "AI Metrics",
+                                tint = LedgerTheme.colors.tint
+                            )
+                        }
+                        IconButton(onClick = onNavigateToAiDebug) {
+                            Icon(
+                                imageVector = Icons.Filled.SmartToy,
+                                contentDescription = "AI Debug",
+                                tint = LedgerTheme.colors.tint
+                            )
+                        }
+                        IconButton(onClick = onNavigateToIntelligenceInspector) {
+                            Icon(
+                                imageVector = Icons.Filled.Lightbulb,
+                                contentDescription = "Intelligence Inspector",
                                 tint = LedgerTheme.colors.tint
                             )
                         }

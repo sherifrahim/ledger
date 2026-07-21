@@ -1,0 +1,26 @@
+[
+  {
+    "id": "e2e_adcb_carrefour",
+    "sourceType": "SMS",
+    "rawText": "Purchase of AED 45.00 at CARREFOUR with card ending 1234.",
+    "senderOrPackage": "ADCB",
+    "expected": {
+      "institution": "ADCB",
+      "merchant": "Carrefour",
+      "category": "GROCERIES",
+      "accountHint": "1234"
+    }
+  },
+  {
+    "id": "e2e_rakbank_uber",
+    "sourceType": "SMS",
+    "rawText": "Purchase of AED 15.00 at UBER with card ending 9012.",
+    "senderOrPackage": "RAKBANK",
+    "expected": {
+      "institution": "RAKBANK",
+      "merchant": "Uber",
+      "category": "TRANSPORT",
+      "accountHint": "9012"
+    }
+  }
+]

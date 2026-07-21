@@ -21,7 +21,18 @@ class AdcbParser @Inject constructor(
 
     override val priority: Int = 0
 
-    private val adcbPackage = "com.adcb.mobileapp"
+    // RC7: was "com.adcb.mobileapp" — a stale value that drifted out of sync
+    // with InstitutionRegistry/NotificationFilter (both already corrected to
+    // the real package, "com.adcb.nexgen", per NotificationFilter's own "Jul
+    // 2026 regression" comment). This parser's own supports() check silently
+    // never matched a real ADCB app notification as a result; only ADCB SMS
+    // (matched via adcbSmsSender below) or the GenericBankParser fallback ever
+    // handled ADCB in practice. Kept as a literal (not injected from
+    // InstitutionRegistry) so this parser's supports() stays an exact,
+    // narrow match — InstitutionRegistry.resolve() also does broader alias
+    // substring matching, which is deliberately NOT wanted for a priority-0
+    // parser's gating check.
+    private val adcbPackage = "com.adcb.nexgen"
     private val adcbSmsSender = "ADCB"
 
     private val patterns = listOf(

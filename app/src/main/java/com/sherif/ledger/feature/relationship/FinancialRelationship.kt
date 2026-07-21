@@ -29,7 +29,6 @@ enum class RelationshipType {
     SUBSCRIPTION,
     INSTALLMENT_PAYMENT,
     INVESTMENT_CONTRIBUTION,
-    UNKNOWN_RELATIONSHIP,
 }
 
 /**

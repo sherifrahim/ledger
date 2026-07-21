@@ -1,0 +1,14 @@
+[
+  {
+    "id": "e2e_mashreq_starbucks",
+    "sourceType": "NOTIFICATION",
+    "rawText": "Purchase of AED 20.00 at STARBUCKS with card ending 5678.",
+    "senderOrPackage": "com.vipera.ts.starter.MashreqAE",
+    "expected": {
+      "institution": "Mashreq",
+      "merchant": "Starbucks",
+      "category": "DINING",
+      "accountHint": "5678"
+    }
+  }
+]

@@ -6,8 +6,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.sherif.ledger.feature.debug.presentation.AiDebugScreen
+import com.sherif.ledger.feature.debug.presentation.AiMetricsScreen
+import com.sherif.ledger.feature.debug.presentation.BalanceInspectorScreen
 import com.sherif.ledger.feature.debug.presentation.DebugConsoleScreen
 import com.sherif.ledger.feature.debug.presentation.DiagnosticsScreen
+import com.sherif.ledger.feature.debug.presentation.IntelligenceInspectorScreen
 import com.sherif.ledger.feature.debug.presentation.PipelineDiagnosticsScreen
 import com.sherif.ledger.feature.debug.presentation.viewmodel.DebugConsoleViewModel
 
@@ -16,13 +20,17 @@ fun NavGraphBuilder.debugNavGraph(navController: NavHostController) {
         val viewModel: DebugConsoleViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsState()
         val dbSummary by viewModel.dbSummary.collectAsState()
-        
+
         DebugConsoleScreen(
             state = state,
             dbSummary = dbSummary,
             onAction = { action -> viewModel.handleAction(action) },
             onNavigateToDiagnostics = { navController.navigate(LedgerRoute.PipelineDiagnostics.route) },
             onNavigateToLedgerDiagnostics = { navController.navigate(LedgerRoute.LedgerDiagnostics.route) },
+            onNavigateToBalanceInspector = { navController.navigate(LedgerRoute.BalanceInspector.route) },
+            onNavigateToAiMetrics = { navController.navigate(LedgerRoute.AiMetrics.route) },
+            onNavigateToAiDebug = { navController.navigate(LedgerRoute.AiDebug.route) },
+            onNavigateToIntelligenceInspector = { navController.navigate(LedgerRoute.IntelligenceInspector.route) },
             onBackClick = { navController.popBackStack() }
         )
     }
@@ -38,7 +46,28 @@ fun NavGraphBuilder.debugNavGraph(navController: NavHostController) {
             onBackClick = { navController.popBackStack() }
         )
     }
+
+    composable(LedgerRoute.BalanceInspector.route) {
+        BalanceInspectorScreen(
+            onBackClick = { navController.popBackStack() }
+        )
+    }
+
+    composable(LedgerRoute.AiMetrics.route) {
+        AiMetricsScreen(
+            onBackClick = { navController.popBackStack() }
+        )
+    }
+
+    composable(LedgerRoute.AiDebug.route) {
+        AiDebugScreen(
+            onBackClick = { navController.popBackStack() }
+        )
+    }
+
+    composable(LedgerRoute.IntelligenceInspector.route) {
+        IntelligenceInspectorScreen(
+            onBackClick = { navController.popBackStack() }
+        )
+    }
 }
-
-
-

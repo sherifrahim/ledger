@@ -12,11 +12,16 @@ sealed class LedgerRoute(val route: String) {
     data object Settings : LedgerRoute("settings")
     data object AdjustBalance : LedgerRoute("adjust_balance")
     data object EditProfile : LedgerRoute("edit_profile")
+    data object AiSettings : LedgerRoute("ai_settings")
     data object SearchFilter : LedgerRoute("search_filter")
     data object ReviewInbox : LedgerRoute("review")
     data object DebugConsole : LedgerRoute("debug_console")
     data object PipelineDiagnostics : LedgerRoute("pipeline_diagnostics")
     data object LedgerDiagnostics : LedgerRoute("ledger_diagnostics")
+    data object BalanceInspector : LedgerRoute("balance_inspector")
+    data object AiMetrics : LedgerRoute("ai_metrics")
+    data object AiDebug : LedgerRoute("ai_debug")
+    data object IntelligenceInspector : LedgerRoute("intelligence_inspector")
     data object SmsOnboarding : LedgerRoute("sms_onboarding")
     data object TransactionDetails : LedgerRoute("transaction/{transactionId}") {
         fun create(transactionId: String): String = "transaction/$transactionId"

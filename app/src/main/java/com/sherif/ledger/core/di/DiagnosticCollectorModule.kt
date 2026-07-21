@@ -6,6 +6,7 @@ import com.sherif.ledger.core.domain.service.diagnostic.DatabaseHealthCollector
 import com.sherif.ledger.core.domain.service.diagnostic.DiagnosticCollector
 import com.sherif.ledger.core.domain.service.diagnostic.FinancialTraceCollector
 import com.sherif.ledger.core.domain.service.diagnostic.ImportSummaryCollector
+import com.sherif.ledger.core.domain.service.diagnostic.InstitutionDiagnosticsCollector
 import com.sherif.ledger.core.domain.service.diagnostic.LiveLogCollector
 import com.sherif.ledger.core.domain.service.diagnostic.NotificationCollector
 import com.sherif.ledger.core.domain.service.diagnostic.PipelineCollector
@@ -61,6 +62,10 @@ abstract class DiagnosticCollectorModule {
     @Binds
     @IntoSet
     abstract fun bindImportSummaryCollector(collector: ImportSummaryCollector): DiagnosticCollector
+
+    @Binds
+    @IntoSet
+    abstract fun bindInstitutionDiagnosticsCollector(collector: InstitutionDiagnosticsCollector): DiagnosticCollector
 }
 
 
