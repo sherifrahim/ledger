@@ -14,6 +14,10 @@ This file is auto-loaded into every session's context, every message, forever �
 - **Before dispatching a research subagent, check whether the answer is already in a canonical doc.** RC9 caught itself nearly re-investigating something RC8 already covered; the canonical docs exist specifically so this stops happening.
 - Note on the mechanism itself: automatic context compaction (summarizing older turns when a session's context fills up) is a harness-level behavior, not something configurable from inside a session — there's no in-session setting to change when it triggers. The actionable levers are the ones above: keep the auto-loaded project context small, avoid redundant investigation, and split very large work across sessions when practical.
 
+## Documentation freeze — Version 1.0 (in effect 2026-07-21)
+
+The canonical specification set is **frozen at v1.0** and considered stable: `LEDGER_MASTER_SPECIFICATION.md`, `ENGINEERING_HANDBOOK.md`, `ECOSYSTEM_SPECIFICATION.md`, `GOVERNANCE.md`, `DESIGN_RATIONALE.md`, `FUTURE_RESEARCH.md` (and the derived `LEDGER_CONSTITUTION.md`). **Do NOT modify any of these during feature implementation.** If implementation reveals a flaw in the specification: (1) raise the issue to the user, (2) propose an ADR (under `docs/adr/`), (3) wait for approval. **Never silently modify the specification while coding.** This rule is itself the reason the freeze status is recorded here, in the session-context layer, rather than inside a frozen document.
+
 ## Canonical docs index
 
 Each of these is comprehensive on its own topic — read the relevant one instead of asking "how does X work" from scratch:
@@ -25,7 +29,10 @@ Each of these is comprehensive on its own topic — read the relevant one instea
 - `ARCHITECTURE.md` — visual index, Mermaid diagrams for every major flow (RC9).
 - `ENGINEERING_STATUS.md` — the single "state of the codebase" doc: subsystem ownership, technical debt eliminated/remaining, risks, recommendations, Product Readiness scorecard (RC9).
 - `SESSION_HISTORY.md` — RC4-RC6 delivery narrative (predates the canonical-doc convention; relocated here from this file 2026-07-21 to keep this file lean).
-- `LEDGER_MANIFESTO.md` / `docs/NORTH_STAR.md` — product philosophy.
+- **`LEDGER_MASTER_SPECIFICATION.md`** — the single canonical product specification, v1.0 (Parts I–XI, Chapters 1–151): product foundation, financial philosophy, platform/domain architecture, design language, product/screen/component/interaction/AI bibles, Universal Data Ingestion. **Level-1 governance authority** (the product vision lives here; there is no separate vision doc). Produced 2026-07-21 by merging the eleven `part*` drafts (now archived under `docs/spec-archive/`).
+- **`LEDGER_CONSTITUTION.md`** — distilled long-lived project principles + the 10 resolved canonical decisions (§13: brownfield, Financial Event as domain model, capability-matrix-is-target, dashboard order, confidence ladder, 9 subsystems, master-spec-as-Level-1, Android-only, currency). **Read this before spec-driven implementation work instead of re-reading the full master spec.**
+- `DOCUMENTATION_REVIEW.md` — principal-architect review of the spec set: contradictions, missing requirements, suggested ADRs, risks. The 10 open questions it raised are now resolved (see the resolution note at its top and `LEDGER_CONSTITUTION.md` §13); retained as historical record. Note it still lists genuine *missing engineering details* (§3) — Financial Event schema, Safe-to-Spend/Story/Forecast algorithms, dedup hash — that need ADRs before those capabilities are built.
+- `LEDGER_MANIFESTO.md` / `docs/NORTH_STAR.md` — product philosophy (predates the spec set).
 - `PROJECT_STANDARDS.md` — git branching, Conventional Commits.
 - `docs/KNOWN_RUNTIME_ISSUES.md`, `docs/technical_debt/DB_MIGRATIONS.md`, `docs/adr/` — as named.
 

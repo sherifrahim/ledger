@@ -14,3 +14,4 @@ keystore.properties
 *.patch
 app/release/
 app/debug/
+.mcp.json
