@@ -26,7 +26,6 @@ fun LedgerTheme(
 ) {
     val ledgerColors = when (themeType) {
         LedgerThemeType.Classic -> if (darkTheme) LedgerV3DarkColors else LedgerV3LightColors
-        LedgerThemeType.Glass -> if (darkTheme) LedgerV3DarkColors else LedgerV3LightColors // Simplified for now
         LedgerThemeType.MidnightGlass -> LedgerV3DarkColors
     }
     val materialColorScheme = if (darkTheme) LedgerDarkColorScheme else LedgerLightColorScheme

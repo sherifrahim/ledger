@@ -3,7 +3,6 @@ package com.sherif.ledger.core.di
 import com.sherif.ledger.core.database.repository.EventSourcedTransactionReadSource
 import com.sherif.ledger.core.database.repository.RoomAccountRepository
 import com.sherif.ledger.core.database.repository.RoomFinancialEventRepository
-import com.sherif.ledger.core.database.repository.RoomInsightsRepository
 import com.sherif.ledger.core.database.repository.RoomMerchantRepository
 import com.sherif.ledger.core.database.repository.RoomParticipantRepository
 import com.sherif.ledger.core.database.repository.RoomSplitRepository
@@ -11,7 +10,6 @@ import com.sherif.ledger.core.database.repository.RoomTransactionRepository
 import com.sherif.ledger.core.database.repository.RoomTransactionRunner
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.FinancialEventRepository
-import com.sherif.ledger.core.domain.repository.InsightsRepository
 import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.ParticipantRepository
 import com.sherif.ledger.core.domain.repository.SplitRepository
@@ -39,10 +37,6 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindMerchantRepository(repo: RoomMerchantRepository): MerchantRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindInsightsRepository(repo: RoomInsightsRepository): InsightsRepository
 
     @Binds
     @Singleton

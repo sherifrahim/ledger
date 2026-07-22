@@ -11,14 +11,9 @@ import java.time.Instant
  * Logcat write, which is unchanged. Both happen unconditionally together;
  * there is no path that logs to one and not the other.
  *
- * Removed the eventTracker bridge to the old core.common.diagnostics
- * PipelineEvent/PipelineTracker system: confirmed dead in RC3 (nothing has
- * injected PipelineTracker since DebugConsoleViewModel was moved onto
- * PipelineTraceSink), so it was silently doing nothing on every call. Not
- * deleting PipelineTracker.kt/RealPipelineTracker.kt/DiagnosticModule.kt
- * themselves — that would be the architectural clean-up RC4 explicitly asked
- * to avoid — only removing this call site now that building the real
- * persistent-logging path makes clear it has nowhere useful left to feed.
+ * H4: removed the dead `eventTracker` bridge to the old core.common.diagnostics
+ * PipelineTracker system along with the tracker itself — the live diagnostics
+ * path is PipelineTraceSink.
  */
 object LedgerLogger {
     private const val TAG = "LedgerPipeline"
@@ -28,14 +23,6 @@ object LedgerLogger {
     private val currentTraceId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
     fun setTraceId(id: String?) { currentTraceId.value = id }
     fun getTraceId(): String? = currentTraceId.value
-
-    // Retained purely so RealPipelineTracker.kt (app/src/debug/) still compiles
-    // — its init{} block wires this. Confirmed dead as a functional path (RC3:
-    // nothing has injected the old PipelineTracker interface since
-    // DebugConsoleViewModel moved onto PipelineTraceSink), so pipeline() below
-    // no longer invokes it. Not deleting RealPipelineTracker.kt itself, since
-    // that would be the architectural clean-up RC4 asked to avoid.
-    var eventTracker: ((com.sherif.ledger.core.common.diagnostics.PipelineEvent) -> Unit)? = null
 
     // Retained for the existing Developer Console "Logs" tab — unchanged shape,
     // still capped, so nothing there needs to change alongside this.

@@ -29,7 +29,6 @@ fun LedgerThemesComparisonPreview() {
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         ThemeColumn("Classic", LedgerThemeType.Classic, modifier = Modifier.weight(1f))
-        ThemeColumn("Glass", LedgerThemeType.Glass, modifier = Modifier.weight(1f))
         ThemeColumn("Midnight", LedgerThemeType.MidnightGlass, modifier = Modifier.weight(1f))
     }
 }
