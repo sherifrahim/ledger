@@ -10,6 +10,7 @@ import com.sherif.ledger.feature.ai.cost.AiCostTracker
 import com.sherif.ledger.feature.ai.domain.AICapability
 import com.sherif.ledger.feature.ai.domain.AICompletionResult
 import com.sherif.ledger.feature.ai.domain.LLMProvider
+import com.sherif.ledger.core.domain.usecase.intelligence.AiCategorizationSweepUseCase
 import com.sherif.ledger.feature.ai.settings.AiSettingsRepository
 import com.sherif.ledger.feature.ai.settings.SecureApiKeyStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -67,6 +68,7 @@ class AiSettingsViewModel @Inject constructor(
     private val capabilityRegistry: CapabilityRegistry,
     private val auditLogger: AiAuditLogger,
     private val costTracker: AiCostTracker,
+    private val aiCategorizationSweep: AiCategorizationSweepUseCase,
 ) : ViewModel() {
 
     private val _testResultByProvider = MutableStateFlow<Map<String, String>>(emptyMap())
@@ -125,7 +127,12 @@ class AiSettingsViewModel @Inject constructor(
     }
 
     fun setAiEnabled(enabled: Boolean) {
-        viewModelScope.launch { aiSettingsRepository.setAiEnabled(enabled) }
+        viewModelScope.launch {
+            aiSettingsRepository.setAiEnabled(enabled)
+            // Turning AI on categorises the existing UNKNOWN-expense backlog now,
+            // so the effect is immediate rather than waiting for the next launch.
+            if (enabled) runCatching { aiCategorizationSweep.execute() }
+        }
     }
 
     fun setTemperature(value: Double) {

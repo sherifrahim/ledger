@@ -86,7 +86,14 @@ class ReviewInboxViewModel @Inject constructor(
         val timeFormatter = DateTimeFormatter.ofPattern("d MMM, HH:mm")
 
         val items = transactions
-            .filter { stories[it.id]?.category == "UNKNOWN" && it.id !in ignored && it.id !in categorized }
+            // Only EXPENSES need a *spending* category. Income (salary/credits),
+            // transfers and refunds are not spending, so they never belong in this
+            // "which category?" queue — they were cluttering it (e.g. salary).
+            .filter {
+                it.type == TransactionType.EXPENSE &&
+                    stories[it.id]?.category == "UNKNOWN" &&
+                    it.id !in ignored && it.id !in categorized
+            }
             .sortedByDescending { it.timestamp }
             .map { t ->
                 val resolution = merchantResolver.resolve(t.rawText)
