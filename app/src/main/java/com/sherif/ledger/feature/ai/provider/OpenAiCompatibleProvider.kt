@@ -36,6 +36,12 @@ private data class ChatCompletionResponse(
     val usage: ChatCompletionUsage? = null,
 )
 
+@Serializable
+private data class OpenAiError(val error: OpenAiErrorBody? = null)
+
+@Serializable
+private data class OpenAiErrorBody(val message: String? = null, val type: String? = null, val code: String? = null)
+
 /**
  * One real implementation of the "OpenAI-compatible chat completions" wire
  * format — used by OpenAI itself, Groq, OpenRouter, Ollama (its `/v1`
@@ -86,7 +92,13 @@ class OpenAiCompatibleProvider(
             client.newCall(requestBuilder.build()).execute().use { response ->
                 val latency = System.currentTimeMillis() - start
                 if (!response.isSuccessful) {
-                    return@withContext AICompletionResult.Failure("HTTP ${response.code}", latency)
+                    // Include the provider's own error message (quota/model/rate-limit
+                    // reason) rather than a bare HTTP code. Never contains the api key.
+                    val detail = runCatching {
+                        json.decodeFromString(OpenAiError.serializer(), response.body?.string().orEmpty()).error?.message
+                    }.getOrNull()
+                    val reason = if (detail.isNullOrBlank()) "HTTP ${response.code}" else "HTTP ${response.code}: ${detail.take(180)}"
+                    return@withContext AICompletionResult.Failure(reason, latency)
                 }
                 val text = response.body?.string().orEmpty()
                 val parsed = json.decodeFromString(ChatCompletionResponse.serializer(), text)
