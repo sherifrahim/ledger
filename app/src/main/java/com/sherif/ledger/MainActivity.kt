@@ -64,6 +64,10 @@ class MainActivity : ComponentActivity() {
         val deepLinkTransactionId = intent.getLongExtra(
             com.sherif.ledger.feature.notification.AndroidTransactionCaptureNotifier.EXTRA_TRANSACTION_ID, -1L,
         ).takeIf { it > 0 }
+        // The notification's "Split" action deep-links straight to the split screen.
+        val deepLinkOpenSplit = intent.getBooleanExtra(
+            com.sherif.ledger.feature.notification.AndroidTransactionCaptureNotifier.EXTRA_OPEN_SPLIT, false,
+        )
         
         setContent {
             val mainViewModel: MainViewModel = hiltViewModel()
@@ -118,7 +122,7 @@ class MainActivity : ComponentActivity() {
                         } else if (isPermissionGranted) {
                             if (isSmsImported) {
                                 com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=true. Launching Dashboard.")
-                                LedgerApp(deepLinkTransactionId = deepLinkTransactionId)
+                                LedgerApp(deepLinkTransactionId = deepLinkTransactionId, deepLinkOpenSplit = deepLinkOpenSplit)
                             } else {
                                 com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=false. Launching SMS Onboarding.")
                                 SmsOnboardingScreen(onComplete = {
@@ -142,7 +146,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun LedgerApp(deepLinkTransactionId: Long? = null) {
+private fun LedgerApp(deepLinkTransactionId: Long? = null, deepLinkOpenSplit: Boolean = false) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -160,9 +164,14 @@ private fun LedgerApp(deepLinkTransactionId: Long? = null) {
         LedgerRoute.Profile.route,
     )
 
-    androidx.compose.runtime.LaunchedEffect(deepLinkTransactionId) {
+    androidx.compose.runtime.LaunchedEffect(deepLinkTransactionId, deepLinkOpenSplit) {
         if (deepLinkTransactionId != null) {
-            navController.navigate(LedgerRoute.TransactionDetails.create(deepLinkTransactionId.toString()))
+            val route = if (deepLinkOpenSplit) {
+                LedgerRoute.Split.create(deepLinkTransactionId.toString())
+            } else {
+                LedgerRoute.TransactionDetails.create(deepLinkTransactionId.toString())
+            }
+            navController.navigate(route)
         }
     }
 

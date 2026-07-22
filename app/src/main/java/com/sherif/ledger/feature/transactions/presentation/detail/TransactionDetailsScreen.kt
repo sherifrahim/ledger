@@ -28,6 +28,7 @@ fun TransactionDetailsScreen(
     onBackClick: () -> Unit = {},
     state: TransactionDetailsUiState,
     onSaveNote: (String) -> Unit = {},
+    onSplitClick: () -> Unit = {},
 ) {
     var editingNote by remember { mutableStateOf(false) }
     if (editingNote) {
@@ -92,6 +93,13 @@ fun TransactionDetailsScreen(
             item {
                 Spacer(Modifier.height(LedgerSpacing.Large))
                 NoteSection(note = state.notes, onEdit = { editingNote = true })
+                Spacer(Modifier.height(LedgerSpacing.Small))
+                LedgerButton(
+                    text = "Split",
+                    onClick = onSplitClick,
+                    style = LedgerButtonStyle.Tonal,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Spacer(Modifier.height(LedgerSpacing.Large))
             }
         }

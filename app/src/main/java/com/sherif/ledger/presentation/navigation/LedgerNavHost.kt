@@ -229,8 +229,18 @@ fun LedgerNavHost(
                     state = it,
                     onBackClick = { navController.popBackStack() },
                     onSaveNote = { note -> viewModel.updateNote(note) },
+                    onSplitClick = { transactionId?.let { id -> navController.navigate(LedgerRoute.Split.create(id)) } },
                 )
             }
+        }
+
+        composable(
+            route = LedgerRoute.Split.route,
+            arguments = listOf(navArgument("transactionId") { type = NavType.StringType }),
+        ) {
+            com.sherif.ledger.feature.split.presentation.SplitScreen(
+                onBackClick = { navController.popBackStack() },
+            )
         }
 
         debugNavGraph(navController)

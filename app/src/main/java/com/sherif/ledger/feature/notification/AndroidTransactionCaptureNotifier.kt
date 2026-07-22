@@ -36,6 +36,7 @@ class AndroidTransactionCaptureNotifier @Inject constructor(
     companion object {
         const val CHANNEL_ID = "transaction_captured"
         const val EXTRA_TRANSACTION_ID = "transaction_id"
+        const val EXTRA_OPEN_SPLIT = "open_split"
         const val ACTION_UNDO = "com.sherif.ledger.action.UNDO_TRANSACTION"
         const val ACTION_ADD_NOTE = "com.sherif.ledger.action.ADD_NOTE"
         const val REMOTE_INPUT_NOTE_KEY = "note_text"
@@ -69,13 +70,26 @@ class AndroidTransactionCaptureNotifier @Inject constructor(
         val notificationId = transaction.id.toInt()
         val requestCodeBase = transaction.id.toInt() * 10
 
-        val splitIntent = Intent(context, MainActivity::class.java).apply {
+        // Tapping the notification body opens the transaction's detail.
+        val contentIntent = Intent(context, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(EXTRA_TRANSACTION_ID, transaction.id)
         }
+        val contentPendingIntent = PendingIntent.getActivity(
+            context, requestCodeBase + 1, contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        // The "Split" action opens the split screen for this transaction directly.
+        val splitIntent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_TRANSACTION_ID, transaction.id)
+            putExtra(EXTRA_OPEN_SPLIT, true)
+        }
         val splitPendingIntent = PendingIntent.getActivity(
-            context, requestCodeBase + 1, splitIntent,
+            context, requestCodeBase + 4, splitIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
@@ -108,7 +122,7 @@ class AndroidTransactionCaptureNotifier @Inject constructor(
             .setContentTitle(merchantOrDescription)
             .setContentText("Captured $formattedAmount")
             .setAutoCancel(true)
-            .setContentIntent(splitPendingIntent)
+            .setContentIntent(contentPendingIntent)
             .addAction(android.R.drawable.ic_menu_share, "Split", splitPendingIntent)
             .addAction(addNoteAction)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Undo", undoPendingIntent)

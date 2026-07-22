@@ -36,6 +36,9 @@ sealed class LedgerRoute(val route: String) {
     data object TransactionDetails : LedgerRoute("transaction/{transactionId}") {
         fun create(transactionId: String): String = "transaction/$transactionId"
     }
+    data object Split : LedgerRoute("split/{transactionId}") {
+        fun create(transactionId: String): String = "split/$transactionId"
+    }
 }
 
 
