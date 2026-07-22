@@ -367,3 +367,31 @@ verification (content-descs present) + dashboard render. Decorative `LedgerBrand
 merchant name (adjacent label) — acceptable.
 
 **Follow-ups (Low):** per-row semantics merging for denser lists. Next: **H3 navigation cleanup**.
+
+---
+
+## H3 — Floating nav + navigation cleanup  ·  `feat(nav): floating nav island; remove dead affordances`
+
+**Reuse question:** improve existing? → **Yes** — reshaped the existing `LedgerBottomBar` and
+reused the card surface tokens; no new component.
+
+- **Floating navigation island (product-owner request).** The bottom bar is now a single
+  rounded pill that floats above the bottom edge (side + bottom margins, clear of the gesture
+  bar) instead of a full-width footer. It follows the card philosophy — **paper-white lifted by
+  a soft shadow in light; one-step-lighter charcoal with a whisper border in dark** (same as
+  `LedgerCard`) — so it reads correctly in both themes. Content scrolls underneath. Equal-width
+  tabs, single-line labels (all five fit incl. the bold selected "Dashboard").
+- **Dead affordances removed:** Dashboard **notification bell** (no-op) and Transaction-detail
+  **Share** (no-op) — a dead affordance is worse than none.
+- **Fabrication removed:** `ProfileScreen`'s static preference rows
+  (Currency/Theme/Language/Notifications/Data & Privacy) deleted; only real, wired actions
+  remain (Adjust Balance, Review, AI Settings, Developer Console, Edit Profile). Theme lives in
+  the gear → Settings (System/Dark).
+
+**Gates:** compileDebug + compileRelease + testDebugUnitTest green; emulator verified **light +
+dark** (`docs/design/screenshots/floating-nav-light-dark.png`); nav behaves in both modes.
+
+**Follow-ups (H3/H4):** `SearchFilterScreen` TODO; unreachable Ledger Split / notification
+actions (product decision); `LedgerThemeType` Light option for a full System/Light/Dark control.
+Next: **H4 dead-code elimination** (the obsolete `InsightsRepository`, `LedgerThemeType.Glass`,
+`PipelineTracker` family — remove after re-proving unused).

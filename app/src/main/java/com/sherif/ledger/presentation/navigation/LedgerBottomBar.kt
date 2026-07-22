@@ -1,7 +1,11 @@
 package com.sherif.ledger.presentation.navigation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
@@ -22,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -53,42 +58,57 @@ private enum class BottomTab(
 }
 
 /**
- * Ledger V3 Navigation Bar
- * 
- * Replaces the V2 floating dock with a clean, editorial architectural footer.
+ * Ledger navigation — a **floating island** in the design language.
+ *
+ * A single rounded surface that floats above the bottom edge (side + bottom margins,
+ * clear of the system gesture bar) rather than a full-width footer. It follows the
+ * card philosophy: paper-white lifted by a soft shadow in light, one-step-lighter
+ * charcoal with a whisper border in dark — the same treatment as [LedgerCard], so it
+ * reads correctly in both themes. Content scrolls underneath it.
  */
 @Composable
 fun LedgerBottomBar(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+    val colors = LedgerTheme.colors
+    val shape = LedgerRadius.Full
 
-    Column {
-        LedgerDivider(alpha = 0.05f) // Architectural separation
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(LedgerTheme.colors.surfaceBase.copy(alpha = 0.95f))
-                .navigationBarsPadding()
-                .padding(vertical = LedgerSpacing.Small),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BottomTab.entries.forEach { tab ->
-                val isSelected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
-                LedgerTabItem(
-                    modifier = Modifier.weight(1f),
-                    icon = if (isSelected) tab.iconFilled else tab.iconOutlined,
-                    label = tab.label,
-                    isSelected = isSelected,
-                    onClick = {
-                        navController.navigate(tab.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                )
-            }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small)
+            .then(
+                if (!colors.isDark) Modifier.shadow(
+                    elevation = 16.dp,
+                    shape = shape,
+                    clip = false,
+                    ambientColor = colors.shadowColor,
+                    spotColor = colors.shadowColor,
+                ) else Modifier,
+            )
+            .clip(shape)
+            .background(colors.surfaceCard)
+            .border(LedgerTheme.border.Hairline, colors.cardBorder, shape)
+            .padding(horizontal = LedgerSpacing.Tiny, vertical = LedgerSpacing.Small),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BottomTab.entries.forEach { tab ->
+            val isSelected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
+            LedgerTabItem(
+                modifier = Modifier.weight(1f),
+                icon = if (isSelected) tab.iconFilled else tab.iconOutlined,
+                label = tab.label,
+                isSelected = isSelected,
+                onClick = {
+                    navController.navigate(tab.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+            )
         }
     }
 }
@@ -110,7 +130,7 @@ private fun LedgerTabItem(
     Column(
         modifier = modifier
             .ledgerClickable(onClick = onClick)
-            .padding(horizontal = LedgerSpacing.Tiny, vertical = 2.dp),
+            .padding(vertical = LedgerSpacing.Tiny),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
@@ -123,6 +143,7 @@ private fun LedgerTabItem(
         Text(
             text = label,
             style = LedgerTextStyles.Caption.copy(
+                fontSize = 11.sp,
                 fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.SemiBold
                              else androidx.compose.ui.text.font.FontWeight.Normal,
             ),

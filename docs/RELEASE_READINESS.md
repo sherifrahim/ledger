@@ -8,7 +8,7 @@ Standing rules in force: reuse-before-new-engine; treat every screen as a produc
 ADR-0000 (brownfield) + ADR-0001 (Financial Event); never fabricate — honest empty state
 when an engine is absent.
 
-_Last updated: after H2 (Accessibility pass)._
+_Last updated: after H3 (floating nav + navigation cleanup)._
 
 ---
 
@@ -38,15 +38,18 @@ identified. (Continued vigilance in PART 4 screen-by-screen polish.)
 
 ## High
 
-- **Dead affordances / TODO-navigation** still present (no-op `onClick`):
-  `TransactionDetailsScreen` (2), `SearchFilterScreen` (1), Dashboard/greeting **notification
-  bell**, Merchant/greeting bells. _`SettingsScreen`'s fabricated rows (Dark-mode toggle,
-  Currency/Language/Default-account/Expense-reminders/Weekly-insights/Export/Delete) with TODO
-  clicks were removed; Accounts "Add Account" & Profile "Log Out" removed earlier._ → H3.
-- **Settings / Profile consolidation** (new): `ProfileScreen` still carries static preference
-  rows (Currency/Theme/Language/Notifications/Data & Privacy) duplicating the (now-cleaned)
-  gear → `SettingsScreen`. Decide the one home; `SettingsScreen` is now just a theme control.
-  A full System/Light/Dark theme control needs a one-line `LedgerThemeType` Light option. → H3.
+- ✅ **Navigation cleanup (H3)** — bottom bar is now a **floating island** (LDL card
+  surface: soft-shadow paper in light, elevated charcoal + border in dark; single-line
+  labels). Dead affordances removed: Dashboard **notification bell** (no-op) and the
+  Transaction-detail **Share** (no-op); `ProfileScreen`'s fabricated static rows
+  (Currency/Theme/Language/Notifications/Data & Privacy) removed — real actions (Adjust
+  Balance, Review, AI Settings, Developer Console, Edit Profile) remain; theme lives in the
+  gear → Settings. _(Earlier: `SettingsScreen` fabricated rows, Accounts "Add Account",
+  Profile "Log Out".)_
+- **Remaining dead-nav (Low → finish in H3/H4):** `SearchFilterScreen` TODO; residual
+  Transaction-detail TODOs. **Unreachable surfaces:** Ledger Split backend (no route) and the
+  notification actions (permission never requested) — product decision to ship a route or
+  remove. A full System/Light/Dark control still needs a one-line `LedgerThemeType` Light option.
 - ✅ **Accessibility (PART 5 / H2)** — `LedgerIconButton.contentDescription` is now a
   **required** param (compiler-enforced) and all 11 call sites are labelled (verified in the
   a11y tree: "Notifications", "Back", "Settings", "Search", "Hide amount", …); touch target

@@ -102,13 +102,7 @@ private fun DetailsTopBar(onBackClick: () -> Unit) {
             contentDescription = "Back",
             tint = LedgerTheme.colors.textPrimary
         )
-
-        LedgerIconButton(
-            icon = Icons.Default.Share,
-            onClick = { /* TODO */ },
-            contentDescription = "Share",
-            tint = LedgerTheme.colors.textPrimary
-        )
+        // (Share removed — it was a no-op; reinstated when export/share is real.)
     }
 }
 

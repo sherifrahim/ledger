@@ -164,16 +164,9 @@ private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceC
             shape = com.sherif.ledger.core.designsystem.tokens.LedgerRadius.Large,
             contentPadding = PaddingValues(0.dp)
         ) {
-            PreferenceRow(icon = Icons.Default.Payments, label = "Currency", value = "AED")
-            LedgerDivider(alpha = 0.05f)
-            PreferenceRow(icon = Icons.Default.Palette, label = "Theme", value = "System")
-            LedgerDivider(alpha = 0.05f)
-            PreferenceRow(icon = Icons.Default.Language, label = "Language", value = "English")
-            LedgerDivider(alpha = 0.05f)
-            PreferenceRow(icon = Icons.Default.Notifications, label = "Notifications")
-            LedgerDivider(alpha = 0.05f)
-            PreferenceRow(icon = Icons.Default.Security, label = "Data & Privacy")
-            LedgerDivider(alpha = 0.05f)
+            // Removed fabricated static rows (Currency/Theme/Language/Notifications/
+            // Data & Privacy) — they displayed hard-coded values and did nothing. Theme
+            // now lives in the gear → Settings. Only real, wired actions remain here.
             PreferenceRow(icon = Icons.Default.AccountBalanceWallet, label = "Adjust Starting Balance", onClick = onAdjustBalanceClick)
             LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.RateReview, label = "Review Uncategorized Transactions", onClick = onReviewInboxClick)
