@@ -8,7 +8,7 @@ Standing rules in force: reuse-before-new-engine; treat every screen as a produc
 ADR-0000 (brownfield) + ADR-0001 (Financial Event); never fabricate — honest empty state
 when an engine is absent.
 
-_Last updated: after P7 (event-first reads — Phase A architecture complete)._
+_Last updated: after the real-device responsive hotfix + Settings legacy removal._
 
 ---
 
@@ -26,15 +26,30 @@ _Last updated: after P7 (event-first reads — Phase A architecture complete)._
 **No production screen renders fabricated data as of H2.** Remaining fabrication: none
 identified. (Continued vigilance in PART 4 screen-by-screen polish.)
 
+## Responsive UI / dynamic type (real-device hotfix)
+
+- ✅ **Large figures no longer wrap** on any width/font-scale — `LedgerAutoSizeText`
+  (single-line, shrink-to-fit) on Dashboard/Accounts Total Balance + Merchant stat cards;
+  `maxLines=1`+ellipsis on account/merchant/row names; **bottom-nav** equal-width tabs +
+  single-line labels (fixes "Settings" stacking). Verified at font-scale 1.3 + 1080px.
+- ✅ **Accounts net-worth sign bug fixed** (showed positive while Dashboard showed negative).
+- ✅ **Sluggish launch** — read-parity harness gated to DEBUG (was running the analytics
+  engines twice on every production launch).
+
 ## High
 
-- **Dead affordances / TODO-navigation** still present (no-op `onClick`): `SettingsScreen`
-  (1), `TransactionDetailsScreen` (2), `SearchFilterScreen` (1), Dashboard/greeting
-  **notification bell** (no-op), Merchant/greeting bells. _Accounts "Add Account" & Profile
-  "Log Out" removed in H2._ → PART 4/6.
+- **Dead affordances / TODO-navigation** still present (no-op `onClick`):
+  `TransactionDetailsScreen` (2), `SearchFilterScreen` (1), Dashboard/greeting **notification
+  bell**, Merchant/greeting bells. _`SettingsScreen`'s fabricated rows (Dark-mode toggle,
+  Currency/Language/Default-account/Expense-reminders/Weekly-insights/Export/Delete) with TODO
+  clicks were removed; Accounts "Add Account" & Profile "Log Out" removed earlier._ → H3.
+- **Settings / Profile consolidation** (new): `ProfileScreen` still carries static preference
+  rows (Currency/Theme/Language/Notifications/Data & Privacy) duplicating the (now-cleaned)
+  gear → `SettingsScreen`. Decide the one home; `SettingsScreen` is now just a theme control.
+  A full System/Light/Dark theme control needs a one-line `LedgerThemeType` Light option. → H3.
 - **Accessibility** (PART 5): `LedgerIconButton` passes `contentDescription = null`
-  app-wide; touch targets (44dp vs 48dp); tertiary-on-inset contrast; dynamic text; screen
-  reader ordering.
+  app-wide; touch targets (44dp vs 48dp); tertiary-on-inset contrast; screen reader ordering.
+  _Dynamic-type overflow now handled for figures/nav (above)._
 - ~~**FinancialEvent backfill** (P5)~~ ✅ done — idempotent, resumable, safe, observable
   (`BackfillFinancialEventsUseCase`, auto-run at startup, on-device `verified=true`).
 

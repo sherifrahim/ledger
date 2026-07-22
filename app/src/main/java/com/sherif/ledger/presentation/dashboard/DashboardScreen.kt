@@ -168,10 +168,11 @@ private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, m
             )
         }
         Spacer(Modifier.height(LedgerSpacing.Small))
-        Text(
+        LedgerAutoSizeText(
             text = if (hidden) "••••••" else (if (isNegative) "-$balance" else balance),
             style = LedgerTextStyles.Hero,
             color = if (isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,
+            modifier = Modifier.fillMaxWidth(),
         )
         if (change != null || monthlySpend.isNotBlank()) {
             Spacer(Modifier.height(LedgerSpacing.Small))

@@ -139,11 +139,18 @@ fun UniversalSearchScreen(
                     ) {
                         LedgerBrandIcon(name = r.merchant, size = 40.dp)
                         Column(Modifier.weight(1f)) {
-                            Text(r.merchant, style = LedgerTextStyles.BodyMedium.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary)
+                            Text(
+                                r.merchant,
+                                style = LedgerTextStyles.BodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = LedgerTheme.colors.textPrimary,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
                             if (r.category.isNotBlank()) {
-                                Text(r.category, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textSecondary)
+                                Text(r.category, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textSecondary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             }
                         }
+                        Spacer(Modifier.width(LedgerSpacing.Small))
                         Column(horizontalAlignment = Alignment.End) {
                             LedgerAmount(
                                 amount = (if (r.isExpense) "-" else "+") + r.amount,

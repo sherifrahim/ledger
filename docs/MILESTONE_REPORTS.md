@@ -303,3 +303,41 @@ record view, and the month-over-month internal helper. **Soft-delete → event V
 
 Commit says it plainly: **reads now originate from FinancialEvent; legacy Transaction reads
 remain only where intentionally documented; no functional regression.** ADR-0001 realized.
+
+---
+
+## Hotfix — real-device responsive UI + Settings legacy removal  ·  `fix(ui): responsive text + real Settings; remove legacy`
+
+Reported from a real phone (larger system font-scale / narrower width than the emulator):
+text overflowing to a second line, weird box sizes, and a sluggish launch.
+
+**Responsive text (dynamic-type safe, uniform across devices).**
+- New `LedgerAutoSizeText` — single-line text that shrinks to fit — on the Dashboard and
+  Accounts **Total Balance** hero and Merchant stat-card values, so large figures never wrap.
+- `maxLines = 1` + ellipsis on account names, transaction-row merchant/explanation,
+  review-card merchant (2 lines), and search-result merchant.
+- **Bottom nav** made robust: equal-width tabs (`weight(1f)`) + single-line labels — fixes the
+  "Settings" label stacking one letter per line at large font.
+- Verified on the emulator at **font-scale 1.3 + 1080px width**: "AED 2,405.00" stays one line;
+  nav labels no longer stack. Device reset to normal after.
+
+**Correctness bug.** Accounts "Total Balance" dropped the negative sign (showed positive while
+the Dashboard showed it negative). Added `netWorthIsNegative`; the hero now renders the sign and
+negative colour, consistent with the Dashboard.
+
+**Sluggishness.** The read-parity harness (runs the analytics engines twice) was executing on
+every production launch → gated to `BuildConfig.DEBUG`. The backfill still runs (idempotent, cheap).
+
+**Settings legacy removal (product-owner comment).** The gear → Settings screen was almost
+entirely fabricated: a hard-coded no-op **Dark-mode toggle**, legacy **Classic/Glass/MidnightGlass**
+theme names (Glass = a no-op duplicate of Classic), and static Currency/Language/Default-account/
+Expense-reminders/Weekly-insights/Export/Delete rows with `TODO` clicks. Removed all of it; kept
+the one wired control, relabelled honestly to **System / Dark**.
+
+**Gates:** compileDebug+Release + testDebugUnitTest green; emulator verified under large font +
+narrow width (screenshots in `docs/design/screenshots`).
+
+**Follow-ups (in RELEASE_READINESS for H3/Architecture Verification):** `ProfileScreen` carries
+similar static preference rows (Settings/Profile duplication to consolidate); the greeting may
+wrap to two lines at large font (benign); `LedgerThemeType` lacks a forced-Light option, so a full
+System/Light/Dark control needs a one-line enum extension.

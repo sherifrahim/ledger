@@ -76,6 +76,7 @@ fun LedgerBottomBar(navController: NavHostController) {
             BottomTab.entries.forEach { tab ->
                 val isSelected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
                 LedgerTabItem(
+                    modifier = Modifier.weight(1f),
                     icon = if (isSelected) tab.iconFilled else tab.iconOutlined,
                     label = tab.label,
                     isSelected = isSelected,
@@ -98,6 +99,7 @@ private fun LedgerTabItem(
     label: String,
     isSelected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colors = LedgerTheme.colors
     val color by animateColorAsState(
@@ -106,9 +108,9 @@ private fun LedgerTabItem(
     )
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .ledgerClickable(onClick = onClick)
-            .padding(horizontal = LedgerSpacing.Small, vertical = 2.dp),
+            .padding(horizontal = LedgerSpacing.Tiny, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
@@ -124,7 +126,10 @@ private fun LedgerTabItem(
                 fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.SemiBold
                              else androidx.compose.ui.text.font.FontWeight.Normal,
             ),
-            color = color
+            color = color,
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
         )
     }
 }

@@ -85,6 +85,7 @@ class AccountsViewModel @Inject constructor(
 
         return AccountsUiState(
             netWorth = MoneyFormatter.format(Money(netWorth.netWorthMinor, netWorth.currency), includeSymbol = false),
+            netWorthIsNegative = netWorth.netWorthMinor < 0,
             netWorthCurrency = netWorth.currency.name,
             assetsTotal = MoneyFormatter.format(Money(assetsUnits, netWorth.currency), includeSymbol = false),
             liabilitiesTotal = MoneyFormatter.format(Money(liabilitiesUnits, netWorth.currency), includeSymbol = false),

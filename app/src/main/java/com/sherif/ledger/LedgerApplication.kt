@@ -31,9 +31,13 @@ class LedgerApplication : Application() {
                 if (report.created > 0 || report.failures > 0) {
                     LedgerLogger.d("Startup backfill: ${report.summary()}")
                 }
-                val parity = readParityHarness.execute()
-                if (!parity.proven) {
-                    LedgerLogger.e("Read parity has UNEXPECTED differences: ${parity.summary()}")
+                // The read-parity harness is a verification tool (it runs the analytics
+                // engines twice). Debug builds only — never adds work to a production launch.
+                if (BuildConfig.DEBUG) {
+                    val parity = readParityHarness.execute()
+                    if (!parity.proven) {
+                        LedgerLogger.e("Read parity has UNEXPECTED differences: ${parity.summary()}")
+                    }
                 }
             } catch (e: Exception) {
                 LedgerLogger.e("Startup event migration/parity failed (non-fatal)", e)

@@ -96,9 +96,16 @@ fun ReviewCard(
             LedgerBrandIcon(name = item.merchant, size = 40.dp)
             Spacer(Modifier.width(LedgerSpacing.Small))
             Column(Modifier.weight(1f)) {
-                Text(item.merchant, style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
+                Text(
+                    item.merchant,
+                    style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold),
+                    color = colors.textPrimary,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
                 Text(item.timestamp, style = LedgerTextStyles.Caption, color = colors.textTertiary)
             }
+            Spacer(Modifier.width(LedgerSpacing.Small))
             LedgerAmount(amount = "${sign}AED ${item.amount}", style = LedgerAmountStyle.Regular, color = amountColor)
         }
 

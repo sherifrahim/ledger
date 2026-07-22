@@ -171,9 +171,15 @@ private fun RelationshipHeader(state: MerchantUiState) {
 @Composable
 private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
     LedgerSurface(modifier = modifier, level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large) {
-        Text(label, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+        Text(label, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         Spacer(Modifier.height(LedgerSpacing.Tiny))
-        Text(value, style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary)
+        com.sherif.ledger.core.designsystem.component.LedgerAutoSizeText(
+            text = value,
+            style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold),
+            color = LedgerTheme.colors.textPrimary,
+            modifier = Modifier.fillMaxWidth(),
+            minFontSize = 14.sp,
+        )
     }
 }
 

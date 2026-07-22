@@ -52,7 +52,7 @@ fun AccountsScreen(
         ) {
             item { AccountsHeader() }
 
-            item { TotalBalanceCard(currency, state.netWorth, state.assetsTotal, state.liabilitiesTotal) }
+            item { TotalBalanceCard(currency, state.netWorth, state.netWorthIsNegative, state.assetsTotal, state.liabilitiesTotal) }
 
             if (hasAccounts) {
                 state.sections.forEach { section ->
@@ -105,11 +105,16 @@ private fun AccountsHeader() {
 }
 
 @Composable
-private fun TotalBalanceCard(currency: String, netWorth: String, assets: String, liabilities: String) {
+private fun TotalBalanceCard(currency: String, netWorth: String, isNegative: Boolean, assets: String, liabilities: String) {
     LedgerCard(elevation = LedgerCardDefaults.Elevation) {
         Text("Total Balance", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
         Spacer(Modifier.height(LedgerSpacing.Small))
-        Text("$currency $netWorth", style = LedgerTextStyles.Hero, color = LedgerTheme.colors.textPrimary)
+        LedgerAutoSizeText(
+            text = (if (isNegative) "-" else "") + "$currency $netWorth",
+            style = LedgerTextStyles.Hero,
+            color = if (isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Spacer(Modifier.height(LedgerSpacing.Medium))
         Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
             Breakdown("Assets", "$currency $assets", LedgerTheme.colors.positive)
@@ -140,11 +145,15 @@ private fun AccountRow(account: AccountUi, currency: String) {
                 account.name,
                 style = LedgerTextStyles.BodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = LedgerTheme.colors.textPrimary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             Text(
                 account.subtitle.lowercase().replaceFirstChar { it.uppercase() },
                 style = LedgerTextStyles.Caption,
                 color = LedgerTheme.colors.textTertiary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
         }
         LedgerAmount(

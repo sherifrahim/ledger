@@ -57,13 +57,17 @@ fun LedgerTransactionRow(
             Text(
                 text = title,
                 style = LedgerTextStyles.BodyMedium.copy(fontWeight = FontWeight.Bold),
-                color = colors.textPrimary
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             if (finalExplanation.isNotEmpty()) {
                 Text(
                     text = finalExplanation,
                     style = LedgerTextStyles.Label,
-                    color = colors.textSecondary
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
         }

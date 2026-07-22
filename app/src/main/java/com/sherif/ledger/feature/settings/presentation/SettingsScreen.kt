@@ -60,45 +60,17 @@ fun SettingsScreen(
             )
         }
 
+        // Only genuinely-functional settings remain. The previous Dark-mode toggle
+        // (hard-coded on, no-op) and the Currency / Language / Default account /
+        // Expense reminders / Weekly insights / Export data / Delete account rows were
+        // fabricated (static values, TODO no-op clicks) and were removed — a settings
+        // row must do what it says. Theme is the one wired control.
         item("appearance") {
             SettingsGroup(title = "Appearance") {
                 ThemeSelectionRow(
                     selectedTheme = themeType,
                     onThemeSelected = { viewModel.setThemeType(it) }
                 )
-                LedgerHairline()
-                SettingsRow(label = "Dark mode", trailing = {
-                    Switch(
-                        checked = true,
-                        onCheckedChange = {},
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = LedgerTheme.colors.onTint,
-                            checkedTrackColor = LedgerTheme.colors.success
-                        )
-                    )
-                })
-                LedgerHairline()
-                SettingsRow(label = "Currency", value = "AED")
-                LedgerHairline()
-                SettingsRow(label = "Language", value = "English")
-            }
-        }
-
-        item("preferences") {
-            SettingsGroup(title = "Preferences") {
-                SettingsRow(label = "Default account", value = "Personal Account")
-                LedgerHairline()
-                SettingsRow(label = "Expense reminders", value = "On")
-                LedgerHairline()
-                SettingsRow(label = "Weekly insights", value = "On")
-            }
-        }
-
-        item("data") {
-            SettingsGroup(title = "Data & Privacy") {
-                SettingsRow(label = "Export data")
-                LedgerHairline()
-                SettingsRow(label = "Delete account", labelColor = LedgerTheme.colors.expense)
             }
         }
     }
@@ -124,7 +96,15 @@ private fun ThemeSelectionRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
         ) {
-            LedgerThemeType.entries.forEach { theme ->
+            // Only the theme types that produce a distinct, working result, with honest
+            // labels (the old Classic/Glass/MidnightGlass names were v1/v2 leftovers;
+            // Glass was a no-op duplicate of Classic). Classic = follow the device;
+            // MidnightGlass = always dark.
+            val options = listOf(
+                LedgerThemeType.Classic to "System",
+                LedgerThemeType.MidnightGlass to "Dark",
+            )
+            options.forEach { (theme, label) ->
                 val isSelected = theme == selectedTheme
                 Box(
                     modifier = Modifier
@@ -139,7 +119,7 @@ private fun ThemeSelectionRow(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = theme.name,
+                        text = label,
                         style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
                         color = if (isSelected) LedgerTheme.colors.onTint else LedgerTheme.colors.secondaryLabel
                     )
