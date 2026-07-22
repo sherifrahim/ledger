@@ -306,6 +306,16 @@ private fun BalanceConfirmationScreen(viewModel: SmsOnboardingViewModel, onCompl
                 color = LedgerTheme.colors.textSecondary,
             )
             Spacer(Modifier.height(LedgerSpacing.Tiny))
+            // Show what Ledger computed from the imported window, so the correction
+            // is transparent: the user sees the machine's figure and enters the real
+            // one, and the difference is recorded as the balance held before the window.
+            Text(
+                text = "Ledger calculated ${formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode)} " +
+                    "from your imported messages. Enter your real balance and Ledger records the difference as your starting point.",
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.textTertiary,
+            )
+            Spacer(Modifier.height(LedgerSpacing.Tiny))
             LedgerAmountInputField(
                 value = entries[account.accountId] ?: "",
                 onValueChange = { entries[account.accountId] = it },

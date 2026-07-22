@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.common.util.DiagnosticUtils
+import com.sherif.ledger.core.designsystem.component.LedgerButton
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -58,7 +59,7 @@ fun NotificationAccessScreen() {
         Icon(
             imageVector = Icons.Default.NotificationsActive,
             contentDescription = null,
-            tint = LedgerTheme.colors.success.copy(alpha = 0.6f),
+            tint = LedgerTheme.colors.textPrimary,
             modifier = Modifier.size(84.dp)
         )
 
@@ -85,31 +86,24 @@ fun NotificationAccessScreen() {
 
         Spacer(Modifier.height(LedgerSpacing.XxxLarge))
 
-        Button(
+        LedgerButton(
+            text = "Enable in Settings",
             onClick = {
                 val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                 context.startActivity(intent)
             },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = LedgerTheme.colors.success,
-                contentColor = LedgerTheme.colors.onTint
-            ),
-            shape = LedgerTheme.radius.Large
-        ) {
-            Text(
-                text = "Enable in Settings",
-                style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold)
-            )
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        // Pipeline diagnostics are a developer aid — never shown to a real user
+        // during onboarding. Debug builds only.
+        if (com.sherif.ledger.BuildConfig.DEBUG) {
+            Spacer(Modifier.height(LedgerSpacing.Massive))
+            DiagnosticSection(diagnostics) {
+                DiagnosticUtils.requestRebind(context)
+            }
         }
 
-        Spacer(Modifier.height(LedgerSpacing.Massive))
-
-        // Diagnostic Section
-        DiagnosticSection(diagnostics) {
-            DiagnosticUtils.requestRebind(context)
-        }
-        
         Spacer(Modifier.height(LedgerSpacing.Massive))
     }
 }

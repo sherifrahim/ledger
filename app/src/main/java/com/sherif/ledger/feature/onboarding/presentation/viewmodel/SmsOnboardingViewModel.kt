@@ -92,7 +92,12 @@ class SmsOnboardingViewModel @Inject constructor(
                     "SmsOnboardingViewModel: Import window = ${range.label} [${range.start}, ${range.end}]",
                 )
                 val result = smsImporter.importHistoricalSms(range.start, range.end, range.label)
-                userPreferencesRepository.setSmsImported(true)
+                // NOTE: do NOT mark isSmsImported here. MainActivity navigates to the
+                // Dashboard the instant that flag flips, which would tear this screen
+                // down before the "Confirm Starting Balance" step can run — leaving
+                // openingBalance = 0 and a wrong Dashboard balance. The flag is set only
+                // at the genuine terminal points (proceedPastImport / confirmBalances /
+                // skipImport), after the opening balance has been confirmed.
                 _importResult.value = result.found
                 com.sherif.ledger.core.common.logging.LedgerLogger.d("SmsOnboardingViewModel: Import Completed. Found=${result.found}")
 
@@ -106,7 +111,6 @@ class SmsOnboardingViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                userPreferencesRepository.setSmsImported(true)
                 _importResult.value = -1
                 com.sherif.ledger.core.common.logging.LedgerLogger.e("SmsOnboardingViewModel: Import Failed", e)
             } finally {
@@ -120,7 +124,12 @@ class SmsOnboardingViewModel @Inject constructor(
         if (_balanceConfirmationAccounts.value.isNotEmpty()) {
             _showBalanceConfirmation.value = true
         } else {
-            onComplete()
+            // No account to confirm (e.g. import failed / found nothing). This is a
+            // genuine terminal point, so mark onboarding done here.
+            viewModelScope.launch {
+                userPreferencesRepository.setSmsImported(true)
+                onComplete()
+            }
         }
     }
 
@@ -130,6 +139,8 @@ class SmsOnboardingViewModel @Inject constructor(
             actualBalancesMinor.forEach { (accountId, actualMinor) ->
                 seedOpeningBalanceUseCase.execute(accountId, actualMinor)
             }
+            // Onboarding truly completes here, after the opening balance is fixed.
+            userPreferencesRepository.setSmsImported(true)
             onComplete()
         }
     }
