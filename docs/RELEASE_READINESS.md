@@ -76,11 +76,21 @@ identified. (Continued vigilance in PART 4 screen-by-screen polish.)
 - Debug-only Compose lists missing `key = {}`; unused preview code — PART 6.
 - Test byproduct `app/src/test/resources/financial-corpus/REPORT.md` regenerates — gitignore/triage.
 
-## Architecture (PART 7 — to verify)
+## Architecture (PART 7) — ✅ verified
 
-ADR-0000/0001 honored so far: no Balance Engine change; FinancialEvent additive +
-best-effort dual-write; presentation-only screen changes; repository boundaries intact.
-Formal audit pending.
+**Architecture Verification: PASS** (`docs/ARCHITECTURE_VERIFICATION.md`). One architectural
+direction: reads originate from FinancialEvent behind `TransactionReadSource`, with a small,
+documented set of intentional Transaction reads (balance, detail). Computed domains (balance,
+analytics, story, relationship, search) each have a single authority. No ADR-000/0001 or
+Financial-Truth violations. Findings routed:
+
+- **Obsolete → remove in H4** (proven unused): `InsightsRepository`+`RoomInsightsRepository`
+  (empty placeholder, **zero usages**); `LedgerThemeType.Glass` (no-op duplicate of Classic);
+  `PipelineTracker`/`RealPipelineTracker`/`PipelineEvent` (dead, kept only for debug compile).
+- **Duplicate → ADR-0009**: two merchant/category systems (System A `feature/merchant` vs
+  System B `core/domain/service/transaction`) — consolidate now the event architecture is done.
+- **Intentional**: `Transaction` coexistence; balance/detail legacy reads; FinancialEvent
+  lossy fields — all documented.
 
 ## Definition-of-Done gates (per milestone)
 
