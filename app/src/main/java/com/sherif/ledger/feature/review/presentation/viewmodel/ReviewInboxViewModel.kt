@@ -51,21 +51,34 @@ class ReviewInboxViewModel @Inject constructor(
     // transaction is still genuinely uncategorized.
     private val ignoredIds = MutableStateFlow<Set<Long>>(emptySet())
 
+    // Just-categorized ids — the learned override IS persisted immediately
+    // (learnedMerchantCategoryStore.learn), but the combine below only re-emits
+    // on transaction/account changes, not on a learn. Tracking the id here gives
+    // instant feedback (the card leaves the queue on tap); on the next full read
+    // the item is excluded anyway because the story no longer resolves to UNKNOWN.
+    private val categorizedIds = MutableStateFlow<Set<Long>>(emptySet())
+
     val uiState: StateFlow<ReviewInboxUiState> = combine(
         transactionReadSource.observeAllTransactions(),
         accountRepository.observeAllAccounts(),
         ignoredIds,
-    ) { transactionsResult, accountsResult, ignored ->
+        categorizedIds,
+    ) { transactionsResult, accountsResult, ignored, categorized ->
         val transactions = (transactionsResult as? LedgerResult.Success)?.data ?: emptyList()
         val accounts = (accountsResult as? LedgerResult.Success)?.data ?: emptyList()
-        buildState(transactions, accounts, ignored)
+        buildState(transactions, accounts, ignored, categorized)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = ReviewInboxUiState(items = emptyList()),
     )
 
-    private fun buildState(transactions: List<Transaction>, accounts: List<Account>, ignored: Set<Long>): ReviewInboxUiState {
+    private fun buildState(
+        transactions: List<Transaction>,
+        accounts: List<Account>,
+        ignored: Set<Long>,
+        categorized: Set<Long>,
+    ): ReviewInboxUiState {
         if (transactions.isEmpty()) return ReviewInboxUiState(items = emptyList())
 
         val accountNames = accounts.associate { it.id to it.name }
@@ -73,7 +86,7 @@ class ReviewInboxViewModel @Inject constructor(
         val timeFormatter = DateTimeFormatter.ofPattern("d MMM, HH:mm")
 
         val items = transactions
-            .filter { stories[it.id]?.category == "UNKNOWN" && it.id !in ignored }
+            .filter { stories[it.id]?.category == "UNKNOWN" && it.id !in ignored && it.id !in categorized }
             .sortedByDescending { it.timestamp }
             .map { t ->
                 val resolution = merchantResolver.resolve(t.rawText)
@@ -104,6 +117,9 @@ class ReviewInboxViewModel @Inject constructor(
     /** [rawMerchantText] is the ORIGINAL raw text (not the display name) — the same key MerchantResolver normalizes when looking overrides up later. */
     fun categorize(transactionId: String, rawMerchantText: String?, category: MerchantCategory) {
         if (rawMerchantText.isNullOrBlank()) return
+        // Instant feedback: the card leaves the queue now. Persist the learned
+        // override so every future transaction from this merchant auto-categorizes.
+        transactionId.toLongOrNull()?.let { id -> categorizedIds.value = categorizedIds.value + id }
         viewModelScope.launch {
             learnedMerchantCategoryStore.learn(rawMerchantText, category)
         }
