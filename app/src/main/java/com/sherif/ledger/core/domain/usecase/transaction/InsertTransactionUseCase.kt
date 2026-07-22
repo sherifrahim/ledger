@@ -17,7 +17,7 @@ import com.sherif.ledger.core.domain.repository.TransactionRunner
 import com.sherif.ledger.core.domain.service.event.FinancialEventFactory
 import com.sherif.ledger.core.domain.service.transaction.CategoryResolver
 import com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator
-import com.sherif.ledger.core.domain.service.transaction.MerchantResolver
+import com.sherif.ledger.core.domain.service.transaction.CaptureMerchantResolver
 import com.sherif.ledger.core.domain.service.transaction.TransactionValidator
 import java.time.Instant
 import javax.inject.Inject
@@ -38,7 +38,7 @@ class InsertTransactionUseCase @Inject constructor(
     private val transactionRunner: TransactionRunner,
     private val validator: TransactionValidator,
     private val fingerprintGenerator: FingerprintGenerator,
-    private val merchantResolver: MerchantResolver,
+    private val merchantResolver: CaptureMerchantResolver,
     private val categoryResolver: CategoryResolver,
     private val financialEventRepository: FinancialEventRepository,
 ) {

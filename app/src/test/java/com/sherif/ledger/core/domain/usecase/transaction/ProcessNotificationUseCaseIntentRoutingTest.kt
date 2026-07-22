@@ -77,7 +77,7 @@ class ProcessNotificationUseCaseIntentRoutingTest {
         object : TransactionRunner { override suspend fun <T> runInTransaction(block: suspend () -> T): T = block() },
         TransactionValidator(),
         FingerprintGenerator(),
-        MerchantResolver(object : com.sherif.ledger.core.domain.repository.MerchantRepository {
+        CaptureMerchantResolver(object : com.sherif.ledger.core.domain.repository.MerchantRepository {
             override suspend fun getAllBrands(): LedgerResult<List<Brand>> = LedgerResult.Success(emptyList())
             override suspend fun getBrandByAlias(rawText: String): LedgerResult<Brand> = LedgerResult.Failure(LedgerError.Unknown(""))
             override suspend fun insertBrand(brand: Brand): LedgerResult<Long> = LedgerResult.Success(1L)

@@ -85,7 +85,7 @@ class InsertTransactionUseCaseTest {
         transactionRunner = transactionRunner,
         validator = com.sherif.ledger.core.domain.service.transaction.TransactionValidator(),
         fingerprintGenerator = com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator(),
-        merchantResolver = com.sherif.ledger.core.domain.service.transaction.MerchantResolver(merchantRepository),
+        merchantResolver = com.sherif.ledger.core.domain.service.transaction.CaptureMerchantResolver(merchantRepository),
         categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver(),
         financialEventRepository = com.sherif.ledger.testsupport.FakeFinancialEventRepository()
     )
@@ -149,7 +149,7 @@ class InsertTransactionUseCaseTest {
             transactionRunner = transactionRunner,
             validator = com.sherif.ledger.core.domain.service.transaction.TransactionValidator(),
             fingerprintGenerator = com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator(),
-            merchantResolver = com.sherif.ledger.core.domain.service.transaction.MerchantResolver(merchantRepository),
+            merchantResolver = com.sherif.ledger.core.domain.service.transaction.CaptureMerchantResolver(merchantRepository),
             categoryResolver = com.sherif.ledger.core.domain.service.transaction.CategoryResolver(),
         financialEventRepository = com.sherif.ledger.testsupport.FakeFinancialEventRepository()
         )
