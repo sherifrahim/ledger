@@ -43,6 +43,12 @@ private data class GeminiResponse(
     val usageMetadata: GeminiUsageMetadata? = null,
 )
 
+@Serializable
+private data class GeminiError(val error: GeminiErrorBody? = null)
+
+@Serializable
+private data class GeminiErrorBody(val code: Int? = null, val message: String? = null, val status: String? = null)
+
 /** Google's Generative Language API — API key travels as a query parameter, not a header; response is a candidates/content/parts tree. */
 @Singleton
 class GeminiProvider @Inject constructor() : LLMProvider {
@@ -89,7 +95,15 @@ class GeminiProvider @Inject constructor() : LLMProvider {
             client.newCall(request).execute().use { response ->
                 val latency = System.currentTimeMillis() - start
                 if (!response.isSuccessful) {
-                    return@withContext AICompletionResult.Failure("HTTP ${response.code}", latency)
+                    // Surface Google's own error message (quota/billing/rate-limit
+                    // reason) rather than a bare HTTP code — the body is where the
+                    // actual "why" lives (e.g. RESOURCE_EXHAUSTED, retry-after).
+                    val detail = runCatching {
+                        val err = json.decodeFromString(GeminiError.serializer(), response.body?.string().orEmpty())
+                        err.error?.message ?: err.error?.status
+                    }.getOrNull()
+                    val reason = if (detail.isNullOrBlank()) "HTTP ${response.code}" else "HTTP ${response.code}: ${detail.take(180)}"
+                    return@withContext AICompletionResult.Failure(reason, latency)
                 }
                 val text = response.body?.string().orEmpty()
                 val parsed = json.decodeFromString(GeminiResponse.serializer(), text)

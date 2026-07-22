@@ -9,6 +9,7 @@ import com.sherif.ledger.core.domain.service.intelligence.CategorySource
 import com.sherif.ledger.feature.ai.settings.AiSettingsRepository
 import com.sherif.ledger.feature.merchant.LearnedMerchantCategoryStore
 import com.sherif.ledger.feature.merchant.MerchantCategory
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,6 +40,11 @@ class AiCategorizationSweepUseCase @Inject constructor(
         fun summary() = "AI sweep: enabled=$aiEnabled considered=$considered categorized=$categorized"
     }
 
+    private companion object {
+        const val MAX_PER_RUN = 12      // stay well under typical free-tier per-minute limits
+        const val SPACING_MS = 2_500L   // ~24 req/min ceiling even at the cap
+    }
+
     suspend fun execute(): Report {
         if (!aiSettingsRepository.isAiEnabled.first()) return Report(aiEnabled = false, considered = 0, categorized = 0)
 
@@ -55,6 +61,13 @@ class AiCategorizationSweepUseCase @Inject constructor(
             // things already AI-categorised on a prior sweep (now LEARNED_MEMORY).
             val deterministic = categoryIntelligenceEngine.resolveDeterministic(raw)
             if (deterministic.source != CategorySource.UNKNOWN) continue
+
+            // Rate-limit friendliness: cap how many the LLM is asked per run and
+            // space the calls out, so enabling AI never fires a burst that trips a
+            // provider's free-tier per-minute limit (HTTP 429). The rest are picked
+            // up on the next run.
+            if (considered >= MAX_PER_RUN) break
+            if (considered > 0) delay(SPACING_MS)
 
             considered++
             val resolved = categoryIntelligenceEngine.resolveWithAiFallback(
