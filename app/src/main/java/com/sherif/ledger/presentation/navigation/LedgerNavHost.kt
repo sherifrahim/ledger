@@ -184,6 +184,14 @@ fun LedgerNavHost(
                     navController.navigate(LedgerRoute.Search.route) { launchSingleTop = true }
                 },
                 onBackClick = { navController.popBackStack() },
+                onAddClick = { navController.navigate(LedgerRoute.ManualEntry.route) },
+            )
+        }
+
+        composable(LedgerRoute.ManualEntry.route) {
+            com.sherif.ledger.feature.transactions.presentation.entry.ManualEntryScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
             )
         }
 

@@ -17,6 +17,7 @@ sealed class LedgerRoute(val route: String) {
             "merchant/${android.net.Uri.encode(merchantKey)}"
     }
     data object Transactions : LedgerRoute("transactions")
+    data object ManualEntry : LedgerRoute("manual_entry")
     data object Insights : LedgerRoute("insights")
     data object Profile : LedgerRoute("profile")
     data object Settings : LedgerRoute("settings")

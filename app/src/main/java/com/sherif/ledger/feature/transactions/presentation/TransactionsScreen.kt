@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,10 +28,11 @@ fun TransactionsScreen(
     onTransactionClick: (String) -> Unit = {},
     onSearchClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onAddClick: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
-            TransactionsTopBar(onSearchClick, onBackClick)
+            TransactionsTopBar(onSearchClick, onBackClick, onAddClick)
         },
         containerColor = LedgerTheme.colors.surfaceBase
     ) { padding ->
@@ -71,7 +73,7 @@ fun TransactionsScreen(
 }
 
 @Composable
-private fun TransactionsTopBar(onSearchClick: () -> Unit, onBackClick: () -> Unit) {
+private fun TransactionsTopBar(onSearchClick: () -> Unit, onBackClick: () -> Unit, onAddClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -93,12 +95,20 @@ private fun TransactionsTopBar(onSearchClick: () -> Unit, onBackClick: () -> Uni
             color = LedgerTheme.colors.textPrimary
         )
 
-        LedgerIconButton(
-            icon = Icons.Default.Search,
-            onClick = onSearchClick,
-            contentDescription = "Search",
-            tint = LedgerTheme.colors.textPrimary
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            LedgerIconButton(
+                icon = Icons.Default.Add,
+                onClick = onAddClick,
+                contentDescription = "Add transaction",
+                tint = LedgerTheme.colors.textPrimary
+            )
+            LedgerIconButton(
+                icon = Icons.Default.Search,
+                onClick = onSearchClick,
+                contentDescription = "Search",
+                tint = LedgerTheme.colors.textPrimary
+            )
+        }
     }
 }
 
