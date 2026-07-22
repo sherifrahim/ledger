@@ -2,6 +2,7 @@ package com.sherif.ledger.feature.settings.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sherif.ledger.core.datastore.UserPreferencesRepository
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.service.transaction.AccountBalanceService
 import com.sherif.ledger.core.domain.usecase.account.SeedOpeningBalanceUseCase
@@ -9,7 +10,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 data class AdjustBalanceAccountUi(
@@ -17,24 +22,34 @@ data class AdjustBalanceAccountUi(
     val accountName: String,
     val computedBalanceMinor: Long,
     val currencyCode: CurrencyCode,
+    /** What the account is assumed to have held before Ledger's tracking window. */
+    val openingBalanceMinor: Long,
+    /** Net of everything Ledger captured since it started tracking (computed - opening). */
+    val capturedNetMinor: Long,
 )
 
 /**
- * Standalone, reachable-anytime version of the same correction the
- * onboarding "Confirm Starting Balance" step offers — see
- * SeedOpeningBalanceUseCase for why this exists at all. The onboarding step
- * only ever runs once per install; this exists so a balance can still be
- * corrected afterward (or the first time, if onboarding already ran before
- * this existed) without needing to reinstall the app.
+ * Standalone, reachable-anytime version of the same correction the onboarding
+ * "Confirm Starting Balance" step offers — see SeedOpeningBalanceUseCase.
+ *
+ * Also exposes a plain-language **reconciliation** of each account's balance
+ * (opening + captured = current) and the window Ledger tracked, so the figure is
+ * explainable rather than a black box: a user can see that, e.g., the opening
+ * balance is 0 and the captured net is what's driving a surprising number.
  */
 @HiltViewModel
 class AdjustBalanceViewModel @Inject constructor(
     private val accountBalanceService: AccountBalanceService,
     private val seedOpeningBalanceUseCase: SeedOpeningBalanceUseCase,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     private val _accounts = MutableStateFlow<List<AdjustBalanceAccountUi>>(emptyList())
     val accounts: StateFlow<List<AdjustBalanceAccountUi>> = _accounts.asStateFlow()
+
+    private val _trackedSince = MutableStateFlow<String?>(null)
+    /** e.g. "This Month · since 21 Jun 2026", or null if no import has run. */
+    val trackedSince: StateFlow<String?> = _trackedSince.asStateFlow()
 
     private val _saved = MutableStateFlow(false)
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
@@ -46,13 +61,28 @@ class AdjustBalanceViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _saved.value = false
+
+            val summary = userPreferencesRepository.importSummary.first()
+            _trackedSince.value = if (summary.windowStartMillis > 0L) {
+                val date = Instant.ofEpochMilli(summary.windowStartMillis)
+                    .atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("d MMM yyyy"))
+                val label = summary.windowLabel.ifBlank { "your import" }
+                "$label · since $date"
+            } else {
+                null
+            }
+
             val balances = accountBalanceService.currentBalances()
             _accounts.value = balances.map {
+                val opening = it.account.openingBalance.minorUnits
                 AdjustBalanceAccountUi(
                     accountId = it.account.id,
                     accountName = it.account.name,
                     computedBalanceMinor = it.balance.minorUnits,
                     currencyCode = it.balance.currencyCode,
+                    openingBalanceMinor = opening,
+                    capturedNetMinor = it.balance.minorUnits - opening,
                 )
             }
         }
