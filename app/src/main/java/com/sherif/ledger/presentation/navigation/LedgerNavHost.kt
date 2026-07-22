@@ -29,7 +29,6 @@ import com.sherif.ledger.feature.transactions.presentation.viewmodel.Transaction
 import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsScreen
 import com.sherif.ledger.feature.transactions.presentation.detail.viewmodel.TransactionDetailsViewModel
 import com.sherif.ledger.presentation.dashboard.DashboardScreen
-import com.sherif.ledger.presentation.dashboard.SearchFilterScreen
 import com.sherif.ledger.presentation.dashboard.viewmodel.DashboardViewModel
 
 @Composable
@@ -182,15 +181,9 @@ fun LedgerNavHost(
                     navController.navigate(LedgerRoute.TransactionDetails.create(id))
                 },
                 onSearchClick = {
-                    navController.navigate(LedgerRoute.SearchFilter.route)
+                    navController.navigate(LedgerRoute.Search.route) { launchSingleTop = true }
                 },
                 onBackClick = { navController.popBackStack() },
-            )
-        }
-
-        composable(LedgerRoute.SearchFilter.route) {
-            SearchFilterScreen(
-                onBackClick = { navController.popBackStack() }
             )
         }
 

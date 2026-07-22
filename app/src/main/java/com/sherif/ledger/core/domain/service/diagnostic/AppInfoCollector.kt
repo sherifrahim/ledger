@@ -23,20 +23,14 @@ data class AppInfoDto(
     val deviceManufacturer: String,
     val deviceModel: String,
     val databaseVersion: Int,
+    val gitHash: String,
     val generatedAtEpochMillis: Long,
 )
 
 /**
- * Every field RC4 asked for except git commit hash, which is deliberately
- * omitted here rather than risked: it requires a build.gradle.kts change
- * (a buildConfigField computed from `git rev-parse`) that I cannot compile
- * or test myself, and a broken build script would jeopardize this entire
- * delivery for one field. Worth doing as a small, isolated follow-up on its
- * own if wanted, not buried inside a large change I can't verify.
- *
- * Everything else here uses BuildConfig fields already proven safe —
- * BuildConfig.DEBUG is already referenced successfully in ProfileScreen.kt,
- * confirming the generated class and its fields are genuinely accessible.
+ * Snapshot of build/device facts for the diagnostic bundle. Includes the short
+ * git commit (BuildConfig.GIT_HASH, injected by a buildConfigField in
+ * build.gradle.kts) so a user's report can be tied to an exact build.
  */
 class AppInfoCollector @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -56,6 +50,7 @@ class AppInfoCollector @Inject constructor(
             deviceManufacturer = Build.MANUFACTURER ?: "unknown",
             deviceModel = Build.MODEL ?: "unknown",
             databaseVersion = LedgerDatabase.DATABASE_VERSION,
+            gitHash = BuildConfig.GIT_HASH,
             generatedAtEpochMillis = Instant.now().toEpochMilli(),
         )
         val json = Json { prettyPrint = true }

@@ -17,6 +17,19 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Short git commit the build was cut from — surfaced in the diagnostic bundle
+// (AppInfoCollector) so a user's report can be tied to an exact build. Uses
+// providers.exec (configuration-cache compatible, unlike a raw ProcessBuilder).
+// Falls back to "unknown" if git isn't available (e.g. a source-only checkout).
+val gitHash: String = try {
+    providers.exec {
+        commandLine("git", "rev-parse", "--short", "HEAD")
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim().ifEmpty { "unknown" }
+} catch (e: Exception) {
+    "unknown"
+}
+
 android {
     namespace = "com.sherif.ledger"
     compileSdk = 36
@@ -27,6 +40,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "GIT_HASH", "\"$gitHash\"")
     }
 
     signingConfigs {

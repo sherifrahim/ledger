@@ -75,18 +75,18 @@ Before marking a feature "done": confirm backend → ViewModel → screen → na
 
 ## Deferred, not forgotten (currently open)
 
-- Git commit hash in `AppInfoCollector`/App Info needs a `build.gradle.kts` `buildConfigField` change — not attempted without the ability to compile-test it.
-- `app/release/*.apk` and baseline profile `.dm` files got committed to git by accident at some point — should be `.gitignore`'d.
 - Git history on `feature/ldl-foundation` is squashed/mixed — don't assume one commit equals one atomic change.
 - RC5/RC6 AI infrastructure is built but never wired into live capture (`ProcessNotificationUseCase` untouched) — explicitly a later phase per the user's own roadmap.
-- `direction=OUTGOING` extracted from text saying "credited" (the original HDFC message) is still unfixed — doesn't affect balance (currency guard zeroes the effect regardless) but is a real extraction bug. See `FINANCIAL_ENGINE.md` Suggested RC8.
-- Whether the HDFC currency-mixing fix (RC6/RC7) fully explains the user's remembered SMS-tally gap is unconfirmed — `BalanceTraceReport.transactionContributions` (RC7) now provides the itemized comparison capability if the user wants to close this out.
-- The merchant/category system split (`feature/merchant` vs `core/domain/service/transaction`) is fully investigated (`MERCHANT_ARCHITECTURE.md`) and deliberately NOT merged — a merge would change real behavior. One safe, narrow follow-up identified there (normalize System B's exact-text Brand lookup) but not done.
-- CSV import, manual transaction entry, a real `FinancialEvent` domain type, structured parser-failure tracking — none built. Seams exist (`IngestionSource`, `SourceAdapter`) and don't need refactoring first. See `FINANCIAL_ENGINE.md`/`INTELLIGENCE_ENGINE.md` Suggested-next-RC sections.
-- `BrandEntity.brandKey`'s doc comment claiming it "matches `LedgerBrandRegistry`" is confirmed false (always hardcoded `"manual"`) — a one-line comment fix, not done.
-- Debug-only Compose lists (Balance/Intelligence Inspector, AI Metrics/Debug, Pipeline/Ledger Diagnostics) don't use `key = { it.id }` in `items()` — main-app screens already do this correctly. Low impact, not fixed.
-- `RC4-RC9`'s work was uncommitted for a long stretch (discovered as a real operational risk in RC7, resolved by committing in RC9 — `git log` now reflects it). If a similar multi-RC uncommitted pile starts building up again, commit sooner rather than letting it compound.
+- **Merchant/category consolidation (`docs/adr/0009`):** System A (`feature/merchant`) vs System B (`core/domain/service/transaction`). **Step 1 done** — System B renamed to `CaptureMerchantResolver` (behaviour-neutral, corpus-proven). Steps 2–3 (unify seed data, then converge matching logic) are **behaviour-changing on the frozen write path** — ADR-gated, corpus-verified, not yet done. Don't do them as a "just refactor".
+- CSV import, manual transaction entry, structured parser-failure tracking — none built. Seams exist (`IngestionSource`, `SourceAdapter`). (The `FinancialEvent` domain type IS built — ADR-0001/M2.)
+- Empirical large-data (10k) perf soak not run — the dev-console injector dedups near-identical rows, so a faithful test needs a distinct-data generator (a debug tool to build first). Architectural analysis holds: list reads are bounded (`observeRecent(N)`), balance/analytics replay is O(n) off-thread.
+- **Ledger Split**: backend exists, no UI/route — a v1.2 feature, not a fix.
+- Debug-only Compose lists (Balance/Intelligence Inspector, AI Metrics/Debug, Pipeline/Ledger Diagnostics) don't use `key = { it.id }` — debug-only, non-shipping; consciously left (churn not worth it).
+- **ADR-0009 steps 2–3, and the "dated anchor Phase 2 → Accounts-screen provenance" surfacing** are the two clear next increments if resumed.
+- If a multi-RC uncommitted pile starts building up again, commit sooner (RC7 lesson).
 
 ## Test suite status
 
-All unit tests pass as of RC9 (2026-07-20/21), including the corpus regression suite and `regression.PipelineCorpusRunnerTest`. `compileReleaseKotlin` verified separately from `compileDebugKotlin`. Run `./gradlew testDebugUnitTest` to confirm current state before trusting this line — it drifts as work continues.
+All unit tests pass as of the RC1 hardening pass (2026-07-22), including the corpus regression suite and `regression.PipelineCorpusRunnerTest`. `compileReleaseKotlin` verified separately from `compileDebugKotlin`. Run `./gradlew testDebugUnitTest` to confirm current state before trusting this line — it drifts as work continues.
+
+**DB schema is now v12** (was v11): `MIGRATION_11_12` adds a nullable `opening_balance_as_of` column to `accounts` (dated opening-balance anchor). Additive/nullable — verified installing v12 over a real v11 DB with **zero data loss**. `AppInfoCollector` now also reports `BuildConfig.GIT_HASH` (injected via `providers.exec` in `build.gradle.kts`). RC1 review + Trust & Verification audit + fix history: `docs/RC1_TRUST_AND_VERIFICATION_AUDIT.md`, `rc1_review` artifact.
