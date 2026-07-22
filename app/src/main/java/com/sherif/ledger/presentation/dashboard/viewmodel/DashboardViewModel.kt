@@ -59,10 +59,12 @@ class DashboardViewModel @Inject constructor(
         accountRepository.observeAllAccounts()
     ) { recentResult, monthResult, _ ->
 
-        if (!diagnosticHasRun) {
+        // Diagnostic-only, and debug-only: logs a structured report via LedgerLogger,
+        // changes nothing displayed. Gated so it never runs in a release build.
+        if (com.sherif.ledger.BuildConfig.DEBUG && !diagnosticHasRun) {
             diagnosticHasRun = true
             try {
-                financialTraceCollector.buildReport() // logs a structured report via LedgerLogger, changes nothing displayed
+                financialTraceCollector.buildReport()
             } catch (e: Exception) {
                 com.sherif.ledger.core.common.logging.LedgerLogger.e("FinancialTraceCollector failed", e)
             }

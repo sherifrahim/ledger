@@ -61,6 +61,10 @@ fun ProfileScreen(
             }
 
             item {
+                CaptureCoverageCard()
+            }
+
+            item {
                 PreferencesSection(onNavigateToDebugConsole, onNavigateToAdjustBalance, onNavigateToReviewInbox, onNavigateToAiSettings)
             }
 
@@ -179,6 +183,51 @@ private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceC
                 PreferenceRow(icon = Icons.Default.BugReport, label = "Developer Console", onClick = onDebugConsoleClick)
             }
         }
+    }
+}
+
+@Composable
+private fun CaptureCoverageCard(
+    viewModel: com.sherif.ledger.feature.settings.presentation.viewmodel.CaptureCoverageViewModel = hiltViewModel(),
+) {
+    val summary by viewModel.summary.collectAsState()
+    val s = summary ?: return
+
+    Column {
+        Text("IMPORT COVERAGE", style = LedgerTheme.typography.labelLarge.copy(letterSpacing = 1.sp), color = LedgerTheme.colors.textTertiary)
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        LedgerSurface(
+            level = com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel.Inset,
+            shape = com.sherif.ledger.core.designsystem.tokens.LedgerRadius.Large,
+            contentPadding = PaddingValues(LedgerSpacing.Medium),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
+                CoverageRow("Window", s.windowLabel.ifBlank { "—" })
+                CoverageRow("Messages scanned", s.smsScanned.toString())
+                CoverageRow("In your window", s.smsWithinWindow.toString())
+                CoverageRow("Skipped (outside window)", s.smsIgnoredOutsideWindow.toString())
+                CoverageRow("Transactions captured", s.transactionsCreated.toString())
+                CoverageRow("Merged / duplicates", s.transactionsMerged.toString())
+                CoverageRow("Not a transaction", s.transactionsDiscarded.toString())
+                if (s.smsIgnoredOutsideWindow > 0L) {
+                    Spacer(Modifier.height(LedgerSpacing.Tiny))
+                    Text(
+                        "Skipped messages were outside the window you chose — they weren't captured. " +
+                            "Import a wider range, or set your starting balance under \"Adjust Starting Balance\", to reconcile.",
+                        style = LedgerTheme.typography.bodySmall,
+                        color = LedgerTheme.colors.textTertiary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoverageRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = LedgerTheme.typography.bodyMedium, color = LedgerTheme.colors.textSecondary)
+        Text(value, style = LedgerTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = LedgerTheme.colors.textPrimary)
     }
 }
 

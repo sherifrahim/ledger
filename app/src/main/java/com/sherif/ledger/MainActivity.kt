@@ -1,9 +1,15 @@
 package com.sherif.ledger
 
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -65,6 +71,24 @@ class MainActivity : ComponentActivity() {
             
             LedgerTheme(themeType = themeType) {
                 val context = LocalContext.current
+
+                // Android 13+: capture-confirmation notifications (and their
+                // Split / Add-note / Undo actions) need POST_NOTIFICATIONS at
+                // runtime. Requested once on launch; declining does not affect
+                // capture itself, only the confirmation UX.
+                val notifPermLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission(),
+                ) { /* result intentionally ignored */ }
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        ContextCompat.checkSelfPermission(
+                            context, android.Manifest.permission.POST_NOTIFICATIONS,
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+
                 val isSmsImported by mainViewModel.isSmsImported.collectAsState()
                 val isProfileSetup by mainViewModel.isProfileSetup.collectAsState()
 

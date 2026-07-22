@@ -58,6 +58,11 @@ object ExtractionHelpers {
         "credited into your account", "credited into account", "credited to your account",
         "credited to account", "deposited into your account", "deposited to your account",
         "amount received", "funds received", "money received",
+        // L7: bank shorthand for a credit-to-account that the phrases above missed
+        // (e.g. HDFC "Rs 500 credited to a/c XX1234"). These mirror the established
+        // credit indicators already curated as income signals in FinancialPhraseLibrary,
+        // so a "credited" transfer is no longer mis-defaulted to OUTGOING.
+        "a/c credited", "acct credited", "amount credited", "credited to a/c", "credited to ac",
     )
 
     /**

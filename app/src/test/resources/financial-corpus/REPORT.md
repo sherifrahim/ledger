@@ -35,10 +35,10 @@
 - Transfer: 100% (16/16)
 
 ## Latency
-- Average: 2.39 ms
-- P95: 1.37 ms
-- P99: 1.95 ms
-- Max: 109.85 ms
+- Average: 1.52 ms
+- P95: 1.25 ms
+- P99: 1.78 ms
+- Max: 61.17 ms
 
 ## Confidence calibration
 - heuristic: claims 96, actual 100.0% (n=61)

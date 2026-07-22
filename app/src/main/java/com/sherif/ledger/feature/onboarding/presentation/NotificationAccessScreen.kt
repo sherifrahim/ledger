@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.common.util.DiagnosticUtils
 import com.sherif.ledger.core.designsystem.component.LedgerButton
+import com.sherif.ledger.core.designsystem.component.LedgerButtonStyle
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -93,6 +94,30 @@ fun NotificationAccessScreen() {
                 context.startActivity(intent)
             },
             modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(Modifier.height(LedgerSpacing.Medium))
+
+        // The single biggest real-world capture-reliability risk: on aggressive
+        // OEMs (this device is an OPPO) Doze / battery optimization can kill the
+        // notification listener, silently dropping transactions. Let the user
+        // exempt Ledger so captures keep working when the app is closed.
+        LedgerButton(
+            text = "Allow background running",
+            onClick = {
+                runCatching {
+                    context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                }
+            },
+            style = LedgerButtonStyle.Ghost,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        Text(
+            text = "Recommended — lets Ledger keep capturing transactions even when the app is closed.",
+            style = LedgerTextStyles.Caption,
+            color = LedgerTheme.colors.tertiaryLabel,
+            textAlign = TextAlign.Center,
         )
 
         // Pipeline diagnostics are a developer aid — never shown to a real user
