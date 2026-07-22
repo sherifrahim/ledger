@@ -91,6 +91,7 @@ private fun ProfileTopBar(onSettingsClick: () -> Unit) {
         LedgerIconButton(
             icon = Icons.Default.Settings,
             onClick = onSettingsClick,
+            contentDescription = "Settings",
             tint = LedgerTheme.colors.textPrimary
         )
     }

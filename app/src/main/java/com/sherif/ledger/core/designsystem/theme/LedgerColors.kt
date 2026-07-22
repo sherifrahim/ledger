@@ -118,7 +118,7 @@ val LedgerV3LightColors = LedgerColors(
     surfaceOverlay = LedgerV3Palette.Paper,
     textPrimary = LedgerV3Palette.Ink,
     textSecondary = LedgerV3Palette.Slate,
-    textTertiary = LedgerV3Palette.Slate.copy(alpha = 0.5f),
+    textTertiary = LedgerV3Palette.Slate.copy(alpha = 0.65f), // a11y: raised from 0.5 for contrast
     border = LedgerV3Palette.Smoke,
     positive = LedgerV3Palette.Mint,
     negative = LedgerV3Palette.Rose,
@@ -135,7 +135,7 @@ val LedgerV3DarkColors = LedgerColors(
     surfaceOverlay = LedgerV3Palette.Charcoal,
     textPrimary = LedgerV3Palette.Cloud,
     textSecondary = LedgerV3Palette.Graphite,
-    textTertiary = LedgerV3Palette.Graphite.copy(alpha = 0.5f),
+    textTertiary = LedgerV3Palette.Graphite.copy(alpha = 0.68f), // a11y: raised from 0.5 for contrast
     border = LedgerV3Palette.Jet,
     positive = LedgerV3Palette.Mint,
     negative = LedgerV3Palette.Rose,

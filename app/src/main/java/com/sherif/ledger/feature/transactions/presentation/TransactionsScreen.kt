@@ -93,6 +93,7 @@ private fun TransactionsTopBar(onSearchClick: () -> Unit) {
         LedgerIconButton(
             icon = Icons.Default.Search,
             onClick = onSearchClick,
+            contentDescription = "Search",
             tint = LedgerTheme.colors.textPrimary
         )
     }

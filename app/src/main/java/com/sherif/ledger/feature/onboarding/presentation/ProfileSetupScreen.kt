@@ -61,7 +61,7 @@ fun ProfileSetupScreen(
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                LedgerIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackClick)
+                LedgerIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackClick, contentDescription = "Back")
             }
             Spacer(Modifier.height(LedgerSpacing.Medium))
         } else {

@@ -66,7 +66,7 @@ fun MerchantScreen(
                 modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = LedgerSpacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                LedgerIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackClick)
+                LedgerIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackClick, contentDescription = "Back")
                 Text(
                     state.name,
                     style = LedgerTextStyles.Title.copy(fontWeight = FontWeight.Bold),

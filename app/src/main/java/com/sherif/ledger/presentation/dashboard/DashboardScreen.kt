@@ -145,7 +145,7 @@ private fun GreetingHeader(viewModel: UserProfileViewModel = hiltViewModel()) {
             )
             Text("Here's your financial overview", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textSecondary)
         }
-        LedgerIconButton(icon = Icons.Default.Notifications, onClick = { }, tint = LedgerTheme.colors.textPrimary)
+        LedgerIconButton(icon = Icons.Default.Notifications, onClick = { }, contentDescription = "Notifications", tint = LedgerTheme.colors.textPrimary)
     }
 }
 

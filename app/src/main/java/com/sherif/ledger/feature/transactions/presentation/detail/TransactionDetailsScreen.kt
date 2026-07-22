@@ -99,12 +99,14 @@ private fun DetailsTopBar(onBackClick: () -> Unit) {
         LedgerIconButton(
             icon = Icons.AutoMirrored.Filled.ArrowBack,
             onClick = onBackClick,
+            contentDescription = "Back",
             tint = LedgerTheme.colors.textPrimary
         )
 
         LedgerIconButton(
             icon = Icons.Default.Share,
             onClick = { /* TODO */ },
+            contentDescription = "Share",
             tint = LedgerTheme.colors.textPrimary
         )
     }

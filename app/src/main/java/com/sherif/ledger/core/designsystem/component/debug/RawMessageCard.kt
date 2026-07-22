@@ -48,6 +48,7 @@ fun RawMessageCard(
             LedgerIconButton(
                 icon = Icons.Default.ContentCopy,
                 onClick = onCopyClick,
+                contentDescription = "Copy message",
                 tint = LedgerTheme.colors.tertiaryLabel
             )
         }

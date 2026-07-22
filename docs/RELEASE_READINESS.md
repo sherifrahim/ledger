@@ -8,7 +8,7 @@ Standing rules in force: reuse-before-new-engine; treat every screen as a produc
 ADR-0000 (brownfield) + ADR-0001 (Financial Event); never fabricate — honest empty state
 when an engine is absent.
 
-_Last updated: after the real-device responsive hotfix + Settings legacy removal._
+_Last updated: after H2 (Accessibility pass)._
 
 ---
 
@@ -47,9 +47,14 @@ identified. (Continued vigilance in PART 4 screen-by-screen polish.)
   rows (Currency/Theme/Language/Notifications/Data & Privacy) duplicating the (now-cleaned)
   gear → `SettingsScreen`. Decide the one home; `SettingsScreen` is now just a theme control.
   A full System/Light/Dark theme control needs a one-line `LedgerThemeType` Light option. → H3.
-- **Accessibility** (PART 5): `LedgerIconButton` passes `contentDescription = null`
-  app-wide; touch targets (44dp vs 48dp); tertiary-on-inset contrast; screen reader ordering.
-  _Dynamic-type overflow now handled for figures/nav (above)._
+- ✅ **Accessibility (PART 5 / H2)** — `LedgerIconButton.contentDescription` is now a
+  **required** param (compiler-enforced) and all 11 call sites are labelled (verified in the
+  a11y tree: "Notifications", "Back", "Settings", "Search", "Hide amount", …); touch target
+  **44 → 48dp**; tertiary text contrast raised (0.5 → 0.65 light / 0.68 dark); dynamic-type
+  overflow handled (hotfix). Screen-reader order follows layout (top-to-bottom reading order);
+  no keyboard nav (touch app; Compose default focus). _Remaining nice-to-haves: a combined
+  content-desc on the merchant star rating (star rating already removed) and per-row semantics
+  merging — Low._
 - ~~**FinancialEvent backfill** (P5)~~ ✅ done — idempotent, resumable, safe, observable
   (`BackfillFinancialEventsUseCase`, auto-run at startup, on-device `verified=true`).
 

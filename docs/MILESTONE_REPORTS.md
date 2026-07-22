@@ -341,3 +341,29 @@ narrow width (screenshots in `docs/design/screenshots`).
 similar static preference rows (Settings/Profile duplication to consolidate); the greeting may
 wrap to two lines at large font (benign); `LedgerThemeType` lacks a forced-Light option, so a full
 System/Light/Dark control needs a one-line enum extension.
+
+---
+
+## H2 — Accessibility  ·  `fix(a11y): required content descriptions, 48dp targets, contrast`
+
+_Phase B begins._ **Reuse question:** improve existing components? → **Yes** — fixed
+`LedgerIconButton`, tokens, and call sites; no new components.
+
+- **Content descriptions (required, not optional).** `LedgerIconButton.contentDescription` is
+  now a **non-optional** parameter — the compiler guarantees no icon button ships unlabeled.
+  All 11 call sites labelled (Back, Notifications, Settings, Search, Share, Copy message,
+  Previous/Next month, …). Verified in the on-device a11y tree: "Notifications", "Hide amount",
+  and the labelled nav tabs are present.
+- **Touch targets** — `LedgerIconButton` 44 → **48dp** (minimum interactive size).
+- **Contrast** — tertiary text alpha raised 0.5 → **0.65** (light) / **0.68** (dark) for
+  timestamps/hints/section labels.
+- **Dynamic type** — already handled (the responsive hotfix: auto-size figures, `maxLines`,
+  equal-width nav).
+- **Screen-reader order** follows layout (top-to-bottom reading order); **keyboard nav** N/A
+  (touch app; Compose default focus).
+
+**Gates:** compileDebug + compileRelease + testDebugUnitTest green; emulator a11y-tree
+verification (content-descs present) + dashboard render. Decorative `LedgerBrandIcon`s carry the
+merchant name (adjacent label) — acceptable.
+
+**Follow-ups (Low):** per-row semantics merging for denser lists. Next: **H3 navigation cleanup**.

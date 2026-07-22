@@ -94,14 +94,18 @@ fun LedgerButton(
 fun LedgerIconButton(
     icon: ImageVector,
     onClick: () -> Unit,
+    contentDescription: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     tint: Color = LedgerTheme.colors.textPrimary,
     backgroundColor: Color = Color.Transparent
 ) {
+    // Icon-only buttons are interactive, so a spoken label is required (a11y/H2) —
+    // the parameter is non-optional so no icon button can ship unlabeled. The 48dp
+    // box meets the minimum touch-target size.
     Box(
         modifier = modifier
-            .size(44.dp)
+            .size(48.dp)
             .ledgerSurface(
                 backgroundColor = backgroundColor,
                 borderColor = Color.Transparent,
@@ -113,7 +117,7 @@ fun LedgerIconButton(
     ) {
         androidx.compose.material3.Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             modifier = Modifier.size(20.dp),
             tint = tint
         )

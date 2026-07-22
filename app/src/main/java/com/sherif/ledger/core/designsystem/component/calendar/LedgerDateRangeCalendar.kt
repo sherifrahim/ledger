@@ -72,6 +72,7 @@ fun LedgerDateRangeCalendar(
             LedgerIconButton(
                 icon = Icons.Filled.ChevronLeft,
                 onClick = { visibleMonth = visibleMonth.minusMonths(1) },
+                contentDescription = "Previous month",
             )
             Text(
                 text = "${visibleMonth.month.getDisplayName(JavaTimeTextStyle.FULL, Locale.getDefault())} ${visibleMonth.year}",
@@ -83,6 +84,7 @@ fun LedgerDateRangeCalendar(
                 icon = Icons.Filled.ChevronRight,
                 onClick = { visibleMonth = visibleMonth.plusMonths(1) },
                 enabled = !nextDisabled,
+                contentDescription = "Next month",
             )
         }
 
