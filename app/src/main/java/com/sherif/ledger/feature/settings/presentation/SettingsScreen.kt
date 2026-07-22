@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -45,7 +44,7 @@ fun SettingsScreen(
     ) {
         item("nav") {
             LedgerTopBar(
-                title = "Settings",
+                title = "Appearance",
                 modifier = Modifier.statusBarsPadding(),
                 navigationIcon = {
                     Icon(
@@ -146,39 +145,3 @@ private fun SettingsGroup(
     }
 }
 
-@Composable
-private fun SettingsRow(
-    label: String,
-    value: String? = null,
-    labelColor: Color = LedgerTheme.colors.label,
-    trailing: @Composable (() -> Unit)? = null
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ledgerClickable { /* TODO */ }
-            .padding(LedgerSpacing.Medium),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(label, style = LedgerTextStyles.Label, color = labelColor)
-        
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (value != null) {
-                Text(value, style = LedgerTextStyles.Label, color = LedgerTheme.colors.secondaryLabel)
-                Spacer(Modifier.width(LedgerSpacing.Small))
-            }
-            
-            if (trailing != null) {
-                trailing()
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = null,
-                    tint = LedgerTheme.colors.tertiaryLabel,
-                    modifier = Modifier.size(LedgerTheme.iconSize.Small)
-                )
-            }
-        }
-    }
-}

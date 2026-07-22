@@ -123,10 +123,16 @@ private fun LedgerApp(deepLinkTransactionId: Long? = null) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    // The five primary destinations that own the floating bottom bar. Must match
+    // LedgerBottomBar's tabs exactly — any drift hides the bar on a real tab (or
+    // shows it, unselected, on a pushed secondary screen). Secondary destinations
+    // (Accounts, Transactions, Insights, Merchant, detail screens) are reached by
+    // push navigation and carry their own back affordance instead.
     val tabRoutes = setOf(
         LedgerRoute.Home.route,
-        LedgerRoute.Accounts.route,
-        LedgerRoute.Transactions.route,
+        LedgerRoute.Story.route,
+        LedgerRoute.ReviewInbox.route,
+        LedgerRoute.Search.route,
         LedgerRoute.Profile.route,
     )
 

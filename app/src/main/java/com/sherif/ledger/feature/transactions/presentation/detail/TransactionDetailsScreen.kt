@@ -6,9 +6,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,7 +27,20 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 fun TransactionDetailsScreen(
     onBackClick: () -> Unit = {},
     state: TransactionDetailsUiState,
+    onSaveNote: (String) -> Unit = {},
 ) {
+    var editingNote by remember { mutableStateOf(false) }
+    if (editingNote) {
+        NoteEditorDialog(
+            initial = state.notes.orEmpty(),
+            onDismiss = { editingNote = false },
+            onSave = { text ->
+                onSaveNote(text)
+                editingNote = false
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             DetailsTopBar(onBackClick)
@@ -75,15 +91,61 @@ fun TransactionDetailsScreen(
 
             item {
                 Spacer(Modifier.height(LedgerSpacing.Large))
-                LedgerButton(
-                    text = "Add note",
-                    onClick = { /* TODO */ },
-                    style = LedgerButtonStyle.Ghost,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                NoteSection(note = state.notes, onEdit = { editingNote = true })
+                Spacer(Modifier.height(LedgerSpacing.Large))
             }
         }
     }
+}
+
+@Composable
+private fun NoteSection(note: String?, onEdit: () -> Unit) {
+    val hasNote = !note.isNullOrBlank()
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (hasNote) {
+            Text(
+                "NOTE",
+                style = LedgerTheme.typography.labelLarge,
+                color = LedgerTheme.colors.textTertiary,
+            )
+            Spacer(Modifier.height(LedgerSpacing.Small))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(LedgerTheme.radius.Large)
+                    .background(LedgerTheme.colors.surfaceInset)
+                    .padding(LedgerSpacing.Medium)
+            ) {
+                Text(note!!, style = LedgerTheme.typography.bodyMedium, color = LedgerTheme.colors.textPrimary)
+            }
+            Spacer(Modifier.height(LedgerSpacing.Small))
+        }
+        LedgerButton(
+            text = if (hasNote) "Edit note" else "Add note",
+            onClick = onEdit,
+            style = LedgerButtonStyle.Ghost,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun NoteEditorDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var text by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Note") },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text("Add a note for this transaction") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onSave(text) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
@@ -114,12 +176,12 @@ private fun DetailsListSection(state: TransactionDetailsUiState) {
         DetailRow("Time", state.time)
         LedgerDivider(alpha = 0.05f)
         DetailRow("Payment Method", state.paymentMethod)
-        LedgerDivider(alpha = 0.05f)
-        DetailRow("Card", "**** ${state.accountNumber.takeLast(4)}")
+        if (state.accountNumber.isNotBlank()) {
+            LedgerDivider(alpha = 0.05f)
+            DetailRow("Card", "**** ${state.accountNumber.takeLast(4)}")
+        }
         LedgerDivider(alpha = 0.05f)
         DetailRow("Reference", state.reference)
-        LedgerDivider(alpha = 0.05f)
-        DetailRow("Location", "Abu Dhabi, UAE")
     }
 }
 

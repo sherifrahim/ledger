@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,6 +21,7 @@ import com.sherif.ledger.core.designsystem.component.LedgerCardDefaults
 import com.sherif.ledger.core.designsystem.component.LedgerDonutChart
 import com.sherif.ledger.core.designsystem.component.LedgerDonutSlice
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
+import com.sherif.ledger.core.designsystem.component.LedgerIconButton
 import com.sherif.ledger.core.designsystem.component.LedgerLineChart
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -37,7 +39,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
  * fabricated progress. Honest empty state until there's activity.
  */
 @Composable
-fun InsightsScreen(state: InsightsUiState) {
+fun InsightsScreen(state: InsightsUiState, onBackClick: () -> Unit = {}) {
     val hasTrend = state.chartPoints.size >= 2 && state.chartPoints.any { it != 0f }
     val hasBreakdown = state.categories.isNotEmpty()
 
@@ -52,7 +54,16 @@ fun InsightsScreen(state: InsightsUiState) {
         ) {
             item {
                 Column(Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small)) {
-                    Text("Insights", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        LedgerIconButton(
+                            icon = Icons.AutoMirrored.Filled.ArrowBack,
+                            onClick = onBackClick,
+                            contentDescription = "Back",
+                            tint = LedgerTheme.colors.textPrimary,
+                        )
+                        Spacer(Modifier.width(LedgerSpacing.Small))
+                        Text("Insights", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
+                    }
                     if (state.dateRange.isNotBlank()) {
                         Text(state.dateRange, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textSecondary)
                     }
@@ -120,13 +131,22 @@ private fun TrendCard(points: List<Float>) {
 
 @Composable
 private fun BreakdownCard(state: InsightsUiState) {
+    // Show the five largest categories individually; fold everything else into a
+    // single "Other" entry so both the donut ring and the legend account for the
+    // full 100% of spending — never a legend that silently sums to less.
+    val shown = state.categories.take(5)
+    val rest = state.categories.drop(5)
+    val otherColor = LedgerTheme.colors.textTertiary
+    val otherPercent = rest.sumOf { it.percentageValue }
+
     Column {
         SectionLabel("SPENDING BREAKDOWN")
         Spacer(Modifier.height(LedgerSpacing.Small))
         LedgerCard(elevation = LedgerCardDefaults.ElevationLow) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LedgerDonutChart(
-                    slices = state.categories.map { LedgerDonutSlice(it.percentageValue.toFloat().coerceAtLeast(0.5f), it.color) },
+                    slices = shown.map { LedgerDonutSlice(it.percentageValue.toFloat().coerceAtLeast(0.5f), it.color) } +
+                        if (rest.isNotEmpty()) listOf(LedgerDonutSlice(otherPercent.toFloat().coerceAtLeast(0.5f), otherColor)) else emptyList(),
                     modifier = Modifier.size(132.dp),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -136,17 +156,25 @@ private fun BreakdownCard(state: InsightsUiState) {
                 }
                 Spacer(Modifier.width(LedgerSpacing.Large))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-                    state.categories.take(5).forEach { category ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(8.dp).clip(CircleShape).background(category.color))
-                            Spacer(Modifier.width(LedgerSpacing.Small))
-                            Text(category.name, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary, modifier = Modifier.weight(1f))
-                            Text("${category.percentageValue}%", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
-                        }
+                    shown.forEach { category ->
+                        LegendRow(category.color, category.name, category.percentageValue)
+                    }
+                    if (rest.isNotEmpty()) {
+                        LegendRow(otherColor, "Other", otherPercent)
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LegendRow(color: androidx.compose.ui.graphics.Color, name: String, percent: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(LedgerSpacing.Small))
+        Text(name, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary, modifier = Modifier.weight(1f))
+        Text("$percent%", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
     }
 }
 

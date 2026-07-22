@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -36,6 +37,7 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 fun AccountsScreen(
     state: AccountsUiState,
     onNavigateToInsights: () -> Unit = {},
+    onBackClick: () -> Unit = {},
 ) {
     val currency = state.netWorthCurrency
     val hasAccounts = state.sections.any { it.accounts.isNotEmpty() }
@@ -49,7 +51,7 @@ fun AccountsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {
-            item { AccountsHeader() }
+            item { AccountsHeader(onBackClick) }
 
             item { TotalBalanceCard(currency, state.netWorth, state.netWorthIsNegative, state.assetsTotal, state.liabilitiesTotal) }
 
@@ -94,11 +96,18 @@ fun AccountsScreen(
 }
 
 @Composable
-private fun AccountsHeader() {
+private fun AccountsHeader(onBackClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        LedgerIconButton(
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            onClick = onBackClick,
+            contentDescription = "Back",
+            tint = LedgerTheme.colors.textPrimary,
+        )
+        Spacer(Modifier.width(LedgerSpacing.Small))
         Text("Accounts", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
     }
 }
@@ -156,7 +165,9 @@ private fun AccountRow(account: AccountUi, currency: String) {
             )
         }
         LedgerAmount(
-            amount = account.balance,
+            // Negative balances carry an explicit minus sign — colour alone is not a
+            // signal a user can rely on (and is invisible to colour-blind users).
+            amount = if (account.isNegative) "-${account.balance}" else account.balance,
             currency = currency,
             style = LedgerAmountStyle.Regular,
             color = if (account.isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,

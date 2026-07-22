@@ -83,9 +83,15 @@ fun LedgerNavHost(
             )
         }
 
-        // Primary destination: Financial Story (Milestone 1 navigation scaffold).
+        // Primary destination: Financial Story — real narrative feed from the
+        // intelligence engine (StoryViewModel), honest empty state until activity.
         composable(LedgerRoute.Story.route) {
-            FinancialStoryScreen()
+            val viewModel: com.sherif.ledger.feature.story.presentation.viewmodel.StoryViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+            FinancialStoryScreen(
+                state = state,
+                onItemClick = { id -> navController.navigate(LedgerRoute.TransactionDetails.create(id)) },
+            )
         }
 
         // Primary destination: Universal Search — real search over captured data.
@@ -108,14 +114,15 @@ fun LedgerNavHost(
                 state = state,
                 onNavigateToInsights = {
                     navController.navigate(LedgerRoute.Insights.route)
-                }
+                },
+                onBackClick = { navController.popBackStack() },
             )
         }
 
         composable(LedgerRoute.Insights.route) {
             val viewModel: InsightsViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsState()
-            InsightsScreen(state = state)
+            InsightsScreen(state = state, onBackClick = { navController.popBackStack() })
         }
 
         // Settings hub (served by the Profile control hub). Also carries the entry
@@ -176,7 +183,8 @@ fun LedgerNavHost(
                 },
                 onSearchClick = {
                     navController.navigate(LedgerRoute.SearchFilter.route)
-                }
+                },
+                onBackClick = { navController.popBackStack() },
             )
         }
 
@@ -218,7 +226,8 @@ fun LedgerNavHost(
             state?.let {
                 TransactionDetailsScreen(
                     state = it,
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    onSaveNote = { note -> viewModel.updateNote(note) },
                 )
             }
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,10 +26,11 @@ fun TransactionsScreen(
     state: TransactionsUiState,
     onTransactionClick: (String) -> Unit = {},
     onSearchClick: () -> Unit = {},
+    onBackClick: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
-            TransactionsTopBar(onSearchClick)
+            TransactionsTopBar(onSearchClick, onBackClick)
         },
         containerColor = LedgerTheme.colors.surfaceBase
     ) { padding ->
@@ -38,10 +40,6 @@ fun TransactionsScreen(
                 .padding(padding),
             contentPadding = PaddingValues(horizontal = LedgerSpacing.ScreenPadding)
         ) {
-            item {
-                TransactionFilterChips()
-            }
-
             state.groups.forEach { group ->
                 item {
                     Text(
@@ -56,7 +54,7 @@ fun TransactionsScreen(
                     LedgerTransactionRow(
                         title = txn.merchant,
                         amount = txn.amount,
-                        explanation = if (txn.category == MerchantCategory.Salary) "Income" else "Matched",
+                        explanation = if (txn.category == MerchantCategory.Salary) "Income" else txn.category.name,
                         currency = "AED",
                         isExpense = txn.category != MerchantCategory.Salary,
                         onClick = { onTransactionClick(txn.id) }
@@ -73,7 +71,7 @@ fun TransactionsScreen(
 }
 
 @Composable
-private fun TransactionsTopBar(onSearchClick: () -> Unit) {
+private fun TransactionsTopBar(onSearchClick: () -> Unit, onBackClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -82,7 +80,12 @@ private fun TransactionsTopBar(onSearchClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Spacer(Modifier.width(44.dp))
+        LedgerIconButton(
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            onClick = onBackClick,
+            contentDescription = "Back",
+            tint = LedgerTheme.colors.textPrimary
+        )
 
         Text(
             text = "Transactions",
@@ -99,31 +102,3 @@ private fun TransactionsTopBar(onSearchClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun TransactionFilterChips() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = LedgerSpacing.Small),
-        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
-    ) {
-        val filters = listOf("All", "Income", "Expenses", "Transfers")
-        filters.forEachIndexed { index, filter ->
-            val isSelected = index == 0
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(if (isSelected) LedgerTheme.colors.textPrimary else LedgerTheme.colors.surfaceInset)
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = filter,
-                    style = LedgerTheme.typography.labelLarge,
-                    color = if (isSelected) LedgerTheme.colors.surfaceBase else LedgerTheme.colors.textSecondary
-                )
-            }
-        }
-    }
-}

@@ -84,7 +84,7 @@ private fun ProfileTopBar(onSettingsClick: () -> Unit) {
         Spacer(Modifier.width(44.dp))
 
         Text(
-            text = "Profile",
+            text = "Settings",
             style = LedgerTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = LedgerTheme.colors.textPrimary
         )
