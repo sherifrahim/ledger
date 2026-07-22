@@ -41,6 +41,12 @@ data class AccountEntity(
     val createdAt: Long = System.currentTimeMillis(),
     
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    // Epoch millis the opening balance is anchored to; null until a real-balance
+    // correction sets it. Nullable + no default — existing rows migrate to null.
+    // Kept LAST to match the migration's ADD COLUMN and avoid positional breakage.
+    @ColumnInfo(name = "opening_balance_as_of")
+    val openingBalanceAsOfMillis: Long? = null
 )
 

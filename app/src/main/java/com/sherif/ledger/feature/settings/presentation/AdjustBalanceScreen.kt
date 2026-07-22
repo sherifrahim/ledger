@@ -155,6 +155,16 @@ private fun ReconciliationCard(account: AdjustBalanceAccountUi) {
     ) {
         Column {
             ReconRow("Opening balance", account.openingBalanceMinor, account.currencyCode)
+            account.openingBalanceAsOfMillis?.let { millis ->
+                val date = java.time.Instant.ofEpochMilli(millis)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy"))
+                Text(
+                    "anchored to $date",
+                    style = LedgerTextStyles.Caption,
+                    color = LedgerTheme.colors.textTertiary,
+                )
+            }
             Spacer(Modifier.height(LedgerSpacing.Small))
             ReconRow("Captured since", account.capturedNetMinor, account.currencyCode, showPlus = true)
             Spacer(Modifier.height(LedgerSpacing.Small))

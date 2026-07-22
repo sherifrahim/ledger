@@ -26,5 +26,14 @@ data class Account(
     // promotes (Developer Console) or dismisses it. Never silently merged into
     // an existing account; never silently included in totals either.
     val isCandidate: Boolean = false,
+    // The point in time [openingBalance] is anchored to — "the account held this
+    // much as of this instant, before Ledger's captured history begins". Set when
+    // the user confirms/corrects their real balance (SeedOpeningBalanceUseCase),
+    // to the earliest captured transaction for the account. Null until then (older
+    // rows, or an account with no correction yet). Makes the balance explainable:
+    // opening (as of date) + captured deltas = current. Never used in the balance
+    // arithmetic itself — purely a provenance/anchor date. Kept LAST so positional
+    // Account(...) constructions are unaffected. See ADR-0009 follow-up.
+    val openingBalanceAsOf: java.time.Instant? = null,
 )
 

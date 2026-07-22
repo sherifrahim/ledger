@@ -4,7 +4,10 @@ import com.sherif.ledger.core.domain.model.LedgerError
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.repository.AccountRepository
+import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.service.transaction.AccountBalanceService
+import kotlinx.coroutines.flow.first
+import java.time.Instant
 import javax.inject.Inject
 
 /**
@@ -30,6 +33,7 @@ import javax.inject.Inject
 class SeedOpeningBalanceUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
     private val accountBalanceService: AccountBalanceService,
+    private val transactionRepository: TransactionRepository,
 ) {
     suspend fun execute(accountId: Long, actualCurrentBalanceMinor: Long): LedgerResult<Unit> {
         val accountResult = accountRepository.getAccountById(accountId)
@@ -40,8 +44,23 @@ class SeedOpeningBalanceUseCase @Inject constructor(
         val correction = actualCurrentBalanceMinor - computedBalanceMinor
         val newOpeningBalanceMinor = account.openingBalance.minorUnits + correction
 
+        // Anchor the opening balance to the earliest captured transaction for this
+        // account — the boundary before which the opening balance applies, so the
+        // figure is explainable ("this much as of <date>"). Keep any existing
+        // anchor if the account has no transactions yet.
+        val anchor = earliestTransactionInstant(accountId) ?: account.openingBalanceAsOf
+
         return accountRepository.updateAccount(
-            account.copy(openingBalance = Money(newOpeningBalanceMinor, account.openingBalance.currencyCode)),
+            account.copy(
+                openingBalance = Money(newOpeningBalanceMinor, account.openingBalance.currencyCode),
+                openingBalanceAsOf = anchor,
+            ),
         )
+    }
+
+    private suspend fun earliestTransactionInstant(accountId: Long): Instant? {
+        val all = (transactionRepository.observeAllTransactions().first() as? LedgerResult.Success)?.data
+            ?: return null
+        return all.filter { it.accountId == accountId }.minByOrNull { it.timestamp }?.timestamp
     }
 }

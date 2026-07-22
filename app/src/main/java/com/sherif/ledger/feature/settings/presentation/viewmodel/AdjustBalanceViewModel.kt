@@ -26,6 +26,8 @@ data class AdjustBalanceAccountUi(
     val openingBalanceMinor: Long,
     /** Net of everything Ledger captured since it started tracking (computed - opening). */
     val capturedNetMinor: Long,
+    /** Epoch millis the opening balance is anchored to (per-account), or null if never corrected. */
+    val openingBalanceAsOfMillis: Long? = null,
 )
 
 /**
@@ -83,6 +85,7 @@ class AdjustBalanceViewModel @Inject constructor(
                     currencyCode = it.balance.currencyCode,
                     openingBalanceMinor = opening,
                     capturedNetMinor = it.balance.minorUnits - opening,
+                    openingBalanceAsOfMillis = it.account.openingBalanceAsOf?.toEpochMilli(),
                 )
             }
         }

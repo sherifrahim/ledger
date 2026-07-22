@@ -199,4 +199,19 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
     }
 }
 
+/**
+ * Dated opening-balance anchor (ADR-0009 follow-up / balance reconciliation).
+ * One new nullable column on `accounts` recording the instant the opening balance
+ * is anchored to. Additive only — the safest migration shape (same as
+ * MIGRATION_8_9's is_candidate): every existing row migrates to NULL, no data is
+ * read, touched, or transformed, and the balance arithmetic never reads this
+ * column. Type/nullability must match AccountEntity.openingBalanceAsOfMillis
+ * (INTEGER, nullable) exactly — Room validates on first open after migrating.
+ */
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE accounts ADD COLUMN opening_balance_as_of INTEGER")
+    }
+}
+
 
