@@ -220,3 +220,23 @@ well-documented. The maintainability drag is concentrated in the
 diagnostics/merchant duplication and a few clearly-labelled transitional seams —
 none blocking, all individually addressable, and each already named in the
 canonical docs.
+
+---
+
+## Open-items closure status (2026-07-22 follow-up)
+
+Actioned after this audit, verified compileDebug+Release + full unit suite green:
+
+| Item | Status |
+|---|---|
+| Opening-balance step skipped on fresh install | **Fixed** — `isSmsImported` flag was flipped before the confirmation step; moved to the true terminal points. Root cause of the −AED 8073 vs 4144 report (bounded "This Month" import + opening balance 0). |
+| NotificationAccessScreen v1 colours + leaking debug panel | **Fixed** — LDL bell/button; PIPELINE DIAGNOSTICS gated to debug. |
+| Capture-coverage visibility ("silently ignore an import?") | **Fixed** — user-facing IMPORT COVERAGE card on the Settings hub (scanned / in-window / skipped / captured / merged / discarded). |
+| Battery-optimization first-run step | **Added** — "Allow background running" action on the notification onboarding screen. |
+| POST_NOTIFICATIONS never requested (L5a) | **Fixed** — requested at runtime on Android 13+. |
+| L7 direction ("credited" → OUTGOING) | **Fixed** — added credit-to-account indicators to `inferTransferDirection`; new unit test; corpus suite green. |
+| DashboardViewModel temporary diagnostic | **Fixed** — gated to `BuildConfig.DEBUG`. |
+| ADR-0009 merchant/category merge | **ADR written** (Proposed) — ordered, corpus-gated plan; blind merge explicitly rejected. |
+| Empirical 10k-row perf test | **Deferred, with reason.** The debug console's injector runs the real pipeline, whose reconciliation **dedups** near-identical injects within 24h — so naive batch injection does not produce N distinct rows. A faithful soak test needs a distinct-data generator (varied amount/timestamp/merchant) that bypasses dedup — a small debug-only tool to build first. The architectural analysis stands: list reads are bounded (`observeRecent(N)`), balance/analytics replay is O(n) off the main thread. |
+| Ledger Split UI (L5b) | **Deferred to v1.2** — backend exists; a full split-creation UX is a feature, not a fix. Backend retained (not removed). |
+| Dated opening-balance anchor + reconciliation view | **Recommended next** — the correct primitive for making the balance explainable (see the balance discussion); preferred over full-history import, which risks parser inaccuracy on old messages. |
