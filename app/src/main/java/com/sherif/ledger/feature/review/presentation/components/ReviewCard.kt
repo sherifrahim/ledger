@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -115,7 +115,7 @@ fun ReviewCard(
 
         // Evidence — real fields only.
         if (item.suggestedAccount.isNotBlank()) EvidenceRow(Icons.Filled.Store, "Account", item.suggestedAccount)
-        if (item.reason.isNotBlank()) EvidenceRow(Icons.Outlined.HelpOutline, "Why review", item.reason)
+        if (item.reason.isNotBlank()) EvidenceRow(Icons.AutoMirrored.Outlined.HelpOutline, "Why review", item.reason)
 
         Spacer(Modifier.height(LedgerSpacing.Medium))
 

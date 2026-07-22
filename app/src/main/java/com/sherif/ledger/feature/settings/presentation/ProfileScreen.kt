@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -146,7 +147,7 @@ private fun OverviewSection(
         ) {
             PreferenceRow(icon = Icons.Default.AccountBalanceWallet, label = "Accounts", onClick = onAccountsClick)
             LedgerDivider(alpha = 0.05f)
-            PreferenceRow(icon = Icons.Default.ReceiptLong, label = "Activity", onClick = onActivityClick)
+            PreferenceRow(icon = Icons.AutoMirrored.Filled.ReceiptLong, label = "Activity", onClick = onActivityClick)
             LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.PieChart, label = "Insights", onClick = onInsightsClick)
         }
