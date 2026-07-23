@@ -22,6 +22,9 @@ class UserPreferencesRepository @Inject constructor(
     private val smsImportedKey = booleanPreferencesKey("sms_imported")
     private val lastSmsImportDateKey = longPreferencesKey("last_sms_import_date")
     private val themeTypeKey = stringPreferencesKey("theme_type")
+    // Liquid Glass — an optional surface style layered on top of the base
+    // light/dark theme. Off by default; the solid surfaces are the default look.
+    private val liquidGlassKey = booleanPreferencesKey("liquid_glass_enabled")
 
     // Local-only profile (name/email) shown in Profile and the Dashboard
     // avatar — no auth, no server; collected once via ProfileSetupScreen on
@@ -74,6 +77,15 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setThemeType(themeType: LedgerThemeType) {
         context.dataStore.edit { preferences ->
             preferences[themeTypeKey] = themeType.name
+        }
+    }
+
+    val isLiquidGlassEnabled: Flow<Boolean> = context.dataStore.data
+        .map { it[liquidGlassKey] ?: false }
+
+    suspend fun setLiquidGlassEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[liquidGlassKey] = enabled
         }
     }
 

@@ -21,6 +21,7 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 @Composable
 fun LedgerTheme(
     themeType: LedgerThemeType = LedgerThemeType.Classic,
+    liquidGlass: Boolean = false,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
@@ -30,7 +31,10 @@ fun LedgerTheme(
     }
     val materialColorScheme = if (darkTheme) LedgerDarkColorScheme else LedgerLightColorScheme
 
-    CompositionLocalProvider(LocalLedgerColors provides ledgerColors) {
+    CompositionLocalProvider(
+        LocalLedgerColors provides ledgerColors,
+        LocalLedgerGlass provides liquidGlass,
+    ) {
         LedgerHapticProvider {
             MaterialTheme(
                 colorScheme = materialColorScheme,
@@ -48,7 +52,11 @@ fun LedgerTheme(
 object LedgerTheme {
     val colors: LedgerColors
         @Composable @ReadOnlyComposable get() = LocalLedgerColors.current
-        
+
+    /** True when the user has opted into the optional Liquid Glass surfaces. */
+    val glass: Boolean
+        @Composable @ReadOnlyComposable get() = LocalLedgerGlass.current
+
     val haptics @Composable @ReadOnlyComposable get() = LedgerHaptics.current
     
     val typography get() = LedgerTypography

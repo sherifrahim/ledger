@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.ledgerGlassSurface
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 /**
@@ -44,6 +45,7 @@ fun LedgerCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LedgerTheme.colors
+    val glass = LedgerTheme.glass
     // Soft, low-alpha shadow in light; disabled in dark where it would read as mud.
     val shadowMod = if (!colors.isDark && elevation > 0.dp) {
         Modifier.shadow(
@@ -55,13 +57,19 @@ fun LedgerCard(
         )
     } else Modifier
 
+    // Surface fill: the optional Liquid Glass treatment (translucent + sheen +
+    // luminous edge) when enabled, otherwise the solid card fill + hairline.
+    val surfaceMod = if (glass) {
+        Modifier.ledgerGlassSurface(shape, colors.isDark)
+    } else {
+        Modifier.clip(shape).background(colors.surfaceCard).border(LedgerTheme.border.Hairline, colors.cardBorder, shape)
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .then(shadowMod)
-            .clip(shape)
-            .background(colors.surfaceCard)
-            .border(LedgerTheme.border.Hairline, colors.cardBorder, shape)
+            .then(surfaceMod)
             .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         content = content,

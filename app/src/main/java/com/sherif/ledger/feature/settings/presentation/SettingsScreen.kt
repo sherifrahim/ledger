@@ -33,6 +33,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val themeType by viewModel.themeType.collectAsState()
+    val liquidGlass by viewModel.liquidGlass.collectAsState()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
@@ -70,8 +71,50 @@ fun SettingsScreen(
                     selectedTheme = themeType,
                     onThemeSelected = { viewModel.setThemeType(it) }
                 )
+                LedgerHairline()
+                LiquidGlassRow(
+                    enabled = liquidGlass,
+                    onToggle = { viewModel.setLiquidGlass(it) },
+                )
             }
         }
+    }
+}
+
+/**
+ * Liquid Glass — an optional, off-by-default surface style. When on, content
+ * cards and the nav island become translucent frosted glass over the base
+ * light/dark theme. A single honest switch: what it says is what it does.
+ */
+@Composable
+private fun LiquidGlassRow(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .ledgerClickable { onToggle(!enabled) }
+            .padding(LedgerSpacing.Medium),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = "Liquid Glass",
+                style = LedgerTextStyles.Label,
+                color = LedgerTheme.colors.label,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "Translucent, frosted cards and navigation",
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.secondaryLabel,
+            )
+        }
+        Switch(
+            checked = enabled,
+            onCheckedChange = onToggle,
+        )
     }
 }
 

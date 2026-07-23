@@ -35,4 +35,11 @@ class MainViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = LedgerThemeType.Classic
         )
+
+    val liquidGlass: StateFlow<Boolean> = userPreferencesRepository.isLiquidGlassEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 }

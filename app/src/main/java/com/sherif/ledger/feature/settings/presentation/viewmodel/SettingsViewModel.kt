@@ -23,9 +23,22 @@ class SettingsViewModel @Inject constructor(
             initialValue = LedgerThemeType.Classic
         )
 
+    val liquidGlass: StateFlow<Boolean> = userPreferencesRepository.isLiquidGlassEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     fun setThemeType(themeType: LedgerThemeType) {
         viewModelScope.launch {
             userPreferencesRepository.setThemeType(themeType)
+        }
+    }
+
+    fun setLiquidGlass(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.setLiquidGlassEnabled(enabled)
         }
     }
 }

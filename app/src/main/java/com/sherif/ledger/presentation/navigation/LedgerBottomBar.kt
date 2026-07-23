@@ -36,6 +36,7 @@ import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.ledgerGlassSurface
 
 // The five primary destinations, per spec Chapter 34: Dashboard, Story, Review,
 // Search, Settings. Secondary experiences (Accounts, Transactions/Activity,
@@ -71,7 +72,16 @@ fun LedgerBottomBar(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val colors = LedgerTheme.colors
+    val glass = LedgerTheme.glass
     val shape = LedgerRadius.Full
+
+    // Same surface language as LedgerCard: optional Liquid Glass (translucent +
+    // sheen + luminous edge) when enabled, otherwise the solid island fill.
+    val surfaceMod = if (glass) {
+        Modifier.ledgerGlassSurface(shape, colors.isDark)
+    } else {
+        Modifier.clip(shape).background(colors.surfaceCard).border(LedgerTheme.border.Hairline, colors.cardBorder, shape)
+    }
 
     Row(
         modifier = Modifier
@@ -87,9 +97,7 @@ fun LedgerBottomBar(navController: NavHostController) {
                     spotColor = colors.shadowColor,
                 ) else Modifier,
             )
-            .clip(shape)
-            .background(colors.surfaceCard)
-            .border(LedgerTheme.border.Hairline, colors.cardBorder, shape)
+            .then(surfaceMod)
             .padding(horizontal = LedgerSpacing.Tiny, vertical = LedgerSpacing.Small),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,

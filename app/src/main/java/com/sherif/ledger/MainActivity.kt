@@ -72,8 +72,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val mainViewModel: MainViewModel = hiltViewModel()
             val themeType by mainViewModel.themeType.collectAsState()
-            
-            LedgerTheme(themeType = themeType) {
+            val liquidGlass by mainViewModel.liquidGlass.collectAsState()
+
+            LedgerTheme(themeType = themeType, liquidGlass = liquidGlass) {
                 val context = LocalContext.current
 
                 // Android 13+: capture-confirmation notifications (and their
