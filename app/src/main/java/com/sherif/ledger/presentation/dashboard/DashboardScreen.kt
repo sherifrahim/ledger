@@ -1,5 +1,6 @@
 package com.sherif.ledger.presentation.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sherif.ledger.core.designsystem.component.*
+import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -67,23 +70,29 @@ fun DashboardScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {
-            item { GreetingHeader() }
+            item { DashboardReveal(index = 0) { GreetingHeader() } }
 
             item {
-                BalanceHero(
-                    balance = state.totalBalance,
-                    isNegative = state.isNegativeBalance,
-                    change = state.balanceChangePercentage,
-                    monthlySpend = state.monthlyExpenses,
-                )
+                DashboardReveal(index = 1) {
+                    BalanceHero(
+                        balance = state.totalBalance,
+                        isNegative = state.isNegativeBalance,
+                        change = state.balanceChangePercentage,
+                        monthlySpend = state.monthlyExpenses,
+                    )
+                }
             }
 
             if (hasInsights) {
-                item { InsightsSection(state.intelligenceSummary, onNavigateToInsights) }
+                item { DashboardReveal(index = 2) { InsightsSection(state.intelligenceSummary, onNavigateToInsights) } }
             }
 
             if (hasActivity) {
-                item { SectionLabel("RECENT ACTIVITY", trailing = "See all", onTrailing = onNavigateToTransactions) }
+                item {
+                    DashboardReveal(index = 3) {
+                        SectionLabel("RECENT ACTIVITY", trailing = "See all", onTrailing = onNavigateToTransactions)
+                    }
+                }
                 state.recentActivity.forEach { group ->
                     item {
                         Text(
@@ -109,17 +118,39 @@ fun DashboardScreen(
 
             if (!hasActivity && !hasInsights) {
                 item {
-                    LedgerEmptyState(
-                        title = "Watching for your activity",
-                        subtitle = "Ledger reads your bank SMS and notifications and builds your " +
-                            "dashboard automatically. As transactions arrive, your balance, " +
-                            "insights and recent activity appear here — nothing to enter by hand.",
-                        icon = Icons.Outlined.AutoAwesome,
-                        modifier = Modifier.padding(top = LedgerSpacing.XLarge),
-                    )
+                    DashboardReveal(index = 2) {
+                        LedgerEmptyState(
+                            title = "Watching for your activity",
+                            subtitle = "Ledger reads your bank SMS and notifications and builds your " +
+                                "dashboard automatically. As transactions arrive, your balance, " +
+                                "insights and recent activity appear here — nothing to enter by hand.",
+                            icon = Icons.Outlined.AutoAwesome,
+                            modifier = Modifier.padding(top = LedgerSpacing.XLarge),
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+/**
+ * First-paint reveal for a top-level dashboard section: a calm fade + slight
+ * upward settle, staggered by [index] so the surface assembles top-to-bottom
+ * rather than snapping in all at once. Plays once on entry (never on scroll
+ * churn — the flag is remembered), and uses the canonical [LedgerAnimations]
+ * vocabulary so motion stays tunable in one place. Deliberately restrained:
+ * no bounce, no overshoot — professional, not flashy.
+ */
+@Composable
+private fun DashboardReveal(index: Int, content: @Composable () -> Unit) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+    AnimatedVisibility(
+        visible = visible,
+        enter = LedgerAnimations.listEnter(delayMs = LedgerAnimations.staggerDelay(index)),
+    ) {
+        content()
     }
 }
 

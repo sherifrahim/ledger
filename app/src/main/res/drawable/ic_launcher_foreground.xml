@@ -1,14 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A bold, geometric "L" wordmark, kept inside the adaptive-icon safe zone
-     (roughly the inner 66dp of the 108dp canvas). Accent is
-     LedgerV3Palette.Azure (#3B82F6) — reused, not invented, so the launcher
-     icon and the in-app splash share the exact same accent. -->
+<!-- Ledger mark: three stacked glass "layers" (isometric rhombi) reading as a
+     ledger/stack — the brand identity. Emerald glass gradient, brightest on
+     top, deepest on the base plate, to give the translucent-stack depth of the
+     source artwork. Kept inside the adaptive-icon safe zone (the guaranteed
+     66dp centre circle of the 108dp canvas). The exact same three-plate mark
+     is redrawn in Compose for the splash (LedgerSplashScreen.LedgerMark) so the
+     launcher icon and the in-app splash are one identity. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#3B82F6"
-        android:pathData="M40,26h14v46h20v14h-34z" />
+
+    <!-- Base plate (deepest, drawn first so upper plates overlap it). -->
+    <path android:pathData="M54,55 L80,68 L54,81 L28,68 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="28" android:startY="55"
+                android:endX="80" android:endY="81">
+                <item android:offset="0" android:color="#FF10B981" />
+                <item android:offset="1" android:color="#FF047857" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Middle plate. -->
+    <path android:pathData="M54,41 L80,54 L54,67 L28,54 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="28" android:startY="41"
+                android:endX="80" android:endY="67">
+                <item android:offset="0" android:color="#FF34D399" />
+                <item android:offset="1" android:color="#FF10B981" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Top plate (brightest, glassy highlight). -->
+    <path android:pathData="M54,27 L80,40 L54,53 L28,40 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="28" android:startY="27"
+                android:endX="80" android:endY="53">
+                <item android:offset="0" android:color="#FFA7F3D0" />
+                <item android:offset="1" android:color="#FF34D399" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>

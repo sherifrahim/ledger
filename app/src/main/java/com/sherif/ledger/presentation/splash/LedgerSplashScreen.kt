@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -63,8 +64,7 @@ fun LedgerSplashScreen(
 ) {
     val colors = LedgerTheme.colors
     val backgroundColor = if (colors.isDark) Color(0xFF000000) else Color(0xFFFFFFFF)
-    val markColor = if (colors.isDark) Color(0xFFFFFFFF) else Color(0xFF0F0F0F)
-    val accent = Color(0xFF3B82F6) // LedgerV3Palette.Azure — same accent as the launcher icon.
+    val accent = Color(0xFF10B981) // Emerald — the same green as the launcher-icon mark; soft ambient light behind it.
 
     val iconOpacity = remember { Animatable(0f) }
     val iconScale = remember { Animatable(0.96f) }
@@ -107,7 +107,6 @@ fun LedgerSplashScreen(
                 ),
         )
         LedgerMark(
-            color = markColor,
             modifier = Modifier
                 .size(96.dp)
                 .graphicsLayer(alpha = iconOpacity.value, scaleX = iconScale.value, scaleY = iconScale.value),
@@ -121,25 +120,49 @@ fun LedgerSplashScreen(
     }
 }
 
-/** The same "L" mark as the launcher icon (ic_launcher_foreground.xml), drawn in Compose so it can animate. */
+/**
+ * The same three-plate stacked mark as the launcher icon
+ * (ic_launcher_foreground.xml), drawn in Compose so it can animate. Emerald
+ * glass gradient — brightest on top, deepest on the base plate — so the splash
+ * and the launcher icon are a single identity. Coordinates are the icon's own
+ * 108x108 viewport, remapped onto this composable's size.
+ */
 @Composable
-private fun LedgerMark(color: Color, modifier: Modifier = Modifier) {
+private fun LedgerMark(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        // Same proportions as the vector icon's path, remapped from its
-        // 108x108 viewport onto this composable's own size.
-        val scaleX = w / 108f
-        val scaleY = h / 108f
-        val path = Path().apply {
-            moveTo(40f * scaleX, 26f * scaleY)
-            lineTo(54f * scaleX, 26f * scaleY)
-            lineTo(54f * scaleX, 72f * scaleY)
-            lineTo(74f * scaleX, 72f * scaleY)
-            lineTo(74f * scaleX, 86f * scaleY)
-            lineTo(40f * scaleX, 86f * scaleY)
+        val s = size.width / 108f
+
+        // One isometric rhombus plate: apex (cx, top), right (cx+hw, mid),
+        // bottom (cx, bottom), left (cx-hw, mid). Matches the vector paths.
+        fun plate(topY: Float, midY: Float, bottomY: Float): Path = Path().apply {
+            moveTo(54f * s, topY * s)
+            lineTo(80f * s, midY * s)
+            lineTo(54f * s, bottomY * s)
+            lineTo(28f * s, midY * s)
             close()
         }
-        drawPath(path, color = color)
+
+        fun plateBrush(topY: Float, bottomY: Float, top: Color, bottom: Color): Brush =
+            Brush.linearGradient(
+                colors = listOf(top, bottom),
+                start = Offset(28f * s, topY * s),
+                end = Offset(80f * s, bottomY * s),
+            )
+
+        // Base (deepest) → drawn first so the upper plates overlap it.
+        drawPath(
+            plate(topY = 55f, midY = 68f, bottomY = 81f),
+            brush = plateBrush(55f, 81f, Color(0xFF10B981), Color(0xFF047857)),
+        )
+        // Middle.
+        drawPath(
+            plate(topY = 41f, midY = 54f, bottomY = 67f),
+            brush = plateBrush(41f, 67f, Color(0xFF34D399), Color(0xFF10B981)),
+        )
+        // Top (brightest, glassy highlight).
+        drawPath(
+            plate(topY = 27f, midY = 40f, bottomY = 53f),
+            brush = plateBrush(27f, 53f, Color(0xFFA7F3D0), Color(0xFF34D399)),
+        )
     }
 }

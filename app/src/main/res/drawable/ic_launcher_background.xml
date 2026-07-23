@@ -1,8 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Matches LedgerV3Palette.Obsidian/Ink (#0F0F0F) — the same near-black used
-     throughout the dark theme, so the launcher icon reads as part of the same
-     design system rather than an invented one-off color. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#0F0F0F" />
-</shape>
+<!-- Dark base for the adaptive icon. A very subtle top-to-bottom deep-green →
+     obsidian gradient (not a flat fill) gives the mark the same faint ambient
+     depth as the source artwork, while staying rooted in the dark-theme
+     obsidian (#0F0F0F) so the launcher icon reads as part of the design
+     system. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M0,0 h108 v108 h-108 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54" android:startY="0"
+                android:endX="54" android:endY="108">
+                <item android:offset="0" android:color="#FF0C1A15" />
+                <item android:offset="1" android:color="#FF0A0A0A" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>
