@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -197,15 +198,19 @@ private fun LedgerApp(deepLinkTransactionId: Long? = null, deepLinkOpenSplit: Bo
 
     val navHazeState = LocalNavHazeState.current
     val glass = LedgerTheme.glass
+    val colors = LedgerTheme.colors
 
     Box(Modifier.fillMaxSize()) {
         LedgerNavHost(
             navController = navController,
             modifier = Modifier
                 .fillMaxSize()
-                // When glass is on, the whole screen content becomes the blur
-                // source the nav island samples — an authentic iOS nav bar that
+                // Opaque page background: some screens (e.g. Story) don't paint
+                // their own, so without this the ambient glass backdrop would
+                // leak through as raw colour. Also serves as the nav island's
+                // blur source when glass is on — an authentic iOS nav bar that
                 // frosts the transactions scrolling beneath it.
+                .background(colors.surfaceBase)
                 .then(if (glass && navHazeState != null) Modifier.hazeSource(navHazeState) else Modifier),
         )
 

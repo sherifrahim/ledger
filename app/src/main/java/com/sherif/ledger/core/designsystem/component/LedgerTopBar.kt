@@ -16,9 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
-import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.LocalCardHazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
  * LDL top navigation bar.
@@ -34,12 +36,22 @@ fun LedgerTopBar(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = LedgerTheme.colors
+    val cardHaze = LocalCardHazeState.current
+    val glass = LedgerTheme.glass && cardHaze != null
+
+    // Under Liquid Glass the top bar becomes a frosted band (iOS-style chrome);
+    // otherwise it stays a flat, transparent extension of the page.
+    val glassMod = if (glass) {
+        Modifier.hazeEffect(cardHaze!!, HazeMaterials.thin(colors.surfaceBase))
+    } else {
+        Modifier.background(Color.Transparent)
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(Color.Transparent)
+            .then(glassMod)
             .padding(horizontal = LedgerSpacing.Medium),
         contentAlignment = Alignment.Center
     ) {

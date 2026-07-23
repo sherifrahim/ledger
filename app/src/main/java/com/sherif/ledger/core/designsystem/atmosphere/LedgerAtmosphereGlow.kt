@@ -6,9 +6,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.sherif.ledger.core.designsystem.theme.LedgerTheme
-import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
-
 /**
  * Renders the atmospheric lighting for Ledger.
  *
@@ -21,12 +18,8 @@ fun LedgerAtmosphereGlow(
     atmosphere: Atmosphere = LedgerAtmosphere.current,
     scrollProgress: Float = 0f // Deterministic scroll-based reaction
 ) {
-    val colors = LedgerTheme.colors
-    val isGlass = colors.themeType != LedgerThemeType.Classic
-    
     // Luxury intensity through restraint.
-    val baseAlpha = if (isGlass) 1.0f else 0.35f
-    val intensity = (atmosphere.intensity * baseAlpha).coerceIn(0f, 1f)
+    val intensity = (atmosphere.intensity * 0.35f).coerceIn(0f, 1f)
 
     Canvas(modifier) {
         val w = size.width

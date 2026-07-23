@@ -53,7 +53,6 @@ enum class LedgerSurfaceLevel {
  * LDL V3 semantic color contract.
  */
 data class LedgerColors(
-    val themeType: LedgerThemeType,
     val isDark: Boolean,
     val surfaceBase: Color,
     val surfaceInset: Color,
@@ -110,7 +109,6 @@ data class LedgerColors(
 }
 
 val LedgerV3LightColors = LedgerColors(
-    themeType = LedgerThemeType.Classic,
     isDark = false,
     surfaceBase = LedgerV3Palette.Paper,
     surfaceInset = LedgerV3Palette.Snow,
@@ -127,7 +125,6 @@ val LedgerV3LightColors = LedgerColors(
 )
 
 val LedgerV3DarkColors = LedgerColors(
-    themeType = LedgerThemeType.Classic,
     isDark = true,
     surfaceBase = LedgerV3Palette.Obsidian,
     surfaceInset = LedgerV3Palette.Charcoal,

@@ -138,13 +138,11 @@ private fun ThemeSelectionRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)
         ) {
-            // Only the theme types that produce a distinct, working result, with honest
-            // labels (the old Classic/Glass/MidnightGlass names were v1/v2 leftovers;
-            // Glass was a no-op duplicate of Classic). Classic = follow the device;
-            // MidnightGlass = always dark.
+            // Explicit Light / Dark — the user picks, no "follow system". Liquid
+            // Glass is the separate switch below.
             val options = listOf(
-                LedgerThemeType.Classic to "System",
-                LedgerThemeType.MidnightGlass to "Dark",
+                LedgerThemeType.Light to "Light",
+                LedgerThemeType.Dark to "Dark",
             )
             options.forEach { (theme, label) ->
                 val isSelected = theme == selectedTheme

@@ -61,7 +61,7 @@ fun Modifier.ledgerAmbientBackground(isDark: Boolean): Modifier = this.drawBehin
     drawRect(
         Brush.radialGradient(
             colors = listOf(
-                Color(0xFF10B981).copy(alpha = if (isDark) 0.30f else 0.22f),
+                Color(0xFF10B981).copy(alpha = if (isDark) 0.18f else 0.12f),
                 Color.Transparent,
             ),
             center = Offset(size.width * 0.16f, size.height * 0.06f),
@@ -71,7 +71,7 @@ fun Modifier.ledgerAmbientBackground(isDark: Boolean): Modifier = this.drawBehin
     drawRect(
         Brush.radialGradient(
             colors = listOf(
-                Color(0xFF3B82F6).copy(alpha = if (isDark) 0.24f else 0.18f),
+                Color(0xFF38BDF8).copy(alpha = if (isDark) 0.14f else 0.10f),
                 Color.Transparent,
             ),
             center = Offset(size.width * 0.9f, size.height * 0.9f),

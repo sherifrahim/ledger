@@ -1,6 +1,5 @@
 package com.sherif.ledger.core.designsystem.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -22,15 +21,12 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
  */
 @Composable
 fun LedgerTheme(
-    themeType: LedgerThemeType = LedgerThemeType.Classic,
+    themeType: LedgerThemeType = LedgerThemeType.Dark,
     liquidGlass: Boolean = false,
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = themeType == LedgerThemeType.Dark,
     content: @Composable () -> Unit,
 ) {
-    val ledgerColors = when (themeType) {
-        LedgerThemeType.Classic -> if (darkTheme) LedgerV3DarkColors else LedgerV3LightColors
-        LedgerThemeType.MidnightGlass -> LedgerV3DarkColors
-    }
+    val ledgerColors = if (darkTheme) LedgerV3DarkColors else LedgerV3LightColors
     val materialColorScheme = if (darkTheme) LedgerDarkColorScheme else LedgerLightColorScheme
 
     // Two backdrop-blur layers for Liquid Glass: one for the scrolling content

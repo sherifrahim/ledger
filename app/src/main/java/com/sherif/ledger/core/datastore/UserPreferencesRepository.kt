@@ -66,11 +66,11 @@ class UserPreferencesRepository @Inject constructor(
 
     val themeType: Flow<LedgerThemeType> = context.dataStore.data
         .map { preferences ->
-            val name = preferences[themeTypeKey] ?: LedgerThemeType.Classic.name
+            val name = preferences[themeTypeKey] ?: LedgerThemeType.Dark.name
             try {
                 LedgerThemeType.valueOf(name)
             } catch (e: Exception) {
-                LedgerThemeType.Classic
+                LedgerThemeType.Dark
             }
         }
 

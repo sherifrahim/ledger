@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.LocalCardHazeState
+import com.sherif.ledger.core.designsystem.theme.ledgerGlassSurface
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
 /**
@@ -68,15 +70,24 @@ fun LedgerSurface(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val colors = LedgerTheme.colors
+    val cardHaze = LocalCardHazeState.current
+    val glass = LedgerTheme.glass && cardHaze != null
+
+    // Under Liquid Glass, grouped surfaces (pills, sections) become frosted glass
+    // over the ambient backdrop; otherwise the solid inset fill + hairline.
+    val surfaceMod = if (glass) {
+        Modifier
+            .ledgerGlassSurface(cardHaze!!, shape, colors.isDark, colors.surface(level))
+            .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
+    } else {
+        Modifier.ledgerSurface(level = level, shape = shape, elevation = elevation, onClick = onClick)
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .ledgerSurface(
-                level = level,
-                shape = shape,
-                elevation = elevation,
-                onClick = onClick
-            )
+            .then(surfaceMod)
             .padding(contentPadding),
         content = content,
     )
