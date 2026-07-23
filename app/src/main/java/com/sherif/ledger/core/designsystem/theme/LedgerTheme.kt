@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
+import dev.chrisbanes.haze.HazeState
 import com.sherif.ledger.core.designsystem.haptics.LedgerHaptics
 import com.sherif.ledger.core.designsystem.haptics.LedgerHapticProvider
 import com.sherif.ledger.core.designsystem.tokens.LedgerBorder
@@ -31,9 +33,18 @@ fun LedgerTheme(
     }
     val materialColorScheme = if (darkTheme) LedgerDarkColorScheme else LedgerLightColorScheme
 
+    // Two backdrop-blur layers for Liquid Glass: one for the scrolling content
+    // beneath the nav island, one for the ambient backdrop beneath cards. Held
+    // here so every glass surface in the tree shares them. Cheap and unused when
+    // glass is off.
+    val navHazeState = remember { HazeState() }
+    val cardHazeState = remember { HazeState() }
+
     CompositionLocalProvider(
         LocalLedgerColors provides ledgerColors,
         LocalLedgerGlass provides liquidGlass,
+        LocalNavHazeState provides navHazeState,
+        LocalCardHazeState provides cardHazeState,
     ) {
         LedgerHapticProvider {
             MaterialTheme(

@@ -36,6 +36,7 @@ import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.LocalNavHazeState
 import com.sherif.ledger.core.designsystem.theme.ledgerGlassSurface
 
 // The five primary destinations, per spec Chapter 34: Dashboard, Story, Review,
@@ -72,13 +73,16 @@ fun LedgerBottomBar(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val colors = LedgerTheme.colors
-    val glass = LedgerTheme.glass
+    val navHaze = LocalNavHazeState.current
+    // Glass only when enabled AND the content layer exists to blur beneath it.
+    val glass = LedgerTheme.glass && navHaze != null
     val shape = LedgerRadius.Full
 
-    // Same surface language as LedgerCard: optional Liquid Glass (translucent +
-    // sheen + luminous edge) when enabled, otherwise the solid island fill.
+    // Same surface language as LedgerCard: real backdrop-blur glass (blurring the
+    // scrolling content passing beneath the island) when enabled, otherwise the
+    // solid island fill.
     val surfaceMod = if (glass) {
-        Modifier.ledgerGlassSurface(shape, colors.isDark)
+        Modifier.ledgerGlassSurface(navHaze!!, shape, colors.isDark, colors.surfaceCard)
     } else {
         Modifier.clip(shape).background(colors.surfaceCard).border(LedgerTheme.border.Hairline, colors.cardBorder, shape)
     }
@@ -89,7 +93,7 @@ fun LedgerBottomBar(navController: NavHostController) {
             .navigationBarsPadding()
             .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small)
             .then(
-                if (!colors.isDark) Modifier.shadow(
+                if (!glass && !colors.isDark) Modifier.shadow(
                     elevation = 16.dp,
                     shape = shape,
                     clip = false,

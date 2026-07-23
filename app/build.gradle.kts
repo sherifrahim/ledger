@@ -103,6 +103,11 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.androidx.security.crypto)
 
+    // Liquid Glass — real backdrop blur (RenderEffect on API 31+) + Apple-style
+    // material presets. Powers the optional glass surfaces (cards + nav island).
+    implementation(libs.haze)
+    implementation(libs.haze.materials)
+
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.compiler)
 

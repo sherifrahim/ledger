@@ -31,6 +31,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.sherif.ledger.core.common.util.PermissionUtils
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.LocalCardHazeState
+import com.sherif.ledger.core.designsystem.theme.LocalNavHazeState
+import com.sherif.ledger.core.designsystem.theme.ledgerAmbientBackground
+import dev.chrisbanes.haze.hazeSource
 import com.sherif.ledger.feature.onboarding.presentation.NotificationAccessScreen
 import com.sherif.ledger.feature.onboarding.presentation.ProfileSetupScreen
 import com.sherif.ledger.feature.onboarding.presentation.SmsOnboardingScreen
@@ -106,11 +110,26 @@ class MainActivity : ComponentActivity() {
                     isPermissionGranted = PermissionUtils.isNotificationServiceEnabled(context)
                 }
 
+                val cardHazeState = LocalCardHazeState.current
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = LedgerTheme.colors.surfaceLevel0
                 ) {
                     Box(Modifier.fillMaxSize()) {
+                        // Ambient backdrop that Liquid Glass cards refract. Sits
+                        // behind opaque screen content, so it is invisible
+                        // directly — it only appears, blurred, through glass
+                        // surfaces. That is what makes a card at the top of a
+                        // screen read as glass rather than a flat panel.
+                        if (liquidGlass && cardHazeState != null) {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .ledgerAmbientBackground(LedgerTheme.colors.isDark)
+                                    .hazeSource(cardHazeState),
+                            )
+                        }
                         // The real destination is composed immediately —
                         // never blocked on the splash — so the splash's
                         // fade-out at the end reveals a screen that's
@@ -176,12 +195,20 @@ private fun LedgerApp(deepLinkTransactionId: Long? = null, deepLinkOpenSplit: Bo
         }
     }
 
+    val navHazeState = LocalNavHazeState.current
+    val glass = LedgerTheme.glass
+
     Box(Modifier.fillMaxSize()) {
         LedgerNavHost(
             navController = navController,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                // When glass is on, the whole screen content becomes the blur
+                // source the nav island samples — an authentic iOS nav bar that
+                // frosts the transactions scrolling beneath it.
+                .then(if (glass && navHazeState != null) Modifier.hazeSource(navHazeState) else Modifier),
         )
-        
+
         if (currentRoute in tabRoutes) {
             Box(Modifier.align(Alignment.BottomCenter)) {
                 LedgerBottomBar(navController)

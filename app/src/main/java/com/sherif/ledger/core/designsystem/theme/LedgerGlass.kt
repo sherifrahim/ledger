@@ -1,59 +1,106 @@
 package com.sherif.ledger.core.designsystem.theme
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
  * Liquid Glass — an *optional*, off-by-default surface style layered on top of
- * whichever base theme (light or dark) is active. It is never forced: the
- * default dark/light solid surfaces do the work unless the user turns this on
- * in Settings → Appearance.
+ * whichever base theme (light or dark) is active. Turned on in Settings →
+ * Appearance; the solid surfaces are the default.
  *
- * ## What this is (and honestly isn't)
+ * ## Real backdrop blur (not a fake)
  *
- * Apple's Liquid Glass is a real-time backdrop blur with specular highlights.
- * A true gaussian *backdrop* blur (blurring the content *behind* a surface) is
- * not achievable in pure Jetpack Compose without a dedicated haze library —
- * `Modifier.blur` only blurs an element's own pixels, not what sits under it,
- * and we deliberately don't pull in a new dependency for a cosmetic option.
+ * This is genuine Apple-style glass: a live `RenderEffect` gaussian blur of the
+ * content *behind* a surface (via the Haze library), with a translucent tint
+ * and a luminous edge — the same construction as iOS/macOS materials. On
+ * API < 31 (no `RenderEffect`) Haze degrades to a translucent scrim.
  *
- * So this is a **translucency-based interpretation**: a semi-transparent fill
- * (so the page and its ambient glow read faintly through the surface), a
- * top-down specular *sheen* gradient, and a luminous hairline edge. Applied
- * only where it reads well — content cards and the floating nav island — never
- * blanket across the app. It gives the layered, lit-from-above glass feel
- * without pretending to be something the platform can't cheaply do.
+ * Backdrop blur only reads as glass when there is something worth blurring
+ * behind the surface, so there are two blur layers:
+ *
+ *  - **Nav island** blurs the *scrolling screen content* passing beneath it —
+ *    exactly like an iOS navigation bar. It samples [LocalNavHazeState].
+ *  - **Cards** blur a soft **ambient backdrop** ([ledgerAmbientBackground])
+ *    rendered once behind the whole app. A card sits at the top of its screen
+ *    with nothing behind it, so without this it would blur a flat colour and
+ *    look like a plain panel (the bug in the first, translucency-only pass).
+ *    Cards sample [LocalCardHazeState].
  */
 
 /** True when the user has opted into Liquid Glass surfaces. Off by default. */
 val LocalLedgerGlass = staticCompositionLocalOf { false }
 
+/** Haze layer for the scrolling screen content — sampled by the nav island. */
+val LocalNavHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+/** Haze layer for the ambient backdrop — sampled by glass cards. */
+val LocalCardHazeState = staticCompositionLocalOf<HazeState?> { null }
+
 /**
- * Frosted-glass surface treatment for [LedgerCard]-family surfaces and the nav
- * island. Replaces the solid fill + hairline: a translucent base, a specular
- * sheen from the top, and a bright edge. [isDark] tunes the palette — a faint
- * white veil on dark, a heavier frost on light.
+ * The ambient backdrop that glass cards refract: the base surface plus two very
+ * soft emerald / azure light pools. Sits behind opaque screen content, so it is
+ * invisible directly — it only shows up, blurred, through glass surfaces. That
+ * is what gives the frosted-with-a-hint-of-colour Apple look instead of a flat
+ * grey panel.
  */
-fun Modifier.ledgerGlassSurface(shape: Shape, isDark: Boolean): Modifier {
-    val baseFill = if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.50f)
-    val sheen = Brush.verticalGradient(
-        colors = if (isDark) {
-            listOf(Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.03f))
-        } else {
-            listOf(Color.White.copy(alpha = 0.75f), Color.White.copy(alpha = 0.30f))
-        },
+fun Modifier.ledgerAmbientBackground(isDark: Boolean): Modifier = this.drawBehind {
+    val base = if (isDark) Color(0xFF080B0A) else Color(0xFFEFF2F6)
+    drawRect(base)
+    drawRect(
+        Brush.radialGradient(
+            colors = listOf(
+                Color(0xFF10B981).copy(alpha = if (isDark) 0.30f else 0.22f),
+                Color.Transparent,
+            ),
+            center = Offset(size.width * 0.16f, size.height * 0.06f),
+            radius = size.maxDimension * 0.75f,
+        ),
     )
-    val edge = if (isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.70f)
+    drawRect(
+        Brush.radialGradient(
+            colors = listOf(
+                Color(0xFF3B82F6).copy(alpha = if (isDark) 0.24f else 0.18f),
+                Color.Transparent,
+            ),
+            center = Offset(size.width * 0.9f, size.height * 0.9f),
+            radius = size.maxDimension * 0.75f,
+        ),
+    )
+}
+
+/**
+ * Real glass surface treatment. Blurs whatever [hazeState] captured behind it,
+ * tints it toward [containerColor], clips to [shape] and finishes with a
+ * luminous hairline edge. Used by [LedgerCard] and the nav island in place of
+ * the solid fill when glass is enabled.
+ */
+@Composable
+fun Modifier.ledgerGlassSurface(
+    hazeState: HazeState,
+    shape: Shape,
+    isDark: Boolean,
+    containerColor: Color,
+): Modifier {
+    val style = if (isDark) {
+        HazeMaterials.thin(containerColor)
+    } else {
+        HazeMaterials.regular(containerColor)
+    }
+    val edge = if (isDark) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.55f)
     return this
         .clip(shape)
-        .background(baseFill, shape)
-        .background(sheen, shape)
+        .hazeEffect(state = hazeState, style = style)
         .border(1.dp, edge, shape)
 }

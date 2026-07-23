@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.LocalCardHazeState
 import com.sherif.ledger.core.designsystem.theme.ledgerGlassSurface
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 
@@ -45,9 +46,12 @@ fun LedgerCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LedgerTheme.colors
-    val glass = LedgerTheme.glass
-    // Soft, low-alpha shadow in light; disabled in dark where it would read as mud.
-    val shadowMod = if (!colors.isDark && elevation > 0.dp) {
+    val cardHaze = LocalCardHazeState.current
+    // Glass only when enabled AND a backdrop layer exists to blur.
+    val glass = LedgerTheme.glass && cardHaze != null
+    // Soft, low-alpha shadow in light; disabled in dark where it would read as
+    // mud, and disabled entirely under glass (the blur carries the depth).
+    val shadowMod = if (!glass && !colors.isDark && elevation > 0.dp) {
         Modifier.shadow(
             elevation = elevation,
             shape = shape,
@@ -57,10 +61,10 @@ fun LedgerCard(
         )
     } else Modifier
 
-    // Surface fill: the optional Liquid Glass treatment (translucent + sheen +
-    // luminous edge) when enabled, otherwise the solid card fill + hairline.
+    // Surface fill: real backdrop-blur glass (Haze) when enabled, otherwise the
+    // solid card fill + hairline.
     val surfaceMod = if (glass) {
-        Modifier.ledgerGlassSurface(shape, colors.isDark)
+        Modifier.ledgerGlassSurface(cardHaze!!, shape, colors.isDark, colors.surfaceCard)
     } else {
         Modifier.clip(shape).background(colors.surfaceCard).border(LedgerTheme.border.Hairline, colors.cardBorder, shape)
     }
