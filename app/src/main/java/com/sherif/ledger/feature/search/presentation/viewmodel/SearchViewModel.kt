@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.search.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
@@ -58,7 +59,7 @@ class SearchViewModel @Inject constructor(
                     id = txn.id.toString(),
                     merchant = prettify(txn.rawText ?: "Unknown"),
                     amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
-                    isExpense = txn.type == TransactionType.EXPENSE,
+                    isExpense = txn.isOutflow,
                     time = txn.timestamp.atZone(ZoneId.systemDefault()).format(timeFormat),
                     category = stories[txn.id]?.category?.let { prettify(it) } ?: "",
                 )

@@ -3,6 +3,7 @@ package com.sherif.ledger.presentation.dashboard.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
@@ -105,7 +106,7 @@ class DashboardViewModel @Inject constructor(
                         merchantName = txn.rawText ?: "Unknown",
                         category = story?.category ?: "UNKNOWN",
                         amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
-                        isExpense = txn.type == TransactionType.EXPENSE,
+                        isExpense = txn.isOutflow,
                         time = txn.timestamp.atZone(ZoneId.systemDefault()).format(timeFormatter),
                         explanation = story?.explanation ?: ""
                     )

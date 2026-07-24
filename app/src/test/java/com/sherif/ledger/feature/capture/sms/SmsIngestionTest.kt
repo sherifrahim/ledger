@@ -132,6 +132,32 @@ class SmsIngestionTest {
     }
 
     @Test
+    fun `ADCB personal-internet-banking transfer SMS is captured as outgoing transfer`() = runBlocking {
+        // Real user SMS (redacted) that Ledger failed to capture. Amount is glued to
+        // the currency ("AED2770.00"), there's a second amount (the balance), the
+        // account is "acc. no. XXX920001", and the channel is "Personal Internet
+        // Banking / Mobile App" with no card tail — a person-to-person transfer.
+        val sms = NotificationEnvelope(
+            packageName = "ADCB",
+            title = "SMS",
+            text = "AED2770.00 transferred via ADCB Personal Internet Banking / Mobile App " +
+                "from acc. no. XXX920001 on Jul 23 2026 3:56PM. Avl. bal. AED 1493.52.",
+            subText = null,
+            timestamp = Instant.now(),
+            notificationKey = "sms_transfer_1",
+            source = IngestionSource.SMS,
+        )
+
+        useCase.execute(sms)
+
+        assertEquals(1, transactionRepository.insertedTransactions.size)
+        val txn = transactionRepository.insertedTransactions.first()
+        assertEquals(277000L, txn.amount.minorUnits)
+        assertEquals(TransactionType.TRANSFER, txn.type)
+        assertEquals(TransferDirection.OUTGOING, txn.transferDirection)
+    }
+
+    @Test
     fun `Duplicate SMS is reconciled and not inserted twice`() = runBlocking {
         val sms = NotificationEnvelope(
             packageName = "ADCB",

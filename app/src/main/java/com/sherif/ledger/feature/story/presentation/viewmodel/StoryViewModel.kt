@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.story.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
@@ -50,7 +51,7 @@ class StoryViewModel @Inject constructor(
                             merchant = txn.rawText ?: "Unknown",
                             explanation = stories[txn.id]?.explanation ?: "",
                             amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
-                            isExpense = txn.type == TransactionType.EXPENSE,
+                            isExpense = txn.isOutflow,
                         )
                     },
                 )
