@@ -3,9 +3,12 @@ package com.sherif.ledger.feature.transactions.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
+import com.sherif.ledger.core.domain.service.transaction.TransactionDisplayName
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.feature.merchant.MerchantResolver
 import com.sherif.ledger.feature.transactions.presentation.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +24,8 @@ import javax.inject.Inject
 class TransactionsViewModel @Inject constructor(
     private val transactionReadSource: TransactionReadSource,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
+    private val merchantRepository: MerchantRepository,
+    private val merchantResolver: MerchantResolver,
 ) : ViewModel() {
 
     init {
@@ -37,14 +42,18 @@ class TransactionsViewModel @Inject constructor(
                 // Real category, from Merchant Intelligence via the analytics layer —
                 // never a presentation-layer merchant-name guess.
                 val stories = getFinancialAnalyticsUseCase.transactionStories(result.data)
+                // Clean row titles: brandId→Brand.name (what capture resolved), else the
+                // deterministic merchant registry — never the raw SMS text.
+                val brandNames = (merchantRepository.getAllBrands() as? LedgerResult.Success)
+                    ?.data?.associate { it.id to it.name } ?: emptyMap()
 
-                val groups = result.data.groupBy { 
+                val groups = result.data.groupBy {
                     it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 }.map { (date, txns) ->
                     val transactionUiModels = txns.map { txn ->
                         TransactionUi(
                             id = txn.id.toString(),
-                            merchant = txn.rawText ?: "Unknown",
+                            merchant = TransactionDisplayName.resolve(txn, brandNames, merchantResolver),
                             category = toUiCategory(txn, stories[txn.id]?.category),
                             amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                             subtitle = txn.source.name

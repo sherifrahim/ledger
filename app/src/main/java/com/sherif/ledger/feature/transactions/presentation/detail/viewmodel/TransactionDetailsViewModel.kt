@@ -10,8 +10,10 @@ import com.sherif.ledger.core.domain.model.TransferDirection
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
+import com.sherif.ledger.core.domain.service.transaction.TransactionDisplayName
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.feature.merchant.MerchantResolver
 import com.sherif.ledger.feature.transactions.presentation.detail.MerchantHistoryItem
 import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDetailsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,6 +48,7 @@ class TransactionDetailsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val merchantRepository: MerchantRepository,
+    private val merchantResolver: MerchantResolver,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
 ) : ViewModel() {
 
@@ -73,12 +76,9 @@ class TransactionDetailsViewModel @Inject constructor(
                 val accountResult = accountRepository.getAccountById(txn.accountId)
                 val account = (accountResult as? LedgerResult.Success)?.data
 
-                val brandName = txn.brandId?.let { brandId ->
-                    val brandResult = merchantRepository.getAllBrands()
-                    if (brandResult is LedgerResult.Success) {
-                        brandResult.data.find { it.id == brandId }?.name
-                    } else null
-                } ?: txn.rawText ?: "Unknown"
+                val brandNames = (merchantRepository.getAllBrands() as? LedgerResult.Success)
+                    ?.data?.associate { it.id to it.name } ?: emptyMap()
+                val brandName = TransactionDisplayName.resolve(txn, brandNames, merchantResolver)
 
                 // Real category, from the same Merchant Intelligence resolution
                 // every other screen uses — never a hardcoded placeholder.

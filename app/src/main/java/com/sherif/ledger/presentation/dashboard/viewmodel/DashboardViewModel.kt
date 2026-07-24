@@ -7,10 +7,13 @@ import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.AccountRepository
+import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.service.diagnostic.FinancialTraceCollector
+import com.sherif.ledger.core.domain.service.transaction.TransactionDisplayName
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.feature.merchant.MerchantResolver
 import com.sherif.ledger.presentation.dashboard.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,6 +42,8 @@ class DashboardViewModel @Inject constructor(
     private val transactionReadSource: TransactionReadSource,
     private val accountRepository: AccountRepository,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
+    private val merchantRepository: MerchantRepository,
+    private val merchantResolver: MerchantResolver,
     private val financialTraceCollector: FinancialTraceCollector, // RC4: permanent, replaces the disposable RC2/RC3 BalanceTraceDiagnostic
 ) : ViewModel() {
 
@@ -87,6 +92,10 @@ class DashboardViewModel @Inject constructor(
         // for this screen — one call into the analytics layer, not a direct
         // RelationshipEngine invocation here.
         val stories = getFinancialAnalyticsUseCase.transactionStories(recentTransactions)
+        // Clean row titles: brandId→Brand.name (what capture resolved), else the
+        // deterministic merchant registry — never the raw SMS text.
+        val brandNames = (merchantRepository.getAllBrands() as? LedgerResult.Success)
+            ?.data?.associate { it.id to it.name } ?: emptyMap()
 
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
         val activityGroups = recentTransactions.groupBy { txn ->
@@ -103,7 +112,7 @@ class DashboardViewModel @Inject constructor(
                     val story = stories[txn.id]
                     ActivityItemUiModel(
                         id = txn.id.toString(),
-                        merchantName = txn.rawText ?: "Unknown",
+                        merchantName = TransactionDisplayName.resolve(txn, brandNames, merchantResolver),
                         category = story?.category ?: "UNKNOWN",
                         amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                         isExpense = txn.isOutflow,

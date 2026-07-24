@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
+import com.sherif.ledger.core.domain.service.transaction.TransactionDisplayName
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.feature.merchant.MerchantResolver
 import com.sherif.ledger.feature.story.presentation.StoryGroupUi
 import com.sherif.ledger.feature.story.presentation.StoryItemUi
 import com.sherif.ledger.feature.story.presentation.StoryUiState
@@ -32,6 +35,8 @@ import javax.inject.Inject
 class StoryViewModel @Inject constructor(
     private val transactionReadSource: TransactionReadSource,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
+    private val merchantRepository: MerchantRepository,
+    private val merchantResolver: MerchantResolver,
 ) : ViewModel() {
 
     val uiState: StateFlow<StoryUiState> = transactionReadSource.observeRecentTransactions(50)
@@ -40,6 +45,8 @@ class StoryViewModel @Inject constructor(
             if (txns.isEmpty()) return@map StoryUiState()
 
             val stories = getFinancialAnalyticsUseCase.transactionStories(txns)
+            val brandNames = (merchantRepository.getAllBrands() as? LedgerResult.Success)
+                ?.data?.associate { it.id to it.name } ?: emptyMap()
             val groups = txns.groupBy { txn ->
                 dateLabel(txn.timestamp.atZone(ZoneId.systemDefault()).toLocalDate())
             }.map { (title, list) ->
@@ -48,7 +55,7 @@ class StoryViewModel @Inject constructor(
                     items = list.map { txn ->
                         StoryItemUi(
                             id = txn.id.toString(),
-                            merchant = txn.rawText ?: "Unknown",
+                            merchant = TransactionDisplayName.resolve(txn, brandNames, merchantResolver),
                             explanation = stories[txn.id]?.explanation ?: "",
                             amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                             isExpense = txn.isOutflow,
