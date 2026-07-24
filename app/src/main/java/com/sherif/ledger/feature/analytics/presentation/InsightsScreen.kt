@@ -1,9 +1,7 @@
 package com.sherif.ledger.feature.analytics.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Insights
@@ -12,36 +10,37 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.component.LedgerCard
 import com.sherif.ledger.core.designsystem.component.LedgerCardDefaults
-import com.sherif.ledger.core.designsystem.component.LedgerDonutChart
-import com.sherif.ledger.core.designsystem.component.LedgerDonutSlice
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerIconButton
-import com.sherif.ledger.core.designsystem.component.LedgerLineChart
+import com.sherif.ledger.core.designsystem.component.LedgerInteractiveLineChart
+import com.sherif.ledger.core.designsystem.component.LedgerInteractivePieChart
+import com.sherif.ledger.core.designsystem.component.LedgerLinePoint
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import kotlin.math.roundToInt
 
 /**
  * Insights — the analytics home, wired to real data (P-Analytics).
  *
  * Two first-class analytics components live here, integrated into the calm
- * editorial language rather than presented as reporting widgets: a **Financial
- * Trend** (this month's real daily spending, a single quiet line) and a **Spending
- * Breakdown** (real category composition as a restrained donut with a plain
- * legend). Every figure comes from the existing analytics
- * (`FinancialAnalytics.trendPoints` / `categoryTotals`) — no new engine, no
+ * editorial language rather than presented as reporting widgets: an **interactive
+ * Spending Trend** (this month's real daily spending — a single quiet line with
+ * labeled axes you can scrub to read any day) and an **interactive Spending
+ * Breakdown** (real category composition as a restrained donut whose slices can be
+ * tapped to reveal each category's exact value and share). Every figure comes from
+ * the existing analytics (`trendPoints` / `categoryTotals`) — no new engine, no
  * fabricated progress. Honest empty state until there's activity.
  */
 @Composable
 fun InsightsScreen(state: InsightsUiState, onBackClick: () -> Unit = {}) {
-    val hasTrend = state.chartPoints.size >= 2 && state.chartPoints.any { it != 0f }
-    val hasBreakdown = state.categories.isNotEmpty()
+    val hasTrend = state.trend.size >= 2 && state.trend.any { it.value != 0f }
+    val hasBreakdown = state.pieSlices.isNotEmpty()
 
     Scaffold(containerColor = LedgerTheme.colors.surfaceBase) { padding ->
         LazyColumn(
@@ -72,7 +71,7 @@ fun InsightsScreen(state: InsightsUiState, onBackClick: () -> Unit = {}) {
 
             item { CashflowCard(state.incomeTotal, state.spentTotal) }
 
-            if (hasTrend) item { TrendCard(state.chartPoints) }
+            if (hasTrend) item { TrendCard(state.trend, state.currencySymbol) }
 
             if (hasBreakdown) item { BreakdownCard(state) }
 
@@ -112,18 +111,25 @@ private fun CashflowCard(income: String, spent: String) {
 }
 
 @Composable
-private fun TrendCard(points: List<Float>) {
+private fun TrendCard(points: List<LedgerLinePoint>, currencySymbol: String) {
     Column {
         SectionLabel("SPENDING TREND")
         Spacer(Modifier.height(LedgerSpacing.Small))
         LedgerCard(elevation = LedgerCardDefaults.ElevationLow) {
             Text("Daily spending this month", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
             Spacer(Modifier.height(LedgerSpacing.Medium))
-            LedgerLineChart(
-                data = points,
-                modifier = Modifier.fillMaxWidth().height(120.dp),
+            LedgerInteractiveLineChart(
+                points = points,
+                yAxisFormatter = { compactMoney(currencySymbol, it) },
+                modifier = Modifier.fillMaxWidth(),
                 lineColor = LedgerTheme.colors.textSecondary,
-                fill = true,
+                height = 184.dp,
+            )
+            Spacer(Modifier.height(LedgerSpacing.Tiny))
+            Text(
+                "Touch and drag along the line to read any day",
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.textTertiary,
             )
         }
     }
@@ -131,50 +137,23 @@ private fun TrendCard(points: List<Float>) {
 
 @Composable
 private fun BreakdownCard(state: InsightsUiState) {
-    // Show the five largest categories individually; fold everything else into a
-    // single "Other" entry so both the donut ring and the legend account for the
-    // full 100% of spending — never a legend that silently sums to less.
-    val shown = state.categories.take(5)
-    val rest = state.categories.drop(5)
-    val otherColor = LedgerTheme.colors.textTertiary
-    val otherPercent = rest.sumOf { it.percentageValue }
-
     Column {
         SectionLabel("SPENDING BREAKDOWN")
         Spacer(Modifier.height(LedgerSpacing.Small))
         LedgerCard(elevation = LedgerCardDefaults.ElevationLow) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                LedgerDonutChart(
-                    slices = shown.map { LedgerDonutSlice(it.percentageValue.toFloat().coerceAtLeast(0.5f), it.color) } +
-                        if (rest.isNotEmpty()) listOf(LedgerDonutSlice(otherPercent.toFloat().coerceAtLeast(0.5f), otherColor)) else emptyList(),
-                    modifier = Modifier.size(132.dp),
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Spent", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
-                        Text(state.spentTotal, style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textPrimary)
-                    }
-                }
-                Spacer(Modifier.width(LedgerSpacing.Large))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-                    shown.forEach { category ->
-                        LegendRow(category.color, category.name, category.percentageValue)
-                    }
-                    if (rest.isNotEmpty()) {
-                        LegendRow(otherColor, "Other", otherPercent)
-                    }
-                }
-            }
+            LedgerInteractivePieChart(
+                slices = state.pieSlices,
+                restingCenterLabel = "Spent",
+                restingCenterValue = state.spentTotal,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(LedgerSpacing.Medium))
+            Text(
+                "Tap a category to see its exact amount and share",
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.textTertiary,
+            )
         }
-    }
-}
-
-@Composable
-private fun LegendRow(color: androidx.compose.ui.graphics.Color, name: String, percent: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(LedgerSpacing.Small))
-        Text(name, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary, modifier = Modifier.weight(1f))
-        Text("$percent%", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
     }
 }
 
@@ -185,4 +164,23 @@ private fun SectionLabel(title: String) {
         style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
         color = LedgerTheme.colors.textTertiary,
     )
+}
+
+/**
+ * Compact currency for a chart axis tick — approximate by design (the exact figure is
+ * one scrub away in the callout), so thousands collapse to "k" and millions to "M".
+ * Operates on major units (the value already divided out of minor units by the VM).
+ */
+private fun compactMoney(symbol: String, majorValue: Float): String {
+    val magnitude = when {
+        majorValue >= 1_000_000f -> trimZero(majorValue / 1_000_000f) + "M"
+        majorValue >= 1_000f -> trimZero(majorValue / 1_000f) + "k"
+        else -> majorValue.roundToInt().toString()
+    }
+    return "$symbol $magnitude"
+}
+
+private fun trimZero(value: Float): String {
+    val rounded = (value * 10f).roundToInt() / 10f
+    return if (rounded % 1f == 0f) rounded.toInt().toString() else rounded.toString()
 }

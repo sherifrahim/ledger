@@ -1,21 +1,17 @@
 package com.sherif.ledger.feature.analytics.presentation
 
-import androidx.compose.ui.graphics.Color
+import com.sherif.ledger.core.designsystem.component.LedgerLinePoint
+import com.sherif.ledger.core.designsystem.component.LedgerPieSlice
 
 data class InsightsUiState(
     val spentTotal: String = "0.00",
     val incomeTotal: String = "0.00",
     val dateRange: String = "",
-    val categories: List<CategoryInsightUi> = emptyList(),
     val currency: String = "AED",
-    val chartPoints: List<Float> = emptyList()
-)
-
-data class CategoryInsightUi(
-    val name: String,
-    val amount: String,
-    val percentage: String = "",
-    val percentageValue: Int = 0,
-    val color: Color,
-    val currency: String = "AED"
+    /** Currency symbol (e.g. "AED", "$") used to label the chart's Y axis compactly. */
+    val currencySymbol: String = "AED",
+    /** Real daily-spend series for the interactive line chart (labeled + exact-valued). */
+    val trend: List<LedgerLinePoint> = emptyList(),
+    /** Real category composition for the interactive donut (top 5 + folded "Other"). */
+    val pieSlices: List<LedgerPieSlice> = emptyList(),
 )
