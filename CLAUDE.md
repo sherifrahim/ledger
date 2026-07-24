@@ -27,6 +27,7 @@ Each of these is comprehensive on its own topic — read the relevant one instea
 - `MERCHANT_ARCHITECTURE.md` — the merchant/category "System A vs System B" investigation and merge decision (RC9).
 - `PIPELINE_ARCHITECTURE.md` — stage-by-stage capture pipeline audit: input/output/confidence/reason/fallback/AI-usage/failure-mode per stage (RC9).
 - `ARCHITECTURE.md` — visual index, Mermaid diagrams for every major flow (RC9).
+- **`MOCK_PARITY_PLAN.md`** — **ACTIVE BUILD (started 2026-07-24)**: the plan to bring the app to Figma-mock parity (dark+light, Liquid Glass) then iOS-fy. Ordered task list, locked decisions, per-screen gaps, and open follow-ups. **Read this before continuing UI work; continue at the next unchecked item.**
 - `ENGINEERING_STATUS.md` — the single "state of the codebase" doc: subsystem ownership, technical debt eliminated/remaining, risks, recommendations, Product Readiness scorecard (RC9).
 - `SESSION_HISTORY.md` — RC4-RC6 delivery narrative (predates the canonical-doc convention; relocated here from this file 2026-07-21 to keep this file lean).
 - **`LEDGER_MASTER_SPECIFICATION.md`** — the single canonical product specification, v1.0 (Parts I–XI, Chapters 1–151): product foundation, financial philosophy, platform/domain architecture, design language, product/screen/component/interaction/AI bibles, Universal Data Ingestion. **Level-1 governance authority** (the product vision lives here; there is no separate vision doc). Produced 2026-07-21 by merging the eleven `part*` drafts (now archived under `docs/spec-archive/`).
