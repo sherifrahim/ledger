@@ -140,6 +140,8 @@ fun LedgerNavHost(
                 onNavigateToAccounts = { navController.navigate(LedgerRoute.Accounts.route) },
                 onNavigateToActivity = { navController.navigate(LedgerRoute.Transactions.route) },
                 onNavigateToInsights = { navController.navigate(LedgerRoute.Insights.route) },
+                onNavigateToPrivacyPolicy = { navController.navigate(LedgerRoute.PrivacyPolicy.route) },
+                onNavigateToLicenses = { navController.navigate(LedgerRoute.Licenses.route) },
             )
         }
 
@@ -165,6 +167,18 @@ fun LedgerNavHost(
 
         composable(LedgerRoute.AiSettings.route) {
             AiSettingsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(LedgerRoute.PrivacyPolicy.route) {
+            com.sherif.ledger.feature.settings.presentation.PrivacyPolicyScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(LedgerRoute.Licenses.route) {
+            com.sherif.ledger.feature.settings.presentation.LicensesScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

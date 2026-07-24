@@ -65,6 +65,15 @@ object ExtractionHelpers {
         "a/c credited", "acct credited", "amount credited", "credited to a/c", "credited to ac",
     )
 
+    // Explicit money-LEAVING indicators. Used only as a guard so a bare
+    // "credited"/"deposited" (money arriving) isn't reclassified as incoming when
+    // the message is actually describing a send whose counterparty was credited
+    // (e.g. "transferred to Ali, credited to payee").
+    private val outgoingTransferIndicators = listOf(
+        "debited", "transferred to", "sent to", "sent via", "paid to", "paid towards",
+        "towards your card", "spent", "withdrawn",
+    )
+
     /**
      * Determines transfer direction from the SAME text already inspected by the
      * caller when it decided the message is a transfer. This is the ONE place
@@ -79,10 +88,16 @@ object ExtractionHelpers {
      * ("transferred to", "sent via UPI", "paid towards your card").
      */
     fun inferTransferDirection(lower: String): TransferDirection =
-        if (incomingTransferPhrases.any { lower.contains(it) }) {
-            TransferDirection.INCOMING
-        } else {
-            TransferDirection.OUTGOING
+        when {
+            incomingTransferPhrases.any { lower.contains(it) } -> TransferDirection.INCOMING
+            // A bare "credited"/"deposited" (money ARRIVING) with no money-leaving
+            // verb present is incoming — this catches bank shorthands the phrase
+            // list above doesn't enumerate (e.g. "INR 500 credited"), so a
+            // "credited" transfer is never mis-defaulted to OUTGOING. Guarded by the
+            // absence of any outgoing indicator so genuine sends stay outgoing.
+            (lower.contains("credited") || lower.contains("deposited")) &&
+                outgoingTransferIndicators.none { lower.contains(it) } -> TransferDirection.INCOMING
+            else -> TransferDirection.OUTGOING
         }
 }
 

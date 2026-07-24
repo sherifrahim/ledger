@@ -35,6 +35,8 @@ fun ProfileScreen(
     onNavigateToAccounts: () -> Unit = {},
     onNavigateToActivity: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
+    onNavigateToPrivacyPolicy: () -> Unit = {},
+    onNavigateToLicenses: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -66,6 +68,10 @@ fun ProfileScreen(
 
             item {
                 PreferencesSection(onNavigateToDebugConsole, onNavigateToAdjustBalance, onNavigateToReviewInbox, onNavigateToAiSettings)
+            }
+
+            item {
+                AboutSection(onNavigateToPrivacyPolicy, onNavigateToLicenses)
             }
 
             item {
@@ -182,6 +188,24 @@ private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceC
                 LedgerDivider(alpha = 0.05f)
                 PreferenceRow(icon = Icons.Default.BugReport, label = "Developer Console", onClick = onDebugConsoleClick)
             }
+        }
+    }
+}
+
+@Composable
+private fun AboutSection(onPrivacyClick: () -> Unit, onLicensesClick: () -> Unit) {
+    Column {
+        Text("ABOUT", style = LedgerTheme.typography.labelLarge.copy(letterSpacing = 1.sp), color = LedgerTheme.colors.textTertiary)
+        Spacer(Modifier.height(LedgerSpacing.Small))
+
+        LedgerSurface(
+            level = com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel.Inset,
+            shape = com.sherif.ledger.core.designsystem.tokens.LedgerRadius.Large,
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            PreferenceRow(icon = Icons.Default.Shield, label = "Privacy Policy", onClick = onPrivacyClick)
+            LedgerDivider(alpha = 0.05f)
+            PreferenceRow(icon = Icons.Default.Description, label = "Open Source Licenses", onClick = onLicensesClick)
         }
     }
 }

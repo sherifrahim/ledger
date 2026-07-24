@@ -24,6 +24,8 @@ sealed class LedgerRoute(val route: String) {
     data object AdjustBalance : LedgerRoute("adjust_balance")
     data object EditProfile : LedgerRoute("edit_profile")
     data object AiSettings : LedgerRoute("ai_settings")
+    data object PrivacyPolicy : LedgerRoute("privacy_policy")
+    data object Licenses : LedgerRoute("licenses")
     data object ReviewInbox : LedgerRoute("review")
     data object DebugConsole : LedgerRoute("debug_console")
     data object PipelineDiagnostics : LedgerRoute("pipeline_diagnostics")
