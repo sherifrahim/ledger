@@ -110,6 +110,7 @@ class AccountIdentityResolverTest {
         transactionRepository,
         EnsureDefaultAccountUseCase(accountRepository),
         learnedDecisionStore,
+        SenderClassifier(),
     )
 
     private fun envelope(pkg: String) = NotificationEnvelope(pkg, "", "text", null, Instant.now(), "k")
@@ -161,6 +162,81 @@ class AccountIdentityResolverTest {
         assertEquals(AccountIdentityDecision.CANDIDATE, second.decision)
         assertEquals(first.accountId, second.accountId)
         assertEquals(1, accountRepository.accounts.count { it.isCandidate })
+    }
+
+    // ---- Senders that can never name an account ----
+    //
+    // A fresh import of the owner's real inbox created twelve accounts, ten of them
+    // named after things that are not banks. Every identifier below is one that
+    // actually produced an account row on the device.
+
+    @Test fun `a messaging app never gets an account named after it`() = runBlocking {
+        // "Unrecognized Institution (com.google.android.apps.messaging) •1959" held
+        // the same card tail as the owner's real "Mashreq Credit Card •1959", so one
+        // card's spending was split across two accounts.
+        val result = resolver.resolve(
+            envelope("com.google.android.apps.messaging"),
+            candidate("AED 46.80 spent on card ending 1959", "1959"),
+        )
+
+        assertEquals(AccountIdentityDecision.CANDIDATE, result.decision)
+        assertTrue(
+            "No account may be named after the messaging app that displayed the message",
+            accountRepository.accounts.none { it.name.contains("messaging") },
+        )
+        val holding = accountRepository.accounts.first { it.id == result.accountId }
+        assertEquals("Unattributed Capture (AED)", holding.name)
+        assertTrue("Must stay off every balance", holding.isCandidate)
+        assertEquals("A tail seen through a messenger belongs to the issuing bank", null, holding.accountNumberTail)
+    }
+
+    @Test fun `every transport and telecom sender shares one holding account per currency`() = runBlocking {
+        // The real senders, in the order the import met them.
+        listOf("com.truecaller", "com.google.android.apps.messaging", "Smiles", "eandINF", "eandUAE", "AD-eand")
+            .forEach { resolver.resolve(envelope(it), candidate("AED 50 charged", null)) }
+
+        assertEquals(
+            "Six unattributable senders must not become six accounts",
+            1, accountRepository.accounts.count { it.isCandidate },
+        )
+        assertEquals("Unattributed Capture (AED)", accountRepository.accounts.first { it.isCandidate }.name)
+    }
+
+    @Test fun `an unattributable sender never lands on the account holding the users opening balance`() = runBlocking {
+        // The fallback account carries the balance the user typed in at onboarding.
+        // Parking telecom captures there would move a number they read as their money.
+        val result = resolver.resolve(envelope("Smiles"), candidate("AED 500 cashback", null))
+
+        assertTrue("Must never be the default account", result.accountId != 1L)
+        assertTrue(accountRepository.accounts.first { it.id == result.accountId }.isCandidate)
+    }
+
+    @Test fun `a wallet is not swept up with the telecom senders that share its prefix`() = runBlocking {
+        // e& money is a real payment wallet; eandINF/eandUAE/AD-eand are the
+        // operator's own marketing and billing senders. Matching whole identifiers
+        // rather than a prefix is what keeps these apart.
+        val wallet = resolver.resolve(envelope("eandmoney"), candidate("AED 200 paid", "4321"))
+        val marketing = resolver.resolve(envelope("eandINF"), candidate("AED 200 paid", "4321"))
+
+        assertEquals(AccountIdentityDecision.CANDIDATE, wallet.decision)
+        assertTrue(
+            "e& money keeps its own reviewable, promotable candidate account",
+            accountRepository.accounts.any { it.name == "Unrecognized Institution (eandmoney) •4321" },
+        )
+        assertTrue("but the operator's marketing sender does not", wallet.accountId != marketing.accountId)
+    }
+
+    @Test fun `an unrecognised bank still keeps its own promotable candidate account`() = runBlocking {
+        // Guards against over-reach: the point is to refuse messengers and telecoms,
+        // not to collapse every institution Ledger has not met yet into one bucket.
+        // RC7 Phase B's per-institution candidate is what makes promotion possible.
+        val result = resolver.resolve(envelope("MBANKAlert"), candidate("AED 120 spent", "000001"))
+
+        assertEquals(AccountIdentityDecision.CANDIDATE, result.decision)
+        assertEquals(
+            "Unrecognized Institution (MBANKAlert) •000001",
+            accountRepository.accounts.first { it.id == result.accountId }.name,
+        )
     }
 
     @Test fun `known institution with no tail falls back`() = runBlocking {
@@ -319,6 +395,7 @@ class AccountIdentityResolverTest {
             transactionRepository,
             EnsureDefaultAccountUseCase(delayedAccounts),
             com.sherif.ledger.core.domain.service.intelligence.LearnedDecisionStore(FakeLearnedDecisionDao()),
+            SenderClassifier(),
         )
         // Single-shot near-certainty: institution + tail + currency + explicit
         // type hint all agree, so this creates on the very first sighting --

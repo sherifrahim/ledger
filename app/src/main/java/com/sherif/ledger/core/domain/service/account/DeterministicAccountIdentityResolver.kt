@@ -30,6 +30,21 @@ object CandidateAccountNaming {
     fun nameFor(rawIdentifier: String, tail: String?): String =
         "Unrecognized Institution ($rawIdentifier)" + (tail?.let { " •$it" } ?: "")
 
+    /**
+     * The one holding account for captures whose sender can never name an account
+     * of the user's — a messaging app, or a telecom/loyalty sender (see
+     * [SenderClassifier]). One per currency, shared by every such sender, so ten
+     * junk accounts named after messengers and mobile operators become one honest
+     * "we caught this but cannot attribute it" bucket.
+     *
+     * Still a Candidate Account, so it is excluded from every balance and net-worth
+     * figure exactly as the per-institution candidates are, and stays reviewable in
+     * Developer Console. Deliberately NOT the fallback/default account: that one
+     * carries the user's real opening balance, and parking unattributable telecom
+     * captures there would move a number the user reads as their money.
+     */
+    fun unattributedName(currencyCode: String): String = "Unattributed Capture ($currencyCode)"
+
     /** Null if [accountName] doesn't match the Candidate Account naming convention (e.g. already promoted/renamed). */
     fun parseRawIdentifier(accountName: String): String? = pattern.matchEntire(accountName)?.groupValues?.get(1)
 }
@@ -70,6 +85,7 @@ class DeterministicAccountIdentityResolver @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val ensureDefaultAccountUseCase: EnsureDefaultAccountUseCase,
     private val learnedDecisionStore: LearnedDecisionStore,
+    private val senderClassifier: SenderClassifier,
 ) : AccountIdentityResolver {
 
     /** Shared across every caller because this class is @Singleton — serializes
@@ -319,6 +335,17 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         typeHint: AccountType?,
         evidence: List<String>,
     ): AccountIdentityResult {
+        // Some senders can never name an account, however often they are seen. A
+        // messaging app only displayed someone else's message, and a telecom or
+        // loyalty sender has no account to hold. Left unchecked this produced ten
+        // of the twelve accounts a real import created — including one named after
+        // Google Messages that held the same card tail as the user's actual Mashreq
+        // card, so one card's spending was split across two accounts.
+        val senderKind = senderClassifier.classify(envelope.packageName)
+        if (senderKind != SenderKind.UNKNOWN) {
+            return resolveOrCreateUnattributed(senderKind, envelope, currency, typeHint, evidence)
+        }
+
         val expectedName = CandidateAccountNaming.nameFor(envelope.packageName, tail)
         val existingCandidates = (accountRepository.observeCandidateAccounts().first() as? LedgerResult.Success)?.data ?: emptyList()
         val existing = existingCandidates.firstOrNull { it.name == expectedName && it.openingBalance.currencyCode == currency }
@@ -349,6 +376,72 @@ class DeterministicAccountIdentityResolver @Inject constructor(
             0,
             typeHint,
             evidence + "Unrecognized institution — created Candidate Account '$expectedName' pending review, currency preserved from the transaction ($currency), never merged into an existing account",
+        )
+    }
+
+    /**
+     * The shared, per-currency holding account for captures from a sender that can
+     * never own one ([SenderClassifier]). Never carries the sender's name — that is
+     * the whole point — and never a card tail, since a tail seen through a
+     * messaging app belongs to the bank that issued it, not to the app.
+     *
+     * Always CHECKING and never [typeHint]-typed: a liability account inverts the
+     * sign of every transaction on it ([com.sherif.ledger.core.domain.service.transaction.BalanceCalculator]),
+     * and a bucket that mixes senders must not let one message's wording decide
+     * that for all the others.
+     */
+    private suspend fun resolveOrCreateUnattributed(
+        senderKind: SenderKind,
+        envelope: NotificationEnvelope,
+        currency: CurrencyCode,
+        typeHint: AccountType?,
+        evidence: List<String>,
+    ): AccountIdentityResult {
+        val reason = when (senderKind) {
+            SenderKind.TRANSPORT ->
+                "'${envelope.packageName}' is a messaging app, not an institution — it displayed this message, it did not issue it"
+            SenderKind.NON_FINANCIAL ->
+                "'${envelope.packageName}' is a known non-financial sender (telecom/loyalty) with no account to hold"
+            SenderKind.UNKNOWN -> "" // unreachable: the caller only routes here for the two kinds above
+        }
+        val name = CandidateAccountNaming.unattributedName(currency.name)
+
+        val existingCandidates = (accountRepository.observeCandidateAccounts().first() as? LedgerResult.Success)?.data ?: emptyList()
+        val existing = existingCandidates.firstOrNull { it.name == name && it.openingBalance.currencyCode == currency }
+        if (existing != null) {
+            return AccountIdentityResult(
+                existing.id,
+                AccountIdentityDecision.CANDIDATE,
+                0,
+                typeHint,
+                evidence + "$reason — recorded against the shared '$name' holding account",
+            )
+        }
+
+        val account = Account(
+            id = 0,
+            name = name,
+            type = AccountType.CHECKING,
+            openingBalance = Money.zero(currency),
+            accountNumberTail = null,
+            bankBrandId = null,
+            isCandidate = true,
+        )
+        val result = accountRepository.insertAccount(account)
+        val accountId = (result as? LedgerResult.Success)?.data
+            ?: return AccountIdentityResult(
+                ensureDefaultAccountUseCase.execute(),
+                AccountIdentityDecision.FALLBACK_DEFAULT,
+                0,
+                typeHint,
+                evidence + "$reason — could not open the shared holding account",
+            )
+        return AccountIdentityResult(
+            accountId,
+            AccountIdentityDecision.CANDIDATE,
+            0,
+            typeHint,
+            evidence + "$reason — opened the shared '$name' holding account, never one named after the sender",
         )
     }
 

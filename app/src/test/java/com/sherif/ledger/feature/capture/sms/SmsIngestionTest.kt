@@ -106,6 +106,7 @@ class SmsIngestionTest {
                     override suspend fun upsert(entity: com.sherif.ledger.core.database.entity.LearnedDecisionEntity) {}
                 },
             ),
+            com.sherif.ledger.core.domain.service.account.SenderClassifier(),
         ),
             PipelineTraceSink(),
             DeterministicFinancialIntentClassifier(),
