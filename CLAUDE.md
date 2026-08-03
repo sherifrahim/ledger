@@ -1,6 +1,6 @@
 # Ledger — Project Context
 
-Offline-first Android personal-finance app. Kotlin, Jetpack Compose, Hilt, Room, MVVM+Clean Architecture. Package `com.sherif.ledger`. Work happens on `feature/ldl-foundation`. **This checkout is `C:\ledger` — a separate git worktree elsewhere on this machine (`.claude/worktrees/*`) is stale and missing most of this project's history; if a session's default working directory isn't `C:\ledger`, use absolute paths into `C:\ledger` explicitly rather than trusting the default cwd.**
+Offline-first Android personal-finance app. Kotlin, Jetpack Compose, Hilt, Room, MVVM+Clean Architecture. Package `com.sherif.ledger`. Work happens on `main` (the single long-lived branch; `feature/ldl-foundation` and `develop` were consolidated into it on 2026-08-03 — `develop`'s pre-merge tip is preserved as the tag `archive/develop-2026-06-27`). **This checkout is `C:\ledger` — a separate git worktree elsewhere on this machine (`.claude/worktrees/*`) is stale and missing most of this project's history; if a session's default working directory isn't `C:\ledger`, use absolute paths into `C:\ledger` explicitly rather than trusting the default cwd.**
 
 ## Token & context discipline (standing practice)
 
