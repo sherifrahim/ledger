@@ -21,6 +21,7 @@ import com.sherif.ledger.core.database.migration.MIGRATION_9_10
 import com.sherif.ledger.core.database.migration.MIGRATION_10_11
 import com.sherif.ledger.core.database.migration.MIGRATION_11_12
 import com.sherif.ledger.core.database.migration.MIGRATION_12_13
+import com.sherif.ledger.core.database.migration.MIGRATION_13_14
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,7 +46,7 @@ object DatabaseModule {
             // (nullable columns, new tables), so no data transform is needed.
             .addMigrations(
                 MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
-                MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+                MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
             )
             .build()
     }

@@ -52,11 +52,13 @@ class AccountBalanceServiceTest {
     private fun txn(
         id: Long, accountId: Long, amount: Long, type: TransactionType, day: Long, rawText: String,
         direction: TransferDirection? = null, cardTail: String? = null, packageName: String? = null,
+        availableCreditMinor: Long? = null,
     ) = Transaction(
         id = id, accountId = accountId, brandId = null, categoryId = null,
         amount = Money(amount, CurrencyCode.AED), type = type,
         timestamp = Instant.ofEpochSecond(day * 86_400L), source = IngestionSource.NOTIFICATION,
         rawText = rawText, cardTail = cardTail, fingerprint = "fp-$id",
+        availableCreditMinor = availableCreditMinor,
         transferDirection = direction,
         origin = packageName?.let { TransactionOrigin(it, null) },
     )
@@ -159,8 +161,76 @@ class AccountBalanceServiceTest {
         // Assets: 600000. Liabilities: 500000 owed. Net worth: 100000.
         assertEquals(100_000L, netWorth.minorUnits)
     }
+
+    // ---- Credit-card outstanding, from the owner's real Mashreq card ----
+
+    @Test
+    fun `a card's outstanding is its limit minus the bank's latest stated headroom`() = runBlocking {
+        // Real figures: the last message on Mashreq ···1959 stated "Available limit:
+        // AED 8,115.13". Against a 10,000 limit the card owes 1,884.87 — regardless
+        // of how much of its history Ledger happened to capture.
+        val card = Account(
+            1L, "Mashreq Credit Card", AccountType.CREDIT, Money.zero(CurrencyCode.AED),
+            "1959", null, creditLimitMinor = 1_000_000L,
+        )
+        val txns = listOf(
+            txn(1L, 1L, 3_000L, TransactionType.EXPENSE, 1, "purchase", availableCreditMinor = 850_000L),
+            txn(2L, 1L, 1_900L, TransactionType.EXPENSE, 2, "purchase", availableCreditMinor = 811_513L),
+        )
+
+        val balance = service(listOf(card), txns).currentBalances().single().balance
+
+        assertEquals(188_487L, balance.minorUnits)
+    }
+
+    @Test
+    fun `paying the card is picked up without matching the payment to anything`() = runBlocking {
+        // The point of the whole design. No payment transaction is present at all —
+        // only a later purchase whose message quotes a HIGHER remaining limit,
+        // exactly as the owner's card did on 9 Jul (+1,184.00). The outstanding
+        // figure follows the bank without Ledger identifying a payment.
+        val card = Account(
+            1L, "Mashreq Credit Card", AccountType.CREDIT, Money.zero(CurrencyCode.AED),
+            "1959", null, creditLimitMinor = 1_000_000L,
+        )
+        val before = listOf(txn(1L, 1L, 1_600L, TransactionType.EXPENSE, 1, "purchase", availableCreditMinor = 754_465L))
+        val after = before + txn(2L, 1L, 1_600L, TransactionType.EXPENSE, 2, "purchase", availableCreditMinor = 872_865L)
+
+        assertEquals(245_535L, service(listOf(card), before).currentBalances().single().balance.minorUnits)
+        assertEquals(127_135L, service(listOf(card), after).currentBalances().single().balance.minorUnits)
+    }
+
+    @Test
+    fun `without a limit the card still replays, exactly as before`() = runBlocking {
+        // The fallback must be untouched: a card whose limit the user has not given
+        // behaves identically to how it always did.
+        val card = Account(1L, "Card", AccountType.CREDIT, Money.zero(CurrencyCode.AED), "1959", null)
+        val txns = listOf(txn(1L, 1L, 5_000L, TransactionType.EXPENSE, 1, "purchase", availableCreditMinor = 811_513L))
+
+        assertEquals(5_000L, service(listOf(card), txns).currentBalances().single().balance.minorUnits)
+    }
+
+    @Test
+    fun `a limit with no stated headroom anywhere falls back to replay`() = runBlocking {
+        val card = Account(
+            1L, "Card", AccountType.CREDIT, Money.zero(CurrencyCode.AED), "1959", null,
+            creditLimitMinor = 1_000_000L,
+        )
+        val txns = listOf(txn(1L, 1L, 5_000L, TransactionType.EXPENSE, 1, "purchase"))
+
+        assertEquals(5_000L, service(listOf(card), txns).currentBalances().single().balance.minorUnits)
+    }
+
+    @Test
+    fun `a limit on a checking account is ignored`() = runBlocking {
+        // Only a liability has an outstanding balance. A stray limit on a current
+        // account must never turn its balance into a subtraction.
+        val checking = Account(
+            1L, "Current", AccountType.CHECKING, Money(100_000L, CurrencyCode.AED), null, null,
+            creditLimitMinor = 1_000_000L,
+        )
+        val txns = listOf(txn(1L, 1L, 5_000L, TransactionType.EXPENSE, 1, "purchase", availableCreditMinor = 811_513L))
+
+        assertEquals(95_000L, service(listOf(checking), txns).currentBalances().single().balance.minorUnits)
+    }
 }
-
-
-
-

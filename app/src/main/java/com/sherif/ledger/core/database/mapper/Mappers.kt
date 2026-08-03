@@ -30,6 +30,7 @@ fun AccountEntity.toDomain(): Account = Account(
     accountNumberTail = accountNumberTail,
     bankBrandId = bankBrandId,
     isCandidate = isCandidate,
+    creditLimitMinor = creditLimitMinor,
 )
 
 fun Account.toEntity(): AccountEntity = AccountEntity(
@@ -42,6 +43,7 @@ fun Account.toEntity(): AccountEntity = AccountEntity(
     accountNumberTail = accountNumberTail,
     bankBrandId = bankBrandId,
     isCandidate = isCandidate,
+    creditLimitMinor = creditLimitMinor,
 )
 
 fun BrandEntity.toDomain(): Brand = Brand(
@@ -70,6 +72,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     rawText = rawText,
     merchantText = merchantText,
     cardTail = cardTail,
+    availableCreditMinor = availableCreditMinor,
     fingerprint = fingerprint,
     transferDirection = transferDirection,
     origin = if (originPackageName != null || originSenderIdentity != null) {
@@ -92,6 +95,7 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     rawText = rawText,
     merchantText = merchantText,
     cardTail = cardTail,
+    availableCreditMinor = availableCreditMinor,
     fingerprint = fingerprint,
     transferDirection = transferDirection,
     originPackageName = origin?.packageName,

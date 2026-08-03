@@ -30,6 +30,14 @@ data class Transaction(
      */
     val merchantText: String? = null,
     val cardTail: String? = null,
+    /**
+     * The card's remaining spending headroom as stated by the bank in the message
+     * this transaction came from. Evidence, not a derived figure — see
+     * [com.sherif.ledger.core.domain.service.transaction.AccountBalanceService],
+     * which pairs the most recent one with the account's credit limit to get the
+     * outstanding balance.
+     */
+    val availableCreditMinor: Long? = null,
     val fingerprint: String,
     // See TransactionCandidate.transferDirection: normalized once upstream, never
     // re-derived downstream.

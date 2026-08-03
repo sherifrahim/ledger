@@ -88,6 +88,7 @@ class InsertTransactionUseCase @Inject constructor(
                 rawText = params.rawMessageText ?: params.rawMerchantText,
                 merchantText = params.rawMerchantText,
                 cardTail = params.cardTail,
+                availableCreditMinor = params.availableCreditMinor,
                 fingerprint = fingerprint,
                 transferDirection = params.transferDirection,
                 origin = params.origin,
@@ -153,6 +154,8 @@ class InsertTransactionUseCase @Inject constructor(
          */
         val rawMessageText: String? = null,
         val cardTail: String? = null,
+        /** The bank's own stated remaining card limit from this message, if any. */
+        val availableCreditMinor: Long? = null,
         val transferDirection: TransferDirection? = null,
         val origin: TransactionOrigin? = null,
     )

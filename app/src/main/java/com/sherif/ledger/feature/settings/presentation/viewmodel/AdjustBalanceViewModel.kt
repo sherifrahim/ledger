@@ -28,6 +28,10 @@ data class AdjustBalanceAccountUi(
     val capturedNetMinor: Long,
     /** Epoch millis the opening balance is anchored to (per-account), or null if never corrected. */
     val openingBalanceAsOfMillis: Long? = null,
+    /** True for a credit card / loan, where the meaningful question is the limit, not a balance. */
+    val isLiability: Boolean = false,
+    /** The card's total credit limit, once the user has given it. */
+    val creditLimitMinor: Long? = null,
 )
 
 /**
@@ -44,6 +48,7 @@ class AdjustBalanceViewModel @Inject constructor(
     private val accountBalanceService: AccountBalanceService,
     private val seedOpeningBalanceUseCase: SeedOpeningBalanceUseCase,
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val accountRepository: com.sherif.ledger.core.domain.repository.AccountRepository,
 ) : ViewModel() {
 
     private val _accounts = MutableStateFlow<List<AdjustBalanceAccountUi>>(emptyList())
@@ -86,8 +91,33 @@ class AdjustBalanceViewModel @Inject constructor(
                     openingBalanceMinor = opening,
                     capturedNetMinor = it.balance.minorUnits - opening,
                     openingBalanceAsOfMillis = it.account.openingBalanceAsOf?.toEpochMilli(),
+                    isLiability = it.account.type.isLiability,
+                    creditLimitMinor = it.account.creditLimitMinor,
                 )
             }
+        }
+    }
+
+    /**
+     * Records each card's total credit limit.
+     *
+     * This is the one number a card's outstanding balance cannot be derived
+     * without: the bank restates the REMAINING limit in every message but never
+     * the total. It is also a number the user actually knows and that essentially
+     * never changes — unlike the card *balance* the onboarding step used to ask
+     * for, which the user does not know offhand and which is stale the moment the
+     * next purchase lands.
+     */
+    fun applyCreditLimits(limitsMinor: Map<Long, Long>) {
+        viewModelScope.launch {
+            limitsMinor.forEach { (accountId, limitMinor) ->
+                val existing = accountRepository.getAccountById(accountId)
+                if (existing is com.sherif.ledger.core.domain.model.LedgerResult.Success) {
+                    accountRepository.updateAccount(existing.data.copy(creditLimitMinor = limitMinor))
+                }
+            }
+            _saved.value = true
+            refresh()
         }
     }
 

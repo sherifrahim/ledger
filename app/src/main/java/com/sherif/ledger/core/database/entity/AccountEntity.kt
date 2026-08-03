@@ -31,6 +31,13 @@ data class AccountEntity(
     @ColumnInfo(name = "bank_brand_id")
     val bankBrandId: Long?,
 
+    // The card's TOTAL credit limit. No purchase SMS ever states it, so it comes
+    // from the user once per card; paired with the bank's stated available limit it
+    // yields the outstanding balance exactly. Null for non-credit accounts and for
+    // cards whose limit has not been supplied yet.
+    @ColumnInfo(name = "credit_limit_minor")
+    val creditLimitMinor: Long? = null,
+
     @ColumnInfo(name = "is_deleted")
     val isDeleted: Boolean = false,
 

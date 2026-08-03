@@ -38,6 +38,10 @@ import com.sherif.ledger.core.domain.util.formatSignedPlainDecimal
 import com.sherif.ledger.core.domain.util.parsePlainDecimalToMinor
 import com.sherif.ledger.feature.settings.presentation.viewmodel.AdjustBalanceAccountUi
 import com.sherif.ledger.feature.settings.presentation.viewmodel.AdjustBalanceViewModel
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 
 /**
  * Reachable anytime from Profile → "Adjust Starting Balance" — see
@@ -55,12 +59,20 @@ fun AdjustBalanceScreen(
     val saved by viewModel.saved.collectAsState()
     val trackedSince by viewModel.trackedSince.collectAsState()
     val entries = remember { mutableStateMapOf<Long, String>() }
+    val limitEntries = remember { mutableStateMapOf<Long, String>() }
 
+    // Scrollable, because this lists EVERY account. With the owner's fifteen, a
+    // fixed Column put every credit card below the fold with no way to reach it —
+    // which meant the one field this screen now exists to collect, the card's
+    // limit, could not be filled in at all.
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(LedgerTheme.colors.surfaceLevel0)
-            .padding(LedgerSpacing.Screen),
+            .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
+            .padding(LedgerSpacing.Screen)
+            .padding(bottom = ledgerScreenBottomPadding),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -104,12 +116,33 @@ fun AdjustBalanceScreen(
             Spacer(Modifier.height(LedgerSpacing.Tiny))
             ReconciliationCard(account)
             Spacer(Modifier.height(LedgerSpacing.Small))
-            LedgerAmountInputField(
-                value = entries[account.accountId] ?: "",
-                onValueChange = { entries[account.accountId] = it },
-                currencySymbol = CurrencyRegistry.get(account.currencyCode).symbol,
-                placeholder = formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode),
-            )
+            if (account.isLiability) {
+                // For a card, the answerable question is the LIMIT, not the balance.
+                // The bank restates what remains of it in every message, so the total
+                // is the only piece it never tells us — and unlike a balance, it is a
+                // number the user knows and that does not go stale.
+                Text(
+                    text = "Total credit limit on this card",
+                    style = LedgerTextStyles.Caption,
+                    color = LedgerTheme.colors.textTertiary,
+                )
+                Spacer(Modifier.height(LedgerSpacing.Tiny))
+                LedgerAmountInputField(
+                    value = limitEntries[account.accountId] ?: "",
+                    onValueChange = { limitEntries[account.accountId] = it },
+                    currencySymbol = CurrencyRegistry.get(account.currencyCode).symbol,
+                    placeholder = account.creditLimitMinor
+                        ?.let { formatSignedPlainDecimal(it, account.currencyCode) }
+                        ?: "10000",
+                )
+            } else {
+                LedgerAmountInputField(
+                    value = entries[account.accountId] ?: "",
+                    onValueChange = { entries[account.accountId] = it },
+                    currencySymbol = CurrencyRegistry.get(account.currencyCode).symbol,
+                    placeholder = formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode),
+                )
+            }
             Spacer(Modifier.height(LedgerSpacing.Large))
         }
 
@@ -122,17 +155,23 @@ fun AdjustBalanceScreen(
             Spacer(Modifier.height(LedgerSpacing.Small))
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(LedgerSpacing.Large))
 
         LedgerButton(
             text = "Save",
             onClick = {
-                val corrections = accounts.mapNotNull { account ->
+                val corrections = accounts.filterNot { it.isLiability }.mapNotNull { account ->
                     val decimalDigits = CurrencyRegistry.get(account.currencyCode).decimalDigits
                     parsePlainDecimalToMinor(entries[account.accountId], decimalDigits)?.let { account.accountId to it }
                 }.toMap()
+                val limits = accounts.filter { it.isLiability }.mapNotNull { account ->
+                    val decimalDigits = CurrencyRegistry.get(account.currencyCode).decimalDigits
+                    parsePlainDecimalToMinor(limitEntries[account.accountId], decimalDigits)?.let { account.accountId to it }
+                }.toMap()
                 entries.clear()
-                viewModel.applyCorrections(corrections)
+                limitEntries.clear()
+                if (corrections.isNotEmpty()) viewModel.applyCorrections(corrections)
+                if (limits.isNotEmpty()) viewModel.applyCreditLimits(limits)
             },
             modifier = Modifier.fillMaxWidth(),
         )

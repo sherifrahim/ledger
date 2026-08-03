@@ -82,6 +82,11 @@ data class TransactionEntity(
     @ColumnInfo(name = "card_tail")
     val cardTail: String? = null,
 
+    // The card's remaining headroom as the BANK stated it in this message, not
+    // anything Ledger derived. Null whenever the message quoted none.
+    @ColumnInfo(name = "available_credit_minor")
+    val availableCreditMinor: Long? = null,
+
     val fingerprint: String, // account_id + amount + brand_id + timestamp_bucket + raw_text_hash
 
     @ColumnInfo(name = "is_deleted")

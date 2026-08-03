@@ -10,6 +10,7 @@ import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.service.account.AccountIdentityResolver
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
+import com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
 import com.sherif.ledger.feature.capture.extraction.ConfirmationMatcher
 import com.sherif.ledger.feature.capture.extraction.ExtractionRegistry
@@ -250,6 +251,11 @@ class ProcessNotificationUseCase @Inject constructor(
                     rawMerchantText = candidate.merchantName ?: "Unknown",
                     rawMessageText = candidate.rawText,
                     cardTail = candidate.accountHint,
+                    // Read once, here, from the captured message rather than in each
+                    // of the seven places a candidate is built (several of them in
+                    // frozen parsers). The clause is issuer-phrasing, not
+                    // parser-specific, so one reading covers every bank.
+                    availableCreditMinor = ExtractionHelpers.extractAvailableCreditMinor(candidate.rawText),
                     transferDirection = candidate.transferDirection,
                     origin = candidate.origin,
                 )

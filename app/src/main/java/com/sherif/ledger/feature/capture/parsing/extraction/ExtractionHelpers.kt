@@ -31,6 +31,16 @@ object ExtractionHelpers {
         Pattern.CASE_INSENSITIVE,
     )
 
+    // The credit-limit flavour of the clause above, captured rather than stripped.
+    // Matches "Available limit: AED 8,115.13" and "Avl Cr. Limit is AED 12,344.16";
+    // deliberately requires the word "limit", so a current account's "Available
+    // balance is AED 1,568.52" can never be read as card headroom.
+    private val AVAILABLE_CREDIT_PATTERN = Pattern.compile(
+        "(?:avail(?:able)?|avl)\\.?\\s*(?:cr\\.?|credit)?\\s*limit\\s*(?:is|of|:|=)?\\s*" +
+            "(?:$CURRENCY_TOKENS)?\\s*(\\d[\\d,]*(?:\\.\\d{1,2})?)",
+        Pattern.CASE_INSENSITIVE,
+    )
+
     // Currency-anchored: the amount must follow a currency token. Prevents card/account
     // numbers (which often precede the amount) from being mis-read as the amount.
     private val AMOUNT_ANCHORED_PATTERN = Pattern.compile("(?:$CURRENCY_TOKENS)\\s*(\\d[\\d,]*(?:\\.\\d{1,2})?)", Pattern.CASE_INSENSITIVE)
@@ -90,7 +100,12 @@ object ExtractionHelpers {
             if (fallback.find()) fallback.group(1) else null
         } ?: return null
 
-        val cleaned = matchedValue.replace(",", "")
+        return parseAmountToMinor(matchedValue)
+    }
+
+    /** "8,115.13" -> 811513. Shared so every amount in this file is parsed one way. */
+    private fun parseAmountToMinor(raw: String): Long {
+        val cleaned = raw.replace(",", "")
         return if (cleaned.contains(".")) {
             val parts = cleaned.split(".")
             val major = parts[0].toLong()
@@ -102,10 +117,30 @@ object ExtractionHelpers {
     }
 
     /**
-     * The currency of the TRANSACTED amount — the token anchoring it, not merely the
-     * first currency word anywhere in the message. A foreign purchase quotes the
-     * home-currency balance too, and reading that would mislabel the transaction.
+     * The card's remaining spending headroom, when the bank states it.
+     *
+     * Deliberately narrower than [BALANCE_CLAUSE_PATTERN], which strips every kind
+     * of "what remains" clause so it can't be mistaken for the transacted amount.
+     * This captures only the CREDIT-LIMIT flavour — "Available limit: AED 8,115.13",
+     * "Avl Cr. Limit is AED 12,344.16" — and never "Available balance", which is a
+     * current account's balance and a completely different quantity.
+     *
+     * Why this is worth extracting: a credit card's outstanding balance cannot be
+     * derived by replaying captured purchases. That only ever sums what Ledger
+     * happened to see since the import window opened, so the owner's card reported
+     * AED 23,499.70 of "debt" that was really three months of spending. The bank,
+     * by contrast, restates the true remaining headroom in every single message —
+     * verified on the owner's real data, where it falls by exactly the purchase
+     * amount and jumps back up by the payment when the card is paid. Given the
+     * card's total limit, outstanding is then exact arithmetic that self-corrects
+     * on the next message, with no payment matching and no drift.
      */
+    fun extractAvailableCreditMinor(text: String): Long? {
+        val m = AVAILABLE_CREDIT_PATTERN.matcher(text)
+        if (!m.find()) return null
+        return parseAmountToMinor(m.group(1) ?: return null)
+    }
+
     fun extractCurrency(text: String): CurrencyCode? {
         tokenToCurrency(anchoringCurrencyToken(text))?.let { return it }
         // No anchored amount (fallback-amount messages): fall back to a text scan.

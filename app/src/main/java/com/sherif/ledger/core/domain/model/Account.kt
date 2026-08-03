@@ -26,6 +26,17 @@ data class Account(
     // promotes (Developer Console) or dismisses it. Never silently merged into
     // an existing account; never silently included in totals either.
     val isCandidate: Boolean = false,
+    /**
+     * The card's TOTAL credit limit, for a liability account.
+     *
+     * Supplied by the user once per card, because no purchase message ever states
+     * it — the bank only ever quotes what REMAINS. Paired with the most recent
+     * remaining figure it gives the outstanding balance exactly:
+     * `outstanding = creditLimit - availableCredit`. Null for a non-credit account,
+     * and for a card whose limit hasn't been given yet, in which case the balance
+     * falls back to replaying captured transactions.
+     */
+    val creditLimitMinor: Long? = null,
     // The point in time [openingBalance] is anchored to — "the account held this
     // much as of this instant, before Ledger's captured history begins". Set when
     // the user confirms/corrects their real balance (SeedOpeningBalanceUseCase),

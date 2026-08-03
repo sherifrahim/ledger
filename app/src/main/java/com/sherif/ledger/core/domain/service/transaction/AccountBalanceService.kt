@@ -3,10 +3,12 @@ package com.sherif.ledger.core.domain.service.transaction
 import com.sherif.ledger.core.domain.model.Account
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
+import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.service.account.AccountMatching
 import com.sherif.ledger.core.domain.service.account.InstitutionRegistry
+import com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
 import com.sherif.ledger.feature.relationship.RelationshipEngine
 import com.sherif.ledger.feature.relationship.RelationshipType
 import kotlinx.coroutines.flow.first
@@ -54,6 +56,26 @@ class AccountBalanceService @Inject constructor(
         } else emptyList()
 
         return accounts.map { account ->
+            // A credit card's outstanding balance is not a replay problem.
+            //
+            // Replaying captured purchases can only ever total what Ledger happened
+            // to see since the import window opened — on the owner's device that
+            // reported AED 23,499.70 of "debt" which was really three months of
+            // spending. The bank does this arithmetic itself and restates the
+            // result in every message: verified on real data, the stated available
+            // limit falls by exactly the purchase amount and jumps back up by the
+            // payment when the card is paid. So when the card's total limit is
+            // known, outstanding is exact subtraction that self-corrects on the
+            // next message — no payment matching, no accumulated drift, and no
+            // dependence on having captured every transaction.
+            //
+            // Falls through to the replay below whenever either half is missing, so
+            // a card with no limit set, or one whose bank never quotes the clause,
+            // behaves exactly as it always did.
+            derivedCardOutstanding(account, byAccount[account.id].orEmpty())?.let { outstanding ->
+                return@map AccountBalance(account, Money(outstanding, account.openingBalance.currencyCode))
+            }
+
             var minorUnits = account.openingBalance.minorUnits
             for (transaction in byAccount[account.id].orEmpty()) {
                 minorUnits += balanceCalculator.effect(transaction, account.type, account.openingBalance.currencyCode)
@@ -79,6 +101,45 @@ class AccountBalanceService @Inject constructor(
             AccountBalance(account, Money(minorUnits, account.openingBalance.currencyCode))
         }
     }
+
+    /**
+     * `creditLimit - availableCredit` for a liability account, or null when that
+     * cannot be stated honestly.
+     *
+     * Returns null — never a guess — if the account is not a liability, has no
+     * limit recorded, or no message on it has ever quoted a remaining limit. The
+     * caller then replays as before, so this is strictly additive.
+     *
+     * The reading used is the most RECENT one that quoted a figure, since each
+     * message supersedes the last. A reading is ignored if its own transaction is
+     * in a different currency from the account, for the same reason
+     * [BalanceCalculator.effect] refuses to mix units.
+     */
+    private fun derivedCardOutstanding(account: Account, transactions: List<Transaction>): Long? {
+        if (!account.type.isLiability) return null
+        val limit = account.creditLimitMinor ?: return null
+        val latestAvailable = transactions
+            .filter { it.amount.currencyCode == account.openingBalance.currencyCode }
+            .sortedByDescending { it.timestamp }
+            .firstNotNullOfOrNull { availableCreditOf(it) } ?: return null
+        // Positive-as-owed, matching the sign convention every liability balance
+        // already uses (see BalanceCalculator.effect, which flips for liabilities).
+        return limit - latestAvailable
+    }
+
+    /**
+     * The bank's stated remaining limit for one message: the stored column, or —
+     * for rows written before that column existed — read back out of the captured
+     * message, which is still there verbatim.
+     *
+     * The same shape as [com.sherif.ledger.core.domain.model.merchantOrRawText],
+     * and possible for the same reason: extraction stopped overwriting `raw_text`.
+     * It means an existing library starts reporting real card balances immediately
+     * rather than only after the user re-imports their history.
+     */
+    private fun availableCreditOf(transaction: Transaction): Long? =
+        transaction.availableCreditMinor
+            ?: transaction.rawText?.let { ExtractionHelpers.extractAvailableCreditMinor(it) }
 
     suspend fun currentBalance(accountId: Long): Money? =
         currentBalances().firstOrNull { it.account.id == accountId }?.balance

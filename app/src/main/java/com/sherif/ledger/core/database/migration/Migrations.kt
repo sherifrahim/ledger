@@ -238,3 +238,35 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
         db.execSQL("ALTER TABLE transactions ADD COLUMN merchant_text TEXT")
     }
 }
+
+/**
+ * Credit-card outstanding, derived rather than replayed.
+ *
+ * A credit card's balance cannot be obtained by summing the purchases Ledger
+ * happened to capture: that only ever totals what arrived since the import window
+ * opened, which is why the owner's Mashreq card reported AED 23,499.70 of "debt"
+ * that was really three months of spending.
+ *
+ * The bank already does this arithmetic and restates the result in every message.
+ * Verified against the owner's real data: the stated available limit falls by
+ * exactly the purchase amount, and jumps back up by the payment when the card is
+ * paid (+1,184.00 on 9 Jul, +964.25 on 13 Jul). So:
+ *
+ *     outstanding = credit_limit - available_credit
+ *
+ * `available_credit_minor` records the bank's own figure per message;
+ * `credit_limit_minor` is the card's total limit, which no purchase SMS ever
+ * states and which the user therefore supplies once per card. Together they give
+ * an exact figure that self-corrects on the very next message, with no payment
+ * matching and no accumulated drift.
+ *
+ * Both columns are additive and nullable, the same shape as MIGRATION_11_12 and
+ * MIGRATION_12_13. Existing rows migrate to NULL and every balance keeps being
+ * computed exactly as before until a limit is actually known.
+ */
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN available_credit_minor INTEGER")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN credit_limit_minor INTEGER")
+    }
+}
