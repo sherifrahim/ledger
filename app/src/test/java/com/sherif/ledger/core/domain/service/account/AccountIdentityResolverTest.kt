@@ -37,7 +37,14 @@ class AccountIdentityResolverTest {
             accounts += account.copy(id = id)
             return LedgerResult.Success(id)
         }
-        override suspend fun updateAccount(account: Account): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        // Persists, like the real Room-backed repository. A no-op here silently hid
+        // the resolver's account-adoption path (claiming the untailed default
+        // account instead of creating a duplicate beside it).
+        override suspend fun updateAccount(account: Account): LedgerResult<Unit> {
+            val index = accounts.indexOfFirst { it.id == account.id }
+            if (index >= 0) accounts[index] = account
+            return LedgerResult.Success(Unit)
+        }
         override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
         override suspend fun getDeletedAccounts(): LedgerResult<List<Account>> = LedgerResult.Success(emptyList())
         override fun observeCandidateAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.filter { it.isCandidate }))
@@ -217,7 +224,14 @@ class AccountIdentityResolverTest {
             accounts += account.copy(id = id)
             return LedgerResult.Success(id)
         }
-        override suspend fun updateAccount(account: Account): LedgerResult<Unit> = LedgerResult.Success(Unit)
+        // Persists, like the real Room-backed repository. A no-op here silently hid
+        // the resolver's account-adoption path (claiming the untailed default
+        // account instead of creating a duplicate beside it).
+        override suspend fun updateAccount(account: Account): LedgerResult<Unit> {
+            val index = accounts.indexOfFirst { it.id == account.id }
+            if (index >= 0) accounts[index] = account
+            return LedgerResult.Success(Unit)
+        }
         override suspend fun deleteAccount(id: Long): LedgerResult<Unit> = LedgerResult.Success(Unit)
         override suspend fun getDeletedAccounts(): LedgerResult<List<Account>> = LedgerResult.Success(emptyList())
         override fun observeCandidateAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.filter { it.isCandidate }))
