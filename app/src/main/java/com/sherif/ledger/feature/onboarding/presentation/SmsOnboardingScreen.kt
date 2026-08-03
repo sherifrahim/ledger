@@ -6,7 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.*
@@ -283,49 +285,60 @@ private fun BalanceConfirmationScreen(viewModel: SmsOnboardingViewModel, onCompl
             .background(LedgerTheme.colors.surfaceLevel0)
             .padding(LedgerSpacing.Screen),
     ) {
-        Spacer(Modifier.height(LedgerSpacing.XLarge))
-        Text(
-            text = "Confirm Starting Balance",
-            style = LedgerTextStyles.Headline,
-            color = LedgerTheme.colors.textPrimary,
-        )
-        Spacer(Modifier.height(LedgerSpacing.Small))
-        Text(
-            text = "Ledger only imported the window you chose, so it doesn't know what you already had before that. " +
-                "Enter your real current balance for each account to get this right — or leave it blank to skip.",
-            style = LedgerTextStyles.BodyMedium,
-            color = LedgerTheme.colors.textSecondary,
-        )
-
-        Spacer(Modifier.height(LedgerSpacing.Large))
-
-        accounts.forEach { account ->
+        // The account list scrolls INSIDE this region while the actions below stay
+        // pinned. Previously everything sat in one unscrollable Column, so a user
+        // with several accounts (a current account plus a few credit cards) had the
+        // "Save & Finish" button pushed off-screen with no way to reach it —
+        // onboarding could not be completed at all.
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Spacer(Modifier.height(LedgerSpacing.XLarge))
             Text(
-                text = account.accountName,
-                style = LedgerTextStyles.Label,
+                text = "Confirm Starting Balance",
+                style = LedgerTextStyles.Headline,
+                color = LedgerTheme.colors.textPrimary,
+            )
+            Spacer(Modifier.height(LedgerSpacing.Small))
+            Text(
+                text = "Ledger only imported the window you chose, so it doesn't know what you already had before that. " +
+                    "Enter your real current balance for each account to get this right — or leave it blank to skip.",
+                style = LedgerTextStyles.BodyMedium,
                 color = LedgerTheme.colors.textSecondary,
             )
-            Spacer(Modifier.height(LedgerSpacing.Tiny))
-            // Show what Ledger computed from the imported window, so the correction
-            // is transparent: the user sees the machine's figure and enters the real
-            // one, and the difference is recorded as the balance held before the window.
-            Text(
-                text = "Ledger calculated ${formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode)} " +
-                    "from your imported messages. Enter your real balance and Ledger records the difference as your starting point.",
-                style = LedgerTextStyles.Caption,
-                color = LedgerTheme.colors.textTertiary,
-            )
-            Spacer(Modifier.height(LedgerSpacing.Tiny))
-            LedgerAmountInputField(
-                value = entries[account.accountId] ?: "",
-                onValueChange = { entries[account.accountId] = it },
-                currencySymbol = CurrencyRegistry.get(account.currencyCode).symbol,
-                placeholder = formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode),
-            )
-            Spacer(Modifier.height(LedgerSpacing.Medium))
+
+            Spacer(Modifier.height(LedgerSpacing.Large))
+
+            accounts.forEach { account ->
+                Text(
+                    text = account.accountName,
+                    style = LedgerTextStyles.Label,
+                    color = LedgerTheme.colors.textSecondary,
+                )
+                Spacer(Modifier.height(LedgerSpacing.Tiny))
+                // Show what Ledger computed from the imported window, so the correction
+                // is transparent: the user sees the machine's figure and enters the real
+                // one, and the difference is recorded as the balance held before the window.
+                Text(
+                    text = "Ledger calculated ${formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode)} " +
+                        "from your imported messages. Enter your real balance and Ledger records the difference as your starting point.",
+                    style = LedgerTextStyles.Caption,
+                    color = LedgerTheme.colors.textTertiary,
+                )
+                Spacer(Modifier.height(LedgerSpacing.Tiny))
+                LedgerAmountInputField(
+                    value = entries[account.accountId] ?: "",
+                    onValueChange = { entries[account.accountId] = it },
+                    currencySymbol = CurrencyRegistry.get(account.currencyCode).symbol,
+                    placeholder = formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode),
+                )
+                Spacer(Modifier.height(LedgerSpacing.Medium))
+            }
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(LedgerSpacing.Medium))
 
         LedgerButton(
             text = "Save & Finish",

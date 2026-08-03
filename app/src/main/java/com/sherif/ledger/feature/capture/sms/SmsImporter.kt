@@ -117,7 +117,14 @@ class SmsImporter @Inject constructor(
 
                 LedgerLogger.d("SmsImporter: Processing Envelope $processedCount/$count (Sender=${row.sender})")
                 try {
-                    val outcome = processNotificationUseCase.execute(envelope, smsImportSourceAdapter.channel)
+                    // Historical import replays months of messages in one pass, so it
+                    // must stay silent — the user asked to backfill history, not to be
+                    // alerted about every transaction they already know about.
+                    val outcome = processNotificationUseCase.execute(
+                        envelope,
+                        smsImportSourceAdapter.channel,
+                        notifyUser = false,
+                    )
                     if (outcome.filterAccepted) matched++
                     when (outcome.category) {
                         ProcessNotificationOutcome.Category.CREATED -> created++

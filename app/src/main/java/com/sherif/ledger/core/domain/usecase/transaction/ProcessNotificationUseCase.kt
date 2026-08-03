@@ -86,9 +86,18 @@ class ProcessNotificationUseCase @Inject constructor(
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
     }
 
+    /**
+     * @param notifyUser post a capture confirmation for each transaction created.
+     *   True for live capture (one message, one notification the user expects).
+     *   MUST be false for a bulk historical import, which replays months of
+     *   messages at once — otherwise importing three months of history buries the
+     *   notification shade under hundreds of alerts for transactions the user made
+     *   long ago.
+     */
     suspend fun execute(
         envelope: NotificationEnvelope,
         channel: SourceChannel = SourceChannel.NOTIFICATION,
+        notifyUser: Boolean = true,
     ): ProcessNotificationOutcome {
         val traceId = envelope.notificationKey
         LedgerLogger.setTraceId(traceId)
@@ -255,14 +264,16 @@ class ProcessNotificationUseCase @Inject constructor(
                     // already-successful persist — this is purely a UX
                     // convenience layered on top of a transaction that's
                     // already safely written.
-                    try {
-                        transactionNotifier.notifyCaptured(
-                            transaction = result.data,
-                            merchantOrDescription = candidate.merchantName ?: "Transaction",
-                            formattedAmount = MoneyFormatter.format(result.data.amount, includeSymbol = true),
-                        )
-                    } catch (e: Exception) {
-                        LedgerLogger.e("ProcessNotificationUseCase: notifyCaptured failed", e)
+                    if (notifyUser) {
+                        try {
+                            transactionNotifier.notifyCaptured(
+                                transaction = result.data,
+                                merchantOrDescription = candidate.merchantName ?: "Transaction",
+                                formattedAmount = MoneyFormatter.format(result.data.amount, includeSymbol = true),
+                            )
+                        } catch (e: Exception) {
+                            LedgerLogger.e("ProcessNotificationUseCase: notifyCaptured failed", e)
+                        }
                     }
                 } else if (result is LedgerResult.Failure) {
                     LedgerLogger.e("Persistence failed: ${result.error}")
