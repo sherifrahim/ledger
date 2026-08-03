@@ -122,6 +122,28 @@ object ExtractionHelpers {
         return if (matcher.find()) matcher.group(1) else null
     }
 
+    // A bank also messages you when money did NOT move: a declined card, a failed
+    // payment, insufficient funds. No money left the account, so recording one as a
+    // transaction invents spending the user never did — found in real captured data,
+    // where a repeatedly-declined AED 27.30 payment had been booked eight times.
+    private val nonExecutedPhrases = listOf(
+        "has been rejected", "was rejected", "is rejected", "rejected",
+        "has been declined", "was declined", "is declined", "declined",
+        "was unsuccessful", "not successful", "unsuccessful",
+        "could not be processed", "cannot be processed",
+        "transaction failed", "payment failed", "has failed",
+        "insufficient funds", "insufficient balance",
+        "do not honour", "do not honor",
+    )
+
+    /**
+     * True when the message describes a transaction that did NOT execute. Such a
+     * message still looks financial (it quotes an amount, a card and a merchant), so
+     * it must be excluded explicitly or it is captured as real spending.
+     */
+    fun describesNonExecutedTransaction(lower: String): Boolean =
+        nonExecutedPhrases.any { lower.contains(it) }
+
     // Incoming-transfer indicators: money ARRIVING at the account in question. Bank-
     // agnostic, deliberately narrow. Used ONLY to determine direction of a transfer
     // that has ALREADY been identified as a transfer by the caller's own type

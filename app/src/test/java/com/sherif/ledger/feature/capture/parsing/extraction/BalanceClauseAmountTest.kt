@@ -2,7 +2,9 @@ package com.sherif.ledger.feature.capture.parsing.extraction
 
 import com.sherif.ledger.core.domain.model.CurrencyCode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -63,6 +65,20 @@ class BalanceClauseAmountTest {
             "on Jul 3 2026 3:25PM at ANTHROPIC CLAUD,US. Avl.Bal AED 8999.38."
         assertEquals(2100L, ExtractionHelpers.extractAmountMinor(text))
         assertEquals(CurrencyCode.USD, ExtractionHelpers.extractCurrency(text))
+    }
+
+    @Test
+    fun `declined transaction is recognised as non-executed`() {
+        // Real captured data booked this repeatedly-declined AED 27.30 payment eight
+        // times as genuine spending.
+        val text = "Your transaction of AED 27.30 at 4/6 RIVERWALK CITYWEST BU has been rejected."
+        assertTrue(ExtractionHelpers.describesNonExecutedTransaction(text.lowercase()))
+    }
+
+    @Test
+    fun `successful transaction is not treated as non-executed`() {
+        val text = "A Cr. transaction of AED 500.00 on your account no. XXX920001 was successful."
+        assertFalse(ExtractionHelpers.describesNonExecutedTransaction(text.lowercase()))
     }
 
     @Test

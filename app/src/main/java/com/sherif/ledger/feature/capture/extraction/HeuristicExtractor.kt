@@ -125,6 +125,20 @@ class HeuristicExtractor @Inject constructor(
         offersToPenalize.forEach { score -= 30; negative += it }
 
         // Decision.
+        // A declined/failed transaction moved no money, but scores like a real one
+        // (it quotes an amount, a card tail and a merchant), so it must be excluded
+        // before the score is consulted.
+        if (com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
+                .describesNonExecutedTransaction(lower)
+        ) {
+            return ExtractionResult.Ignore(
+                reason = "Transaction did not execute (declined/failed)",
+                extractorName = name,
+                category = "Declined",
+                matchedPhrases = emptyList(),
+                confidence = 0,
+            )
+        }
         if (offers.isNotEmpty() && score < transactionThreshold) {
             return ExtractionResult.Ignore(
                 reason = "Promotion/offer detected",

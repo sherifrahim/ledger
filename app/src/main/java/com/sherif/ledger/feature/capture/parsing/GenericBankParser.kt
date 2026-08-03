@@ -59,6 +59,12 @@ class GenericBankParser @Inject constructor(
             return ParseResult.Ignore
         }
 
+        // A declined/failed transaction moved no money. It quotes an amount, a card
+        // and a merchant, so without this it is captured as real spending.
+        if (ExtractionHelpers.describesNonExecutedTransaction(lower)) {
+            return ParseResult.Ignore
+        }
+
         val amount = ExtractionHelpers.extractAmountMinor(text)
         val account = ExtractionHelpers.extractAccountHint(text)
 
