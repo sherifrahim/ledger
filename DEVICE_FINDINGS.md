@@ -41,9 +41,70 @@ a green **+**. Fixed via `Transaction.isOutflow`.
 
 ---
 
+## FIXED 2026-08-03 (second pass) — verified by a fresh import on the device
+
+Re-imported the owner's inbox on a clean install (1,156 messages scanned,
+"Last 3 Months"). **378 transactions and 15 accounts, against 383 and 18
+before.** Entering the real ADCB balance of AED 1,568.52 (and 0 for the
+fallback "Primary Account", which holds only misattributed FAB/Mashreq
+messages) produced **Total Balance = AED 1,568.52** on the dashboard.
+
+### A. The same transaction captured 2–3 times — fixed
+Two independent causes, both dead code rather than mistuning:
+1. The fingerprint included `accountId`, but dedup runs BEFORE account
+   attribution — candidates were fingerprinted with 0, every persisted row
+   with a real id, so `ReconciliationEngine`'s exact-match branch could never
+   fire at all, and the unique index could not catch one event landing on two
+   accounts. `accountId` is now out of the fingerprint.
+2. Scoring could not reach its own threshold for the commonest shape. The AED
+   3,000.00 pair (ids 238/239, 85s apart, one tailed with a merchant, one
+   with neither) scored 40+20+10 = 70 against a 90 threshold. The engine now
+   matches structurally first — same amount/currency, within 5 minutes,
+   compatible tails, same direction of travel — independent of wording.
+
+A same-event scan over the new database finds **0 duplicate rows remaining
+(was 1 cross-account)**. Item D below fell out of the same fix: Tabby's
+"Pay As Low As 12" instalment line no longer becomes a second AED 160.00.
+
+### B. Junk "Unrecognized Institution" accounts — fixed
+`SenderClassifier` refuses an account to a transport app (Google Messages,
+Truecaller, Samsung Messages) and to known non-financial senders (Smiles,
+eand*, du). Both route to one shared per-currency "Unattributed Capture"
+candidate account — excluded from balances exactly as other candidates are,
+and deliberately not the fallback account, which carries the user's opening
+balance. Ten junk accounts became two.
+
+Genuinely financial senders Ledger doesn't recognise yet (MBANKAlert, Tabby,
+Paytm, SBI UPI, e& money) deliberately keep their own reviewable, promotable
+candidate account — the point is to refuse messengers and telecoms, not to
+collapse every unmet bank into one bucket.
+
+**The mojibake was a false alarm.** The stored name is
+`Unrecognized Institution (MBANKAlert) •000001` with a correct UTF-8 U+2022
+bullet (`E2 80 A2`, confirmed at the byte level in both the database and the
+source). The `�` was the previous session's terminal failing to decode
+UTF-8, not corrupt data.
+
+### C. `raw_text` overwritten with the merchant name — fixed
+`MIGRATION_12_13` adds a nullable `merchant_text` column; `raw_text` now
+holds the captured message verbatim. All 378 rows in the fresh import carry
+both. `Transaction.merchantOrRawText` prefers the new column and falls back
+to the old meaning, so pre-migration rows and the frozen relationship/
+recurring scoring paths read exactly what they read before.
+
+---
+
 ## NOT yet fixed — ranked by trust impact
 
-### A. The same transaction is captured 2–3 times (HIGH)
+### A2. Account identity is still split (HIGH — now the top remaining issue)
+"Primary Account" (the fallback) holds 4 tail-less FAB/Mashreq messages
+totalling −3,381.47, while the real ADCB money sits on "ADCB Account". No
+single per-account balance entry makes the dashboard total right on its own;
+the 1,568.52 above was reached by telling Ledger the fallback account's real
+balance is 0. See `ACCOUNT_IDENTITY_PLAN.md` — unchanged and now the clear
+next increment.
+
+### A. The same transaction is captured 2–3 times (HIGH) — FIXED, see above
 One purchase arrives as a bank-app notification, as an SMS notification from
 Google Messages, **and** as a Truecaller SMS preview. Each becomes its own
 transaction, often under a *different account*, so reconciliation never matches

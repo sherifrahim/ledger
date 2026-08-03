@@ -15,12 +15,15 @@ verification. Complements `DEVICE_FINDINGS.md` (capture bugs) and
 
 ## Broken / wrong (ranked)
 1. **Account identity split** — see `ACCOUNT_IDENTITY_PLAN.md`. Directly wrong balance.
-2. **Duplicate capture** (bank app + Messages + Truecaller) — inflates spending.
-3. **Junk accounts** from SMS sender IDs; one has a mojibake character in its name.
-4. **`raw_text` overwritten with the merchant name** — the original message is lost,
-   so nothing can be diagnosed from the database afterwards (the phantom-amount bug
-   had to be diagnosed from `dumpsys notification` instead). Keep the raw message;
-   add a separate merchant column.
+2. ~~**Duplicate capture**~~ — FIXED 2026-08-03, see `DEVICE_FINDINGS.md`. A fresh
+   import now finds 0 same-event duplicates (was 1 cross-account); 378 transactions
+   against 383.
+3. ~~**Junk accounts** from SMS sender IDs~~ — FIXED 2026-08-03. 15 accounts against
+   18; ten sender-named junk accounts became two shared "Unattributed Capture" ones.
+   The mojibake was a terminal decoding artifact, not corrupt data.
+4. ~~**`raw_text` overwritten with the merchant name**~~ — FIXED 2026-08-03.
+   `merchant_text` column added (DB v13); `raw_text` now holds the captured
+   message verbatim.
 5. **Bogus merchant names** — "Mid Kr", "Ak Jol", "Your", "Day", "The Next Day",
    "Standard Rate", "4 6 Riverwalk Citywest Bu Has Been Rejected". Merchant
    extraction grabs arbitrary fragments; the feed shows them as titles.
@@ -31,8 +34,8 @@ verification. Complements `DEVICE_FINDINGS.md` (capture bugs) and
 7. **`opening_balance_as_of` never set** — `SeedOpeningBalanceUseCase` reads
    `observeAllTransactions().first()`; if that first emission is empty the anchor is
    silently lost. Every account has NULL.
-8. **Tabby posts two notifications per purchase** — the instalment/marketing line
-   ("Pay As Low As 12") is captured as a second transaction.
+8. ~~**Tabby posts two notifications per purchase**~~ — FIXED 2026-08-03 as a
+   side effect of same-event dedup.
 9. **Negative totals don't always render a minus sign** in the hero.
 10. **Not on the battery-optimisation whitelist** — the listener can be killed in
     the background; the onboarding step exists but the user is not actually exempt.
