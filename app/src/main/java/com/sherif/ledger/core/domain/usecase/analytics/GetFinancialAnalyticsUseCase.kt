@@ -124,6 +124,7 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
                     accountType = it.account.type,
                     isLiability = it.account.type.isLiability,
                     balanceMinor = it.balance.minorUnits,
+                    currencyCode = it.balance.currencyCode,
                 )
             },
         )

@@ -168,8 +168,11 @@ private fun AccountRow(account: AccountUi, currency: String) {
         LedgerAmount(
             // Negative balances carry an explicit minus sign — colour alone is not a
             // signal a user can rely on (and is invisible to colour-blind users).
-            amount = if (account.isNegative) "-${account.balance}" else account.balance,
-            currency = currency,
+            // A balance carries a minus when it is negative and nothing when it is
+            // not — unlike a transaction, where the sign is the direction of travel.
+            // U+2212, so the sign stays tight against the tabular digits.
+            amount = if (account.isNegative) "−${account.balance}" else account.balance,
+            currency = account.currency,
             style = LedgerAmountStyle.Regular,
             color = if (account.isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,
         )

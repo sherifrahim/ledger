@@ -63,12 +63,22 @@ class AccountsViewModel @Inject constructor(
                 id = summary.accountId.toString(),
                 name = summary.accountName,
                 subtitle = summary.accountType.name,
-                balance = MoneyFormatter.format(Money(summary.balanceMinor, netWorth.currency), includeSymbol = false),
+                balance = MoneyFormatter.format(Money(summary.balanceMinor, summary.currencyCode), includeSymbol = false),
+                currency = summary.currencyCode.name,
                 isNegative = if (summary.isLiability) summary.balanceMinor > 0 else summary.balanceMinor < 0,
             )
         }
-        val assetsUnits = netWorth.accountBalances.filter { !it.isLiability }.sumOf { it.balanceMinor }
-        val liabilitiesUnits = netWorth.accountBalances.filter { it.isLiability }.sumOf { it.balanceMinor }
+        // Read the currency-scoped figures the use case already computes; do NOT
+        // re-sum accountBalances here. That list carries every account regardless of
+        // currency and AccountBalanceSummary does not record which currency each one
+        // is in, so summing it added a USD balance into an AED total and labelled
+        // the result AED — the owner's Assets read AED 1,521.53, which is
+        // 1,568.52 AED with -46.99 USD subtracted from it as though the two were the
+        // same unit. This is the same cross-currency corruption RC7 Phase C fixed
+        // inside computeNetWorth; it survived one layer up because this screen
+        // derived its own totals instead of using that one's.
+        val assetsUnits = netWorth.cashBalanceMinor
+        val liabilitiesUnits = netWorth.cardDebtMinor
 
         val monthTransactions = (monthResult as? LedgerResult.Success)?.data ?: emptyList()
         val analytics = getFinancialAnalyticsUseCase.compute(monthTransactions, currentMonthRange.first, currentMonthRange.second)

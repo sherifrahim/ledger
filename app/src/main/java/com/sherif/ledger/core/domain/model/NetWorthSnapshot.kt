@@ -38,5 +38,15 @@ data class AccountBalanceSummary(
     val accountType: AccountType,
     val isLiability: Boolean,
     val balanceMinor: Long,
+    /**
+     * The currency this account's balance is actually denominated in.
+     *
+     * Carried per row because these summaries span every account, not only the
+     * ones in the net-worth currency. Without it a consumer has nothing to format
+     * against but the snapshot's own currency, which silently relabels a USD
+     * account as AED — the Accounts screen showed the owner's USD balance as
+     * "AED -46.99".
+     */
+    val currencyCode: CurrencyCode,
 )
 
