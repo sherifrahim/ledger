@@ -18,9 +18,29 @@ package com.sherif.ledger.core.domain.model
  * (real money leaving) as a green +amount, as if it were income.
  */
 val Transaction.isOutflow: Boolean
-    get() = when (type) {
+    get() = isOutflowOf(type, transferDirection)
+
+/**
+ * The same rule as [Transaction.isOutflow], expressed over the two fields it
+ * actually depends on, so it can also be applied to a not-yet-persisted
+ * [TransactionCandidate].
+ *
+ * Extracted (rather than duplicated) because
+ * [com.sherif.ledger.feature.capture.reconciliation.ReconciliationEngine] needs
+ * to ask "do these two records move money the same way?" while deciding whether a
+ * candidate duplicates an existing transaction — and a second, independently
+ * drifting copy of this rule there is exactly how a candidate could be judged an
+ * outflow while the row it merged into renders as an inflow.
+ *
+ * A null [type] (extraction produced no type at all) is treated as an outflow,
+ * matching the direction-less-transfer reasoning above: conservative, and it
+ * never invents an inflow the user did not receive.
+ */
+fun isOutflowOf(type: TransactionType?, transferDirection: TransferDirection?): Boolean =
+    when (type) {
         TransactionType.EXPENSE -> true
         TransactionType.INCOME -> false
         TransactionType.REFUND -> false
         TransactionType.TRANSFER -> transferDirection != TransferDirection.INCOMING
+        null -> true
     }

@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.capture.reconciliation
 import com.sherif.ledger.core.common.logging.LedgerLogger
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionCandidate
+import com.sherif.ledger.core.domain.model.isOutflowOf
 import com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator
 import com.sherif.ledger.core.domain.usecase.transaction.InsertTransactionUseCase
 import java.time.Duration
@@ -25,6 +26,16 @@ import javax.inject.Inject
 class ReconciliationEngine @Inject constructor(
     private val fingerprintGenerator: FingerprintGenerator
 ) {
+    companion object {
+        /**
+         * How far apart two records of the same real-world event can be. Independent
+         * channels mirror one another in seconds (the observed cross-channel pairs on
+         * the owner's device were 6s, 41s, 85s and 91s apart); five minutes is
+         * generous headroom without reaching into genuinely separate purchases.
+         */
+        const val SAME_EVENT_WINDOW_MINUTES = 5L
+    }
+
     /**
      * Reconciles a candidate against a list of nearby existing transactions.
      */
@@ -39,7 +50,20 @@ class ReconciliationEngine @Inject constructor(
             return ReconciliationResult.Duplicate(exactMatch.id)
         }
 
-        // 2. Fuzzy Matching Signals
+        // 2. Structural same-event match. Independent of the scoring below and
+        // deliberately ahead of it: this is the "(amount, ~timestamp, card tail)"
+        // identity of a real-world money movement, which does not depend on how
+        // any particular channel worded the message.
+        val sameEvent = existingTransactions.firstOrNull { describesSameEvent(candidate, it) }
+        if (sameEvent != null) {
+            LedgerLogger.pipeline(
+                "Reconciliation",
+                "Same-event match to #${sameEvent.id} (amount + <=${SAME_EVENT_WINDOW_MINUTES}min + compatible tail/direction)",
+            )
+            return ReconciliationResult.Duplicate(sameEvent.id)
+        }
+
+        // 3. Fuzzy Matching Signals
         // RC3: log every comparison, not only the winner — if an unrelated
         // transaction is scoring high enough to cause a false Duplicate/Updated
         // match (e.g. two genuinely separate transfers sharing the same ACCOUNT
@@ -82,6 +106,55 @@ class ReconciliationEngine @Inject constructor(
 
     /** RC9 Phase C: exposed (was private) so Developer Console diagnostics can show duplicate-detection reasoning. Never consumed by [reconcile] logic itself — read-only. */
     data class ScoreResult(val score: Int, val details: String)
+
+    /**
+     * Whether [candidate] and [existing] describe the SAME real-world money
+     * movement, judged only on structure — never on wording.
+     *
+     * This exists because the confidence scoring below cannot reach its own
+     * threshold for the most common duplicate shape in real captured data. Verified
+     * on the owner's device: one AED 3,000.00 ATM withdrawal produced two rows 85
+     * seconds apart from the same ADCB sender — one carrying the account tail and
+     * the merchant "Atm-index Exc Hamdaan", the other carrying no tail and no
+     * merchant at all ("Unknown"). It scored amount 40 + time 20 + type 10 = 70,
+     * under the 90 threshold, so both were persisted, and because account identity
+     * is resolved afterwards they landed on two DIFFERENT accounts — one purchase
+     * counted twice, on two accounts that could never reconcile against each other.
+     *
+     * The four conditions are all necessary, and each rejects a real non-duplicate
+     * found in that same database:
+     *  - **Same amount and currency** — the structural identity of the movement.
+     *  - **Within [SAME_EVENT_WINDOW_MINUTES]** — channels mirror each other in
+     *    seconds to a couple of minutes, not hours.
+     *  - **Compatible tails** — equal, or at least one side did not quote one. Two
+     *    DIFFERENT tails mean two different accounts and therefore two different
+     *    events: an AED 900.00 pair with tails 920001 and 000001 is a transfer
+     *    between the owner's own accounts, and merging it would erase one leg.
+     *  - **Same direction of travel** — an inflow never duplicates an outflow, for
+     *    the same reason. Uses the shared [isOutflowOf] rule, not a local copy, so
+     *    a merged row can never render with the opposite sign to the one it
+     *    absorbed.
+     *
+     * Note this is strictly narrower in TIME than the scoring path it precedes:
+     * matching merchant text already merges at up to 30 minutes today. So this adds
+     * no duplicate-merging risk that the engine did not already accept — it only
+     * stops requiring the two channels to have chosen the same words.
+     */
+    private fun describesSameEvent(candidate: TransactionCandidate, existing: Transaction): Boolean {
+        val amount = candidate.amountMinor ?: return false
+        if (candidate.currencyCode != existing.amount.currencyCode) return false
+        if (amount != existing.amount.minorUnits) return false
+
+        val drift = Duration.between(candidate.timestamp, existing.timestamp).abs()
+        if (drift > Duration.ofMinutes(SAME_EVENT_WINDOW_MINUTES)) return false
+
+        val candidateTail = candidate.accountHint
+        val existingTail = existing.cardTail
+        if (candidateTail != null && existingTail != null && candidateTail != existingTail) return false
+
+        return isOutflowOf(candidate.transactionType, candidate.transferDirection) ==
+            isOutflowOf(existing.type, existing.transferDirection)
+    }
 
     /**
      * RC9 Phase C — Explainability. Purely additive, read-only: reproduces
