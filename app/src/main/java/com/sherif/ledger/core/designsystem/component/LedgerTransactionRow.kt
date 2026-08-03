@@ -13,8 +13,27 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 /**
+ * The amount as it should be typeset: exactly one leading sign, and a real
+ * U+2212 MINUS SIGN rather than a hyphen.
+ *
+ * The distinction matters because amounts are set in a tabular ("tnum") face,
+ * where every glyph is padded to one digit width. A hyphen is drawn narrow, so
+ * tabular spacing adds the difference as whitespace and the row reads "− 21.50"
+ * with a visible gap between sign and number. The true minus is designed at digit
+ * width and sits tight — which is the reason it exists as a separate character.
+ *
+ * Callers pass amounts in either shape (already signed, or bare), so this
+ * normalises rather than assumes.
+ */
+internal fun signedAmount(amount: String, isExpense: Boolean): String {
+    val bare = amount.removePrefix("-").removePrefix("−").removePrefix("+")
+    val negative = amount.startsWith("-") || amount.startsWith("−") || (isExpense && !amount.startsWith("+"))
+    return if (negative) "−$bare" else "+$bare"
+}
+
+/**
  * Ledger V3 Transaction Activity Row
- * 
+ *
  * Focuses on Intelligence: Explains the event rather than just listing it.
  */
 @Composable
@@ -42,9 +61,8 @@ fun LedgerTransactionRow(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
-            .padding(vertical = LedgerSpacing.Medium),
+            .padding(vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium)
     ) {
         // 1. Merchant Identity
         LedgerBrandIcon(
@@ -52,7 +70,12 @@ fun LedgerTransactionRow(
             size = 40.dp
         )
 
-        // 2. Narrative Intelligence
+        Spacer(Modifier.width(LedgerSpacing.Medium))
+
+        // 2. Narrative Intelligence.
+        // The gap to the amount is deliberately tighter than the gap after the
+        // brand mark: every dp given to the gutter is a dp taken from the merchant
+        // name, and merchant names are what people actually scan for.
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
@@ -72,10 +95,12 @@ fun LedgerTransactionRow(
             }
         }
 
+        Spacer(Modifier.width(LedgerSpacing.Small))
+
         // 3. Authority of Amount
         Column(horizontalAlignment = Alignment.End) {
             LedgerAmount(
-                amount = (if (isExpense && !amount.startsWith("-")) "-" else if (!isExpense && !amount.startsWith("+")) "+" else "") + amount,
+                amount = signedAmount(amount, isExpense),
                 currency = currency,
                 style = LedgerAmountStyle.Regular,
                 color = finalAmountColor

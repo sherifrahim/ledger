@@ -49,6 +49,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.search.presentation.viewmodel.SearchViewModel
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /**
  * Universal Search (Product Hardening, PART 1) — real, not a resting mock.
@@ -79,7 +80,7 @@ fun UniversalSearchScreen(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceBase),
         contentPadding = PaddingValues(
             start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
-            top = LedgerSpacing.Small, bottom = LedgerSpacing.ScreenBottom + 100.dp,
+            top = LedgerSpacing.Small, bottom = ledgerScreenBottomPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
     ) {

@@ -34,6 +34,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.review.presentation.components.ReviewCard
 import com.sherif.ledger.feature.review.presentation.viewmodel.ReviewInboxViewModel
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /**
  * Review Queue (P3) — wired to live data only.
@@ -63,7 +64,7 @@ fun ReviewInboxScreen(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceBase),
         contentPadding = PaddingValues(
             start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
-            top = LedgerSpacing.Small, bottom = LedgerSpacing.ScreenBottom + 100.dp,
+            top = LedgerSpacing.Small, bottom = ledgerScreenBottomPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
     ) {

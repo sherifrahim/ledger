@@ -21,6 +21,7 @@ import com.sherif.ledger.core.designsystem.component.*
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 @Composable
 fun TransactionsScreen(
@@ -40,7 +41,11 @@ fun TransactionsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(horizontal = LedgerSpacing.ScreenPadding)
+            contentPadding = PaddingValues(
+                start = LedgerSpacing.ScreenPadding,
+                end = LedgerSpacing.ScreenPadding,
+                bottom = ledgerScreenBottomPadding,
+            )
         ) {
             state.groups.forEach { group ->
                 item {

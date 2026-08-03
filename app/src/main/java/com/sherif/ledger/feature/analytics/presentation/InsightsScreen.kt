@@ -24,6 +24,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import kotlin.math.roundToInt
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /**
  * Insights — the analytics home, wired to real data (P-Analytics).
@@ -47,24 +48,31 @@ fun InsightsScreen(state: InsightsUiState, onBackClick: () -> Unit = {}) {
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(
                 start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
-                bottom = LedgerSpacing.ScreenBottom + 100.dp,
+                bottom = ledgerScreenBottomPadding,
             ),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {
             item {
-                Column(Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        LedgerIconButton(
-                            icon = Icons.AutoMirrored.Filled.ArrowBack,
-                            onClick = onBackClick,
-                            contentDescription = "Back",
-                            tint = LedgerTheme.colors.textPrimary,
-                        )
-                        Spacer(Modifier.width(LedgerSpacing.Small))
+                // Title and subtitle share one text column to the right of the back
+                // button. Previously the subtitle was a sibling of the whole Row, so
+                // it started at the screen edge while the title started past the
+                // button — two left edges where the eye expects one.
+                Row(
+                    modifier = Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    LedgerIconButton(
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        onClick = onBackClick,
+                        contentDescription = "Back",
+                        tint = LedgerTheme.colors.textPrimary,
+                    )
+                    Spacer(Modifier.width(LedgerSpacing.Small))
+                    Column {
                         Text("Insights", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-                    }
-                    if (state.dateRange.isNotBlank()) {
-                        Text(state.dateRange, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textSecondary)
+                        if (state.dateRange.isNotBlank()) {
+                            Text(state.dateRange, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textSecondary)
+                        }
                     }
                 }
             }

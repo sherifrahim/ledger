@@ -43,6 +43,9 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import kotlin.math.atan2
 import kotlin.math.hypot
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 
 /**
  * A slice of the interactive pie/donut. Money is pre-formatted by the caller into
@@ -97,7 +100,14 @@ fun LedgerInteractivePieChart(
     val drawn = remember(slices) { slices.filter { it.value > 0f } }
     val total = remember(drawn) { drawn.sumOf { it.value.toDouble() }.toFloat().takeIf { it > 0f } ?: 1f }
 
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    // Side-by-side only when the legend can actually hold a category name. A 148dp
+    // ring plus a 24dp gutter leaves roughly 70dp for the label inside a card on a
+    // 393dp-wide phone, which rendered every entry as "Sh… 59%" / "Un… 24%" — a
+    // legend that cannot be read is worse than no legend. Below the threshold the
+    // ring centres and the legend takes the full width beneath it.
+    BoxWithConstraints(modifier) {
+    val stacked = maxWidth < 340.dp
+    val chart: @Composable () -> Unit = {
         Box(Modifier.size(ringSize), contentAlignment = Alignment.Center) {
             Canvas(
                 Modifier
@@ -183,21 +193,43 @@ fun LedgerInteractivePieChart(
             }
         }
 
-        Spacer(Modifier.width(LedgerSpacing.Large))
+    }
 
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
-        ) {
-            drawn.forEachIndexed { i, slice ->
-                LegendRow(
-                    slice = slice,
-                    selected = i == selected,
-                    dimmed = selected >= 0 && i != selected,
-                    onClick = { select(i) },
-                )
-            }
+    val legend: @Composable ColumnScope.() -> Unit = {
+        drawn.forEachIndexed { i, slice ->
+            LegendRow(
+                slice = slice,
+                selected = i == selected,
+                dimmed = selected >= 0 && i != selected,
+                onClick = { select(i) },
+            )
         }
+    }
+
+    if (stacked) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
+        ) {
+            chart()
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Tiny),
+                content = legend,
+            )
+        }
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            chart()
+            Spacer(Modifier.width(LedgerSpacing.Large))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
+                content = legend,
+            )
+        }
+    }
     }
 }
 

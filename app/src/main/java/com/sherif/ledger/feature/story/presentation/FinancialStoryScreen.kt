@@ -21,6 +21,7 @@ import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /**
  * Financial Story — a primary destination (spec Chapter 34/36/80).
@@ -54,7 +55,7 @@ fun FinancialStoryScreen(
                 contentPadding = PaddingValues(
                     start = LedgerSpacing.ScreenPadding,
                     end = LedgerSpacing.ScreenPadding,
-                    bottom = LedgerSpacing.ScreenBottom + 100.dp,
+                    bottom = ledgerScreenBottomPadding,
                 ),
             ) {
                 state.groups.forEach { group ->

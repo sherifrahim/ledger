@@ -23,6 +23,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /**
  * Accounts — wired to live data (Milestone P1).
@@ -47,7 +48,7 @@ fun AccountsScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(
                 start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
-                bottom = LedgerSpacing.ScreenBottom + 100.dp,
+                bottom = ledgerScreenBottomPadding,
             ),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {

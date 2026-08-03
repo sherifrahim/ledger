@@ -24,6 +24,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import androidx.compose.material3.Text
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /** A section of legal / informational copy: an optional heading + body paragraph. */
 private data class LegalSection(val heading: String?, val body: String)
@@ -38,7 +39,7 @@ private fun LegalScaffold(
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceBase),
         contentPadding = PaddingValues(
-            start = LedgerSpacing.Screen, end = LedgerSpacing.Screen, bottom = LedgerSpacing.ScreenBottom,
+            start = LedgerSpacing.Screen, end = LedgerSpacing.Screen, bottom = ledgerScreenBottomPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
     ) {

@@ -45,6 +45,9 @@ import com.sherif.ledger.presentation.navigation.LedgerRoute
 import com.sherif.ledger.presentation.splash.LedgerSplashScreen
 import com.sherif.ledger.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.dp
+import com.sherif.ledger.core.designsystem.theme.LocalBottomBarInset
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -177,13 +180,7 @@ private fun LedgerApp(deepLinkTransactionId: Long? = null, deepLinkOpenSplit: Bo
     // shows it, unselected, on a pushed secondary screen). Secondary destinations
     // (Accounts, Transactions, Insights, Merchant, detail screens) are reached by
     // push navigation and carry their own back affordance instead.
-    val tabRoutes = setOf(
-        LedgerRoute.Home.route,
-        LedgerRoute.Story.route,
-        LedgerRoute.ReviewInbox.route,
-        LedgerRoute.Search.route,
-        LedgerRoute.Profile.route,
-    )
+    val tabRoutes = LedgerRoute.tabRoutes
 
     androidx.compose.runtime.LaunchedEffect(deepLinkTransactionId, deepLinkOpenSplit) {
         if (deepLinkTransactionId != null) {
@@ -200,23 +197,41 @@ private fun LedgerApp(deepLinkTransactionId: Long? = null, deepLinkOpenSplit: Bo
     val glass = LedgerTheme.glass
     val colors = LedgerTheme.colors
 
-    Box(Modifier.fillMaxSize()) {
-        LedgerNavHost(
-            navController = navController,
-            modifier = Modifier
-                .fillMaxSize()
-                // Opaque page background: some screens (e.g. Story) don't paint
-                // their own, so without this the ambient glass backdrop would
-                // leak through as raw colour. Also serves as the nav island's
-                // blur source when glass is on — an authentic iOS nav bar that
-                // frosts the transactions scrolling beneath it.
-                .background(colors.surfaceBase)
-                .then(if (glass && navHazeState != null) Modifier.hazeSource(navHazeState) else Modifier),
-        )
+    // The island's real measured height, published to every screen beneath it via
+    // LocalBottomBarInset so no screen has to guess how much room to leave. Only
+    // non-zero while a tab actually owns the island — a pushed secondary screen
+    // has none, and must not reserve space for a bar that isn't there.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var bottomBarHeight by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(0.dp) }
+    val showBottomBar = currentRoute in tabRoutes
 
-        if (currentRoute in tabRoutes) {
-            Box(Modifier.align(Alignment.BottomCenter)) {
-                LedgerBottomBar(navController)
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalBottomBarInset provides if (showBottomBar) bottomBarHeight else 0.dp,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            LedgerNavHost(
+                navController = navController,
+                modifier = Modifier
+                    .fillMaxSize()
+                    // Opaque page background: some screens (e.g. Story) don't paint
+                    // their own, so without this the ambient glass backdrop would
+                    // leak through as raw colour. Also serves as the nav island's
+                    // blur source when glass is on — an authentic iOS nav bar that
+                    // frosts the transactions scrolling beneath it.
+                    .background(colors.surfaceBase)
+                    .then(if (glass && navHazeState != null) Modifier.hazeSource(navHazeState) else Modifier),
+            )
+
+            if (showBottomBar) {
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .onSizeChanged { size ->
+                            with(density) { bottomBarHeight = size.height.toDp() }
+                        },
+                ) {
+                    LedgerBottomBar(navController)
+                }
             }
         }
     }

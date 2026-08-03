@@ -58,4 +58,9 @@ object LedgerAnimations {
     val screenPopEnter: EnterTransition = LedgerNavigationMotion.StandardPopEnter
 
     val screenPopExit: ExitTransition = LedgerNavigationMotion.StandardPopExit
+
+    /** Sibling-to-sibling movement between bottom-bar tabs — never a push. */
+    val tabEnter: EnterTransition = LedgerNavigationMotion.TabEnter
+
+    val tabExit: ExitTransition = LedgerNavigationMotion.TabExit
 }

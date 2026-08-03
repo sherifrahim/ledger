@@ -1,7 +1,6 @@
 package com.sherif.ledger.feature.review.presentation.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,8 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Store
@@ -39,6 +36,11 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.merchant.MerchantCategory
 import com.sherif.ledger.feature.review.presentation.ReviewItemUi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.border
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
+import com.sherif.ledger.core.designsystem.component.signedAmount
 
 /**
  * Review Queue card (P3) — the confidence/evidence card language.
@@ -52,6 +54,7 @@ import com.sherif.ledger.feature.review.presentation.ReviewItemUi
  * button performs a no-op — the category chips are the decision.
  */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun ReviewCard(
     item: ReviewItemUi,
     onConfirm: () -> Unit = {},
@@ -63,7 +66,6 @@ fun ReviewCard(
 ) {
     val colors = LedgerTheme.colors
     val amountColor = if (item.isIncome) colors.income else colors.textPrimary
-    val sign = if (item.isIncome) "+" else "-"
     val hasSuggestion = item.suggestedCategory.isNotBlank() &&
         !item.suggestedCategory.equals("unknown", ignoreCase = true) &&
         !item.suggestedCategory.equals("uncategorized", ignoreCase = true)
@@ -106,7 +108,12 @@ fun ReviewCard(
                 Text(item.timestamp, style = LedgerTextStyles.Caption, color = colors.textTertiary)
             }
             Spacer(Modifier.width(LedgerSpacing.Small))
-            LedgerAmount(amount = "${sign}AED ${item.amount}", style = LedgerAmountStyle.Regular, color = amountColor)
+            LedgerAmount(
+                amount = signedAmount(item.amount, isExpense = !item.isIncome),
+                currency = "AED",
+                style = LedgerAmountStyle.Regular,
+                color = amountColor,
+            )
         }
 
         Spacer(Modifier.height(LedgerSpacing.Medium))
@@ -122,8 +129,17 @@ fun ReviewCard(
         if (onCategorySelected != null) {
             Text("Choose a category", style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold), color = colors.textTertiary)
             Spacer(Modifier.height(LedgerSpacing.Small))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-                items(MerchantCategory.entries.filter { it != MerchantCategory.UNKNOWN }) { category ->
+            // Wraps rather than scrolls. This was a LazyRow, which hid most of the
+            // categories off the right edge of the card with nothing to suggest they
+            // were there, and clipped the first and last chip mid-word ("ainment",
+            // "F") because a lazy row nested in a lazy column can restore a sibling
+            // card's scroll offset. The set is small and fixed — showing all of it is
+            // both simpler and the better answer to "which category?".
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Tiny),
+                verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Tiny),
+            ) {
+                MerchantCategory.entries.filter { it != MerchantCategory.UNKNOWN }.forEach { category ->
                     CategoryChip(
                         category = category,
                         suggested = hasSuggestion && category.name.equals(item.suggestedCategory, ignoreCase = true),
@@ -131,8 +147,15 @@ fun ReviewCard(
                     )
                 }
             }
-            Spacer(Modifier.height(LedgerSpacing.Small))
-            Text("Ignore", style = LedgerTextStyles.Label, color = colors.textTertiary, modifier = Modifier.clickable(onClick = onIgnore))
+            Spacer(Modifier.height(LedgerSpacing.Medium))
+            // Was a bare Text with a clickable on it: no affordance that it could be
+            // tapped, and a hit target the height of one line of 13sp type.
+            LedgerButton(
+                text = "Ignore",
+                onClick = onIgnore,
+                style = LedgerButtonStyle.Ghost,
+                modifier = Modifier.fillMaxWidth(),
+            )
         } else {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
                 LedgerButton("Approve", onClick = onConfirm, style = LedgerButtonStyle.Accent, modifier = Modifier.weight(1f))
@@ -150,20 +173,35 @@ private fun EvidenceRow(icon: androidx.compose.ui.graphics.vector.ImageVector, l
     ) {
         Icon(icon, null, tint = LedgerTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(LedgerSpacing.Small))
-        Text(label, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary, modifier = Modifier.width(80.dp))
+        // 80.dp was narrower than the longest label this row is given ("Why
+        // review"), so it wrapped to two lines against a one-line value.
+        Text(
+            label,
+            style = LedgerTextStyles.BodyMedium,
+            color = LedgerTheme.colors.textPrimary,
+            maxLines = 1,
+            modifier = Modifier.width(104.dp),
+        )
         Text(note, style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textSecondary, modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
 private fun CategoryChip(category: MerchantCategory, suggested: Boolean, onClick: () -> Unit) {
-    val bg = if (suggested) LedgerTheme.colors.accent.copy(alpha = 0.14f) else LedgerTheme.colors.surfaceInset
-    val fg = if (suggested) LedgerTheme.colors.accent else LedgerTheme.colors.textPrimary
+    val colors = LedgerTheme.colors
+    val bg = if (suggested) colors.accent.copy(alpha = 0.14f) else colors.surfaceInset
+    val fg = if (suggested) colors.accent else colors.textPrimary
+    // Inside a card, surfaceInset is within a couple of percent of the card's own
+    // fill, so the chips rendered as bare floating words with a mysterious 16dp
+    // indent (their own padding, with nothing drawn around it). The hairline is
+    // what makes them read as tappable objects rather than a list of labels.
+    val outline = if (suggested) colors.accent.copy(alpha = 0.5f) else colors.cardBorder
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(bg)
-            .clickable(onClick = onClick)
+            .border(LedgerTheme.border.Hairline, outline, RoundedCornerShape(50))
+            .ledgerClickable(onClick = onClick)
             .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Tiny),
     ) {
         Text(prettyCategory(category.name), style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.SemiBold), color = fg)

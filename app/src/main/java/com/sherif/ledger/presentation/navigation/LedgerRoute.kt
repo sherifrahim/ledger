@@ -41,6 +41,27 @@ sealed class LedgerRoute(val route: String) {
     data object Split : LedgerRoute("split/{transactionId}") {
         fun create(transactionId: String): String = "split/$transactionId"
     }
+
+    companion object {
+        /**
+         * The five destinations that own the bottom bar.
+         *
+         * Single source of truth, because three separate places need to agree on
+         * it and each was previously keeping its own copy: the bar decides which
+         * item to fill in, the app shell decides whether to draw the bar at all
+         * (and how much bottom inset to publish), and the nav host decides whether
+         * a transition is a sideways tab switch or a hierarchical push. Drift
+         * between those copies shows up as a bar that vanishes on a real tab, or a
+         * tab that slides in like a pushed screen.
+         */
+        val tabRoutes: Set<String> = setOf(
+            Home.route,
+            Story.route,
+            ReviewInbox.route,
+            Search.route,
+            Profile.route,
+        )
+    }
 }
 
 

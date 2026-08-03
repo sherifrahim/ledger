@@ -59,9 +59,46 @@ object LedgerMotion {
         dampingRatio = 0.70f,
         stiffness = 600f
     )
-    
+
     fun <T> heroSpring() = spring<T>(
         dampingRatio = HeroSpringDamping,
         stiffness = HeroSpringStiffness
+    )
+
+    // ── Press ──
+    //
+    // Down and up are deliberately different curves. Pressing in is stiff and
+    // essentially unbouncy, so the surface is already compressed by the time the
+    // touch registers; releasing is softer and slower so it settles back rather
+    // than snapping. Using one spring for both is what makes a press read as an
+    // animation being played at you instead of a surface responding to you.
+
+    /** Compression on touch-down: immediate, no overshoot. */
+    fun <T> pressInSpring() = spring<T>(
+        dampingRatio = 1f,
+        stiffness = 1600f,
+    )
+
+    /** Settle on release: softer, a touch slower, still no bounce. */
+    fun <T> pressOutSpring() = spring<T>(
+        dampingRatio = 1f,
+        stiffness = 520f,
+    )
+
+    /**
+     * A tap can go down and up inside a single frame, in which case the press
+     * would never render. The pressed state is held at least this long so every
+     * tap is visibly acknowledged.
+     */
+    const val MinPressVisibleMs = 90L
+
+    /**
+     * Selection in a tab bar or segmented control: a small, quick overshoot. This
+     * is the one place a little bounce is right — it is the app confirming a
+     * deliberate choice, not a surface settling.
+     */
+    fun <T> selectionSpring() = spring<T>(
+        dampingRatio = 0.55f,
+        stiffness = 700f,
     )
 }

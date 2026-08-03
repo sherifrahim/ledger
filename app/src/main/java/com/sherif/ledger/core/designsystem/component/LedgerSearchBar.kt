@@ -89,10 +89,18 @@ fun LedgerSearchBar(
                 ) {
 
                     if (query.isEmpty()) {
+                        // Single line, always. The field itself is singleLine, so a
+                        // placeholder that wraps makes the pill grow to two lines
+                        // before the user has typed anything and then snap back on
+                        // the first keystroke — which is exactly what "Search
+                        // transactions and merchants" did at this width.
                         Text(
                             text = placeholder,
                             style = LedgerTextStyles.Body,
                             color = LedgerTheme.colors.tertiaryLabel,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         )
                     }
 

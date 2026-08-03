@@ -37,6 +37,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.settings.presentation.viewmodel.UserProfileViewModel
 import java.util.Calendar
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /**
  * Dashboard — the flagship surface, wired to live data.
@@ -66,7 +67,7 @@ fun DashboardScreen(
             contentPadding = PaddingValues(
                 start = LedgerSpacing.ScreenPadding,
                 end = LedgerSpacing.ScreenPadding,
-                bottom = LedgerSpacing.ScreenBottom + 100.dp,
+                bottom = ledgerScreenBottomPadding,
             ),
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {

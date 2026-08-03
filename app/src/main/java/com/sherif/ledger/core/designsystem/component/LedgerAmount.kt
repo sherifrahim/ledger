@@ -4,11 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -21,9 +21,19 @@ enum class LedgerAmountStyle {
 }
 
 /**
- * Ledger V3 Amount Component
- * 
- * Focuses on authoritative typographic alignment without decorative monospace.
+ * A monetary figure with its currency code.
+ *
+ * Two things this gets right that a plain Row of two Texts does not:
+ *
+ *  - **The code sits on the number's baseline.** This used to align the two by
+ *    `Alignment.Bottom`, which aligns the bottom of each text's *line box* — and
+ *    since the code was rendered at 0.6× the amount's style, including 0.6× its
+ *    line height, its box was shorter and the code floated visibly below the
+ *    digits in every list, card and hero in the app. `alignByBaseline` aligns the
+ *    letterforms themselves, which is what "AED 1,568.52" is supposed to mean.
+ *  - **The digits are tabular.** Every glyph 0–9 takes the same advance width, so
+ *    a column of amounts lines up on the decimal point instead of shimmering as
+ *    the values change.
  */
 @Composable
 fun LedgerAmount(
@@ -35,25 +45,30 @@ fun LedgerAmount(
     textAlign: TextAlign = TextAlign.Start,
 ) {
     val textStyle: TextStyle = when (style) {
-        LedgerAmountStyle.Small -> LedgerTextStyles.Label
-        LedgerAmountStyle.Regular -> LedgerTextStyles.BodyMedium
-        LedgerAmountStyle.Large -> LedgerTextStyles.Title
+        LedgerAmountStyle.Small -> LedgerTextStyles.Label.copy(fontFeatureSettings = "tnum")
+        LedgerAmountStyle.Regular -> LedgerTextStyles.AmountRow
+        LedgerAmountStyle.Large -> LedgerTextStyles.Title.copy(fontFeatureSettings = "tnum")
         LedgerAmountStyle.Display -> LedgerTextStyles.Display
     }
 
+    // The code tracks the amount's size at roughly the golden ratio, but as a real
+    // type size rather than a scaled style, so its line height stays independent.
+    val currencyStyle = LedgerTextStyles.AmountCurrency.copy(
+        fontSize = (textStyle.fontSize.value * 0.62f).sp,
+        lineHeight = textStyle.lineHeight,
+    )
+
     Row(
         modifier = modifier,
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Atomic)
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Atomic),
     ) {
         if (currency != null) {
             Text(
                 text = currency,
-                style = textStyle.copy(
-                    fontSize = textStyle.fontSize * 0.6f,
-                    color = LedgerTheme.colors.textSecondary,
-                    textAlign = textAlign
-                )
+                style = currencyStyle,
+                color = LedgerTheme.colors.textTertiary,
+                maxLines = 1,
+                modifier = Modifier.alignByBaseline(),
             )
         }
         Text(
@@ -61,6 +76,7 @@ fun LedgerAmount(
             style = textStyle.copy(textAlign = textAlign),
             color = color,
             maxLines = 1,
+            modifier = Modifier.alignByBaseline(),
         )
     }
 }

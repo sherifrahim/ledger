@@ -26,6 +26,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
 import com.sherif.ledger.feature.settings.presentation.viewmodel.SettingsViewModel
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 @Composable
 fun SettingsScreen(
@@ -39,7 +40,7 @@ fun SettingsScreen(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceLevel0),
         contentPadding = PaddingValues(
             start = LedgerSpacing.Screen, end = LedgerSpacing.Screen,
-            top = LedgerSpacing.Large, bottom = LedgerSpacing.ScreenBottom,
+            top = LedgerSpacing.Large, bottom = ledgerScreenBottomPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {

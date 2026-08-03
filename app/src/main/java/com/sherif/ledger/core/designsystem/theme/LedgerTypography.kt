@@ -85,6 +85,31 @@ object LedgerTextStyles {
         lineHeight = 16.sp,
     )
 
+    // Money in a list. Same size as BodyMedium so a row's amount and its title sit
+    // on one optical line, but tabular ("tnum") so every digit occupies the same
+    // advance width — without it the decimal points of a scrolling column of
+    // amounts wander by a pixel or two per row, which is the single most obvious
+    // tell that a finance app was not drawn by someone counting.
+    val AmountRow = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
+        fontFeatureSettings = "tnum",
+    )
+
+    // The currency code that accompanies an amount. Deliberately its own style
+    // rather than a scaled-down copy of the amount's: scaling a style by 0.6
+    // also scales its line height, which is what pushed the code off the number's
+    // baseline everywhere it appeared.
+    val AmountCurrency = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.3.sp,
+    )
+
     // Explanatory Intelligence
     val Narrative = TextStyle(
         fontFamily = Inter,

@@ -30,20 +30,31 @@ import com.sherif.ledger.feature.transactions.presentation.detail.TransactionDet
 import com.sherif.ledger.feature.transactions.presentation.detail.viewmodel.TransactionDetailsViewModel
 import com.sherif.ledger.presentation.dashboard.DashboardScreen
 import com.sherif.ledger.presentation.dashboard.viewmodel.DashboardViewModel
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.navigation.NavBackStackEntry
 
 @Composable
 fun LedgerNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
+    // A move between two bottom-bar tabs is a sideways move between peers; a move
+    // to anything else is a push down the hierarchy. They must not look the same:
+    // sliding a tab in from the right implies Search lives "after" Review, which is
+    // not true of any tab bar. Deciding here, from the routes actually involved,
+    // keeps the choice in one place rather than per-destination.
+    fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch(): Boolean =
+        initialState.destination.route in LedgerRoute.tabRoutes &&
+            targetState.destination.route in LedgerRoute.tabRoutes
+
     NavHost(
         navController = navController,
         startDestination = LedgerRoute.Home.route,
         modifier = modifier,
-        enterTransition = { LedgerAnimations.screenEnter },
-        exitTransition = { LedgerAnimations.screenExit },
-        popEnterTransition = { LedgerAnimations.screenPopEnter },
-        popExitTransition = { LedgerAnimations.screenPopExit },
+        enterTransition = { if (isTabSwitch()) LedgerAnimations.tabEnter else LedgerAnimations.screenEnter },
+        exitTransition = { if (isTabSwitch()) LedgerAnimations.tabExit else LedgerAnimations.screenExit },
+        popEnterTransition = { if (isTabSwitch()) LedgerAnimations.tabEnter else LedgerAnimations.screenPopEnter },
+        popExitTransition = { if (isTabSwitch()) LedgerAnimations.tabExit else LedgerAnimations.screenPopExit },
     ) {
         composable(LedgerRoute.Home.route) {
             val viewModel: DashboardViewModel = hiltViewModel()

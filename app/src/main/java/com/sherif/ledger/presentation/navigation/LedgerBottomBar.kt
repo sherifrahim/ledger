@@ -38,6 +38,10 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.theme.LocalNavHazeState
 import com.sherif.ledger.core.designsystem.theme.ledgerGlassSurface
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
+import com.sherif.ledger.core.designsystem.theme.LedgerMotion
 
 // The five primary destinations, per spec Chapter 34: Dashboard, Story, Review,
 // Search, Settings. Secondary experiences (Accounts, Transactions/Activity,
@@ -136,7 +140,17 @@ private fun LedgerTabItem(
     val colors = LedgerTheme.colors
     val color by animateColorAsState(
         targetValue = if (isSelected) colors.textPrimary else colors.textTertiary,
+        animationSpec = tween(LedgerMotion.Short),
         label = "tabColor",
+    )
+
+    // The glyph swaps outlined→filled on selection, which is a hard cut. Springing
+    // the scale through that swap is what turns it from "the icon changed" into
+    // "the tab was chosen": a small, quick overshoot that lands with the colour.
+    val iconScale by animateFloatAsState(
+        targetValue = if (isSelected) LedgerMotion.SelectedIconScale else 1f,
+        animationSpec = LedgerMotion.selectionSpring(),
+        label = "tabIconScale",
     )
 
     Column(
@@ -150,7 +164,12 @@ private fun LedgerTabItem(
             imageVector = icon,
             contentDescription = label,
             tint = color,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier
+                .size(24.dp)
+                .graphicsLayer {
+                    scaleX = iconScale
+                    scaleY = iconScale
+                },
         )
         Text(
             text = label,

@@ -39,6 +39,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
+import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 
 /**
  * Merchant relationship page (P2), wired to live data.
@@ -57,7 +58,7 @@ fun MerchantScreen(
         modifier = Modifier.fillMaxSize().background(LedgerTheme.colors.surfaceBase),
         contentPadding = PaddingValues(
             start = LedgerSpacing.ScreenPadding, end = LedgerSpacing.ScreenPadding,
-            bottom = LedgerSpacing.ScreenBottom + 100.dp,
+            bottom = ledgerScreenBottomPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
     ) {
