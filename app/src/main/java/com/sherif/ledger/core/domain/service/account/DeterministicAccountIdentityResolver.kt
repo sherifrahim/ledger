@@ -190,7 +190,7 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         val singleShotScore = scoreHypothetical(institution, tail, currency, typeHint)
 
         if (singleShotScore >= CREATE_SINGLE_SHOT_THRESHOLD) {
-            val accountId = createAccount(institution, tail, currency, typeHint)
+            val accountId = createAccount(institution, tail, currency, typeHint, envelope.packageName, defaultAccountId)
             return AccountIdentityResult(
                 accountId,
                 AccountIdentityDecision.CREATED_NEW,
@@ -212,7 +212,7 @@ class DeterministicAccountIdentityResolver @Inject constructor(
                 .sumOf { it.count }
             val totalObservations = priorFallbackCount + 1 // including this one
             if (totalObservations >= CREATE_OBSERVATION_COUNT) {
-                val accountId = createAccount(institution, tail, currency, typeHint)
+                val accountId = createAccount(institution, tail, currency, typeHint, envelope.packageName, defaultAccountId)
                 return AccountIdentityResult(
                     accountId,
                     AccountIdentityDecision.CREATED_NEW,
@@ -357,6 +357,8 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         tail: String,
         currency: CurrencyCode,
         typeHint: AccountType?,
+        packageName: String,
+        defaultAccountId: Long,
     ): Long {
         val type = typeHint ?: AccountType.CHECKING
         val name = "${institution.name} ${if (type == AccountType.CREDIT) "Credit Card" else "Account"}"
@@ -369,7 +371,44 @@ class DeterministicAccountIdentityResolver @Inject constructor(
             bankBrandId = null,
         )
         val result = accountRepository.insertAccount(account)
-        return (result as? LedgerResult.Success)?.data ?: ensureDefaultAccountUseCase.execute()
+        val newAccountId = (result as? LedgerResult.Success)?.data
+            ?: return ensureDefaultAccountUseCase.execute()
+
+        // An account is created only AFTER this identity has been seen several
+        // times, and every one of those earlier sightings was parked on the default
+        // account. Leaving them there splits one real account in two: the earlier
+        // transactions (and any balance the user reconciles against them) sit on the
+        // default account while everything later accumulates here.
+        //
+        // Observed live: a real AED 1,568.52 balance sat on "Primary Account" with
+        // 11 stranded ADCB transactions, while "ADCB Account ···920001" collected
+        // the other 25 — the dashboard under-reported by that account's net.
+        //
+        // Claiming them now is precise (same package AND same tail — the very
+        // signature that justified creating this account) and it preserves the
+        // invariant that the default account is never *bound* to as an identity:
+        // it stays the fallback, it just stops keeping what was never really its.
+        runCatching {
+            val moved = transactionRepository.reassignTransactions(
+                fromAccountId = defaultAccountId,
+                packageName = packageName,
+                cardTail = tail,
+                toAccountId = newAccountId,
+            )
+            if (moved > 0) {
+                com.sherif.ledger.core.common.logging.LedgerLogger.d(
+                    "AccountIdentity: reclaimed $moved fallback transaction(s) for " +
+                        "$packageName/$tail from default account $defaultAccountId to $newAccountId ('$name')",
+                )
+            }
+        }.onFailure {
+            // Never let consolidation failure block the account creation itself —
+            // the transactions stay where they are and remain queryable.
+            com.sherif.ledger.core.common.logging.LedgerLogger.e(
+                "AccountIdentity: failed to reclaim fallback transactions for $packageName/$tail", it,
+            )
+        }
+        return newAccountId
     }
 }
 

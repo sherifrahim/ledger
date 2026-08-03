@@ -67,7 +67,19 @@ class AccountIdentityResolverTest {
         override suspend fun updateNote(id: Long, note: String?) = LedgerResult.Success(Unit)
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> =
             (originCounts[packageName to cardTail] ?: emptyMap()).map { (accId, count) -> AccountOriginCount(accId, count) }
-        override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
+        // Actually moves them, like the real Room-backed repository. A no-op here
+        // hid the resolver leaving earlier fallback transactions stranded on the
+        // default account after creating the real one.
+        override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int {
+            val bySignature = originCounts[packageName to cardTail] ?: return 0
+            val moved = bySignature.remove(fromAccountId) ?: return 0
+            bySignature.merge(toAccountId, moved) { a, b -> a + b }
+            return moved
+        }
+
+        /** Transactions currently attributed to [accountId] for this signature. */
+        fun countFor(packageName: String, tail: String, accountId: Long): Int =
+            originCounts[packageName to tail]?.get(accountId) ?: 0
     }
 
     private class FakeLearnedDecisionDao : com.sherif.ledger.core.database.dao.LearnedDecisionDao {
@@ -179,6 +191,33 @@ class AccountIdentityResolverTest {
         val third = resolver.resolve(envelope(pkg), candidate(text, tail))
         assertEquals(AccountIdentityDecision.CREATED_NEW, third.decision)
         assertTrue(accountRepository.accounts.any { it.name.contains("ADCB") && it.accountNumberTail == tail })
+    }
+
+    @Test fun `creating an account reclaims the fallback transactions that justified it`() = runBlocking {
+        // Every sighting before an account exists is parked on the default account.
+        // Once the real account is created those must move onto it — otherwise one
+        // real account is split in two, and any balance the user reconciles against
+        // the default account is stranded away from its own transactions.
+        // Observed live: AED 1,568.52 on "Primary Account" with 11 stranded ADCB
+        // transactions while "ADCB Account ···920001" collected the other 25.
+        val pkg = "com.adcb.nexgen"
+        val text = "AED 200 debited from account"
+        val tail = "920001"
+        transactionRepository.recordFallback(pkg, tail, 1L)
+        transactionRepository.recordFallback(pkg, tail, 1L)
+        assertEquals(2, transactionRepository.countFor(pkg, tail, 1L))
+
+        val created = resolver.resolve(envelope(pkg), candidate(text, tail))
+        assertEquals(AccountIdentityDecision.CREATED_NEW, created.decision)
+
+        assertEquals(
+            "fallback transactions must not stay on the default account",
+            0, transactionRepository.countFor(pkg, tail, 1L),
+        )
+        assertEquals(
+            "they belong to the account their own signature created",
+            2, transactionRepository.countFor(pkg, tail, created.accountId),
+        )
     }
 
     @Test fun `subsequent messages bind to the account created from repeated observations`() = runBlocking {
