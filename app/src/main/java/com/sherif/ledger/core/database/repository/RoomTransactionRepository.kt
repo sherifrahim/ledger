@@ -166,6 +166,12 @@ class RoomTransactionRepository @Inject constructor(
         cardTail: String,
         toAccountId: Long,
     ): Int = transactionDao.reassignByOriginSignature(fromAccountId, packageName, cardTail, toAccountId)
+
+    override suspend fun reassignUntailedTransactions(
+        fromAccountId: Long,
+        packageName: String,
+        toAccountId: Long,
+    ): Int = transactionDao.reassignUntailedByOrigin(fromAccountId, packageName, toAccountId)
 }
 
 

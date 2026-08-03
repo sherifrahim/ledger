@@ -389,12 +389,36 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         // invariant that the default account is never *bound* to as an identity:
         // it stays the fallback, it just stops keeping what was never really its.
         runCatching {
-            val moved = transactionRepository.reassignTransactions(
+            var moved = transactionRepository.reassignTransactions(
                 fromAccountId = defaultAccountId,
                 packageName = packageName,
                 cardTail = tail,
                 toAccountId = newAccountId,
             )
+
+            // The same bank sends both shapes: messages quoting "acc. no. XXX920001"
+            // and messages quoting no account number at all. The tail-less ones can
+            // never match an origin signature, so they stay on the fallback account
+            // forever — splitting one real account by message shape rather than by
+            // actual account. Observed live: ADCB's tail-less messages held
+            // AED 1,568.52 on "Primary Account" while the tailed ones sat on
+            // "ADCB Account ···920001", so the dashboard showed 1,104.21.
+            //
+            // Only safe while this institution is unambiguous. If the user holds a
+            // second account at the same bank, a message without an account number
+            // genuinely cannot be attributed, and guessing would be worse than
+            // leaving it visible on the fallback account.
+            val confirmedForInstitution = (accountRepository.observeAllAccounts().first() as? LedgerResult.Success)
+                ?.data.orEmpty()
+                .count { !it.isCandidate && it.name.startsWith(institution.name) }
+            if (confirmedForInstitution <= 1) {
+                moved += transactionRepository.reassignUntailedTransactions(
+                    fromAccountId = defaultAccountId,
+                    packageName = packageName,
+                    toAccountId = newAccountId,
+                )
+            }
+
             if (moved > 0) {
                 com.sherif.ledger.core.common.logging.LedgerLogger.d(
                     "AccountIdentity: reclaimed $moved fallback transaction(s) for " +

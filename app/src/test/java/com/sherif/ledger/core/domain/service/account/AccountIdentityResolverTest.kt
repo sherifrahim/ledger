@@ -77,6 +77,15 @@ class AccountIdentityResolverTest {
             return moved
         }
 
+        // Transactions from this package that quote no account number at all. The
+        // real bank sends both shapes; modelled with an empty-string tail key.
+        override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long): Int {
+            val bySignature = originCounts[packageName to ""] ?: return 0
+            val moved = bySignature.remove(fromAccountId) ?: return 0
+            bySignature.merge(toAccountId, moved) { a, b -> a + b }
+            return moved
+        }
+
         /** Transactions currently attributed to [accountId] for this signature. */
         fun countFor(packageName: String, tail: String, accountId: Long): Int =
             originCounts[packageName to tail]?.get(accountId) ?: 0
@@ -217,6 +226,32 @@ class AccountIdentityResolverTest {
         assertEquals(
             "they belong to the account their own signature created",
             2, transactionRepository.countFor(pkg, tail, created.accountId),
+        )
+    }
+
+    @Test fun `creating an account also reclaims the banks tail-less messages`() = runBlocking {
+        // ADCB sends both "…from acc. no. XXX920001…" and messages with no account
+        // number. The tail-less ones can never match an origin signature, so they
+        // stayed on the fallback account and split one real account by message
+        // shape: AED 1,568.52 stranded on "Primary Account" while the tailed ones
+        // sat on "ADCB Account ···920001" — the dashboard showed 1,104.21.
+        val pkg = "com.adcb.nexgen"
+        val text = "AED 200 debited from account"
+        val tail = "920001"
+        transactionRepository.recordFallback(pkg, tail, 1L)
+        transactionRepository.recordFallback(pkg, tail, 1L)
+        transactionRepository.recordFallback(pkg, "", 1L) // tail-less, same bank
+
+        val created = resolver.resolve(envelope(pkg), candidate(text, tail))
+        assertEquals(AccountIdentityDecision.CREATED_NEW, created.decision)
+
+        assertEquals(
+            "tail-less messages from the same bank must not stay stranded",
+            0, transactionRepository.countFor(pkg, "", 1L),
+        )
+        assertEquals(
+            "they belong with the rest of that bank's account",
+            1, transactionRepository.countFor(pkg, "", created.accountId),
         )
     }
 

@@ -58,6 +58,7 @@ class RoomTransactionRepositoryTest {
         override suspend fun updateNote(id: Long, note: String?, timestamp: Long): Int = 1
         override suspend fun countByOriginSignature(packageName: String, cardTail: String): List<com.sherif.ledger.core.database.dao.AccountOriginCountRow> = emptyList()
         override suspend fun reassignByOriginSignature(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
+        override suspend fun reassignUntailedByOrigin(fromAccountId: Long, packageName: String, toAccountId: Long): Int = 0
     }
 
     private val repository = RoomTransactionRepository(fakeDao, com.sherif.ledger.testsupport.FakeFinancialEventRepository())

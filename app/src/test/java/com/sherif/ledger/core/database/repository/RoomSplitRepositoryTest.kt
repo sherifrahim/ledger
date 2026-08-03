@@ -51,6 +51,7 @@ class RoomSplitRepositoryTest {
         override suspend fun updateNote(id: Long, note: String?) = throw NotImplementedError()
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String) = throw NotImplementedError()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = throw NotImplementedError()
+        override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long) = throw NotImplementedError()
     }
 
     private class InMemorySplitDao : SplitDao {

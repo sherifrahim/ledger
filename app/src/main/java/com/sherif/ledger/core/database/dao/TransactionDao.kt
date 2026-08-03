@@ -62,6 +62,30 @@ interface TransactionDao {
         cardTail: String,
         toAccountId: Long,
     ): Int
+
+    /**
+     * Reassigns transactions from the same institution that quote NO account
+     * number. A bank sends both shapes — "…from acc. no. XXX920001…" and messages
+     * with no account number at all — and the tail-less ones can never be matched
+     * by [reassignByOriginSignature]. Left behind, they strand part of one real
+     * account on the fallback account.
+     *
+     * Deliberately narrow: same origin package, card_tail IS NULL, and only ever
+     * called when that institution has exactly one confirmed account, so there is
+     * no second card the message could have belonged to.
+     */
+    @Query(
+        """
+        UPDATE transactions SET account_id = :toAccountId
+        WHERE account_id = :fromAccountId AND origin_package_name = :packageName
+          AND card_tail IS NULL AND is_deleted = 0
+        """
+    )
+    suspend fun reassignUntailedByOrigin(
+        fromAccountId: Long,
+        packageName: String,
+        toAccountId: Long,
+    ): Int
 }
 
 /** Room projection for [countByOriginSignature]. */

@@ -1,17 +1,17 @@
 {
-  "rawMessage": "Your HDFC OTP is 112233. Valid for 5 minutes.",
+  "rawMessage": "Your debit card XXX5986 linked to acc. XXX920001 was used for USD21.00 on Jul 3 2026 3:25PM at ANTHROPIC CLAUD,US. Avl.Bal AED 8999.38.",
   "observed": {
     "decision": "ignored",
-    "category": "Statement",
+    "category": "Unknown",
     "transactionType": null,
     "amountMinor": null,
     "cardTail": null,
     "confidence": 0,
-    "extractor": "known-bank"
+    "extractor": "heuristic"
   },
   "expectedFromCorpus": {
-    "decision": "Ignored"
+    "decision": "Extracted"
   },
-  "failureReason": "category Statement != OTP",
+  "failureReason": "decision ignored != expected extracted",
   "TODO": "classify and move into the correct bank fixtures.json"
 }

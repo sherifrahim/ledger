@@ -53,6 +53,7 @@ class DetectDuplicateAccountIdentitiesUseCaseTest {
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String) =
             originCounts[packageName to cardTail] ?: emptyList()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
+        override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long) = 0
     }
 
     private fun txn(id: Long, accountId: Long, packageName: String?, cardTail: String?) = Transaction(

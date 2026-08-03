@@ -40,6 +40,17 @@ interface TransactionRepository {
         cardTail: String,
         toAccountId: Long,
     ): Int
+
+    /** Same contract as [reassignTransactions], for transactions from [packageName]
+     *  that carry NO card tail. A bank sends both shapes; the tail-less ones cannot
+     *  be matched by origin signature and would otherwise stay stranded on the
+     *  account they first fell back to. Callers must establish that the institution
+     *  is unambiguous (exactly one confirmed account) before invoking this. */
+    suspend fun reassignUntailedTransactions(
+        fromAccountId: Long,
+        packageName: String,
+        toAccountId: Long,
+    ): Int
 }
 
 
