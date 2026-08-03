@@ -100,8 +100,21 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
     suspend fun computeNetWorth(): NetWorthSnapshot {
         val balances = accountBalanceService.currentBalances()
         val netWorth = accountBalanceService.netWorth()
+        // Split assets from debt, in the net-worth currency only — a balance in a
+        // different currency is never added to a total denominated in this one.
+        val inCurrency = balances.filter { it.balance.currencyCode == netWorth.currencyCode }
+        val cashBalanceMinor = inCurrency
+            .filterNot { it.account.type.isLiability }
+            .sumOf { it.balance.minorUnits }
+        // A liability account's balance is already positive-as-owed (see
+        // BalanceCalculator.effect, which flips the sign for liability accounts).
+        val cardDebtMinor = inCurrency
+            .filter { it.account.type.isLiability }
+            .sumOf { it.balance.minorUnits }
         return NetWorthSnapshot(
             netWorthMinor = netWorth.minorUnits,
+            cashBalanceMinor = cashBalanceMinor,
+            cardDebtMinor = cardDebtMinor,
             currency = netWorth.currencyCode,
             accountBalances = balances.map {
                 AccountBalanceSummary(

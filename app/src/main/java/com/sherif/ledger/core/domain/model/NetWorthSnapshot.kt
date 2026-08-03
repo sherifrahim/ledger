@@ -15,6 +15,19 @@ package com.sherif.ledger.core.domain.model
  */
 data class NetWorthSnapshot(
     val netWorthMinor: Long,
+    /**
+     * Money the user actually HAS: the total of asset (non-liability) accounts in
+     * [currency]. This is what "Total Balance" means to a person — deliberately
+     * NOT [netWorthMinor], which subtracts credit-card debt.
+     *
+     * Showing net worth under a "Total Balance" label made the dashboard read
+     * AED -11,771.65 for someone holding AED 1,568.52, because an AED 11,888 card
+     * balance was folded in. Debt is real and still reported, but as its own
+     * figure ([cardDebtMinor]) — never silently mixed into "your balance".
+     */
+    val cashBalanceMinor: Long,
+    /** What is owed on liability (credit-card) accounts, as a positive number. */
+    val cardDebtMinor: Long,
     val currency: CurrencyCode,
     val accountBalances: List<AccountBalanceSummary>,
 )

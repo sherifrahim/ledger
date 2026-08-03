@@ -73,7 +73,11 @@ class DashboardViewModel @Inject constructor(
 
         val netWorth = getFinancialAnalyticsUseCase.computeNetWorth()
         val primaryCurrency = netWorth.currency
-        val totalBalanceUnits = netWorth.netWorthMinor
+        // "Total Balance" is the money the user HAS. Previously this was net worth,
+        // which subtracts credit-card debt — so a real AED 1,568.52 balance with an
+        // AED 11,888 card balance displayed as AED -11,771.65. Debt is still shown,
+        // as its own figure, never folded into this one.
+        val totalBalanceUnits = netWorth.cashBalanceMinor
 
         val monthTransactions = (monthResult as? LedgerResult.Success)?.data ?: emptyList()
         val analytics = getFinancialAnalyticsUseCase.compute(monthTransactions, currentMonthRange.first, currentMonthRange.second)
