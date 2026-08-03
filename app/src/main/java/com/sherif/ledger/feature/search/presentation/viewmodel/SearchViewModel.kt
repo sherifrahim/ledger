@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
+import com.sherif.ledger.core.domain.service.transaction.TransactionDisplayName
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.feature.merchant.MerchantResolver
 import com.sherif.ledger.feature.search.presentation.SearchResultUi
 import com.sherif.ledger.feature.search.presentation.SearchUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +34,8 @@ import javax.inject.Inject
 class SearchViewModel @Inject constructor(
     private val transactionReadSource: TransactionReadSource,
     private val analytics: GetFinancialAnalyticsUseCase,
+    private val merchantRepository: MerchantRepository,
+    private val merchantResolver: MerchantResolver,
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
@@ -52,12 +57,14 @@ class SearchViewModel @Inject constructor(
         }.sortedByDescending { it.timestamp }.take(40)
 
         val stories = analytics.transactionStories(matches)
+        val brandNames = (merchantRepository.getAllBrands() as? LedgerResult.Success)
+            ?.data?.associate { it.id to it.name } ?: emptyMap()
         SearchUiState(
             query = q,
             results = matches.map { txn ->
                 SearchResultUi(
                     id = txn.id.toString(),
-                    merchant = prettify(txn.rawText ?: "Unknown"),
+                    merchant = TransactionDisplayName.resolve(txn, brandNames, merchantResolver),
                     amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
                     isExpense = txn.isOutflow,
                     time = txn.timestamp.atZone(ZoneId.systemDefault()).format(timeFormat),

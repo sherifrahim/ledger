@@ -28,8 +28,18 @@ screens/features are missing. After parity, do the iOS-fy pass.
 - **Icons:** SF Symbols can't be shipped (proprietary) → Material icons stand in.
 
 ## Ordered build plan
-1. [ ] **Interactive charts** (line + pie, labeled axes, touch-scrub, real data) →
+1. [~] **Interactive charts** (line + pie, labeled axes, touch-scrub, real data) →
    apply to Insights, Accounts (Balance Trend), Forecast. *(user's explicit first item)*
+   - **Done:** `LedgerInteractiveLineChart` + `LedgerInteractivePieChart` (reusable, in
+     `core/designsystem/component`) built and wired into **Insights** — labeled axes,
+     horizontal touch-scrub w/ callout + haptic, tap-to-select pie slices, real
+     analytics data, both themes verified on-device. Commit on branch
+     `claude/mock-parity-interactive-charts-f1e36f`.
+   - **Deferred (reuse targets not yet buildable):** *Accounts Balance Trend* needs a
+     real balance-over-time series that doesn't exist yet — do NOT hand-roll cumulative
+     balance in a ViewModel (cross-currency arithmetic must go through
+     AccountBalanceService / GetFinancialAnalyticsUseCase; see RC7 Phase C). *Forecast*
+     is a whole missing screen (item 3). Drop both charts in as those surfaces land.
 2. [ ] **Design-system polish pass** — colored category/brand icon chips, `+N%`
    metric-delta styling (green/red), progress bars, section headers, card spacing.
    Includes **brand logos** + **merchant-name resolution** (fixes the raw-SMS-as-title
