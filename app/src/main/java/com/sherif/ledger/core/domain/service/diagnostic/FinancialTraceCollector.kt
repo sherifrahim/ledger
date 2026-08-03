@@ -16,6 +16,7 @@ import com.sherif.ledger.feature.relationship.RelationshipType
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * RC4: the permanent Financial Trace, replacing the disposable RC2/RC3
@@ -185,7 +186,7 @@ class FinancialTraceCollector @Inject constructor(
         accounts.forEach { account ->
             val ownTxns = byAccount[account.id].orEmpty()
             if (account.type.isLiability) {
-                val salaryTxns = ownTxns.filter { t -> salaryPhrases.any { p -> t.rawText?.lowercase()?.contains(p) == true } }
+                val salaryTxns = ownTxns.filter { t -> salaryPhrases.any { p -> t.merchantOrRawText?.lowercase()?.contains(p) == true } }
                 if (salaryTxns.isNotEmpty()) {
                     typeConflicts += TypeConflictFinding(
                         account.id, account.name, account.type.name,
@@ -195,7 +196,7 @@ class FinancialTraceCollector @Inject constructor(
                 }
             } else {
                 val cardPaymentTxns = ownTxns.filter { t ->
-                    t.type == TransactionType.EXPENSE && cardPaymentWords.any { w -> t.rawText?.lowercase()?.contains(w) == true }
+                    t.type == TransactionType.EXPENSE && cardPaymentWords.any { w -> t.merchantOrRawText?.lowercase()?.contains(w) == true }
                 }
                 if (cardPaymentTxns.size >= 2) {
                     typeConflicts += TypeConflictFinding(

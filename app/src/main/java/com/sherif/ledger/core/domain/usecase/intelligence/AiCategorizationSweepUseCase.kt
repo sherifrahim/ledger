@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * Optional AI augmentation of categorisation — the "smart handling" that only
@@ -55,7 +56,7 @@ class AiCategorizationSweepUseCase @Inject constructor(
         var categorized = 0
         for (t in txns) {
             if (t.type != TransactionType.EXPENSE) continue
-            val raw = t.rawText?.takeIf { it.isNotBlank() } ?: continue
+            val raw = t.merchantOrRawText?.takeIf { it.isNotBlank() } ?: continue
 
             // Skip anything the deterministic tiers can already resolve — including
             // things already AI-categorised on a prior sweep (now LEARNED_MEMORY).

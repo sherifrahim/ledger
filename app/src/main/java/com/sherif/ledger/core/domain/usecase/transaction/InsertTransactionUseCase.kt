@@ -81,7 +81,12 @@ class InsertTransactionUseCase @Inject constructor(
                 type = params.type,
                 timestamp = params.timestamp,
                 source = params.source,
-                rawText = params.rawMerchantText,
+                // The message stays the message. Extraction's own output goes in
+                // merchantText beside it, never over it — writing the merchant here
+                // is what previously destroyed every captured message in the
+                // database and made a real capture bug undiagnosable from it.
+                rawText = params.rawMessageText ?: params.rawMerchantText,
+                merchantText = params.rawMerchantText,
                 cardTail = params.cardTail,
                 fingerprint = fingerprint,
                 transferDirection = params.transferDirection,
@@ -140,6 +145,13 @@ class InsertTransactionUseCase @Inject constructor(
         val timestamp: Instant,
         val source: IngestionSource,
         val rawMerchantText: String,
+        /**
+         * The captured message this was extracted from, verbatim. Optional only so
+         * callers that genuinely have no source message (manual entry) can omit it;
+         * every capture path must pass it. When absent the persisted `rawText`
+         * falls back to [rawMerchantText], which is the pre-separation behaviour.
+         */
+        val rawMessageText: String? = null,
         val cardTail: String? = null,
         val transferDirection: TransferDirection? = null,
         val origin: TransactionOrigin? = null,

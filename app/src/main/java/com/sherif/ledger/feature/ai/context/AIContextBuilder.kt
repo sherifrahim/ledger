@@ -10,6 +10,7 @@ import com.sherif.ledger.feature.ai.domain.RelationshipAnalysisContext
 import com.sherif.ledger.feature.ai.domain.SearchAnalysisContext
 import com.sherif.ledger.feature.ai.domain.TransactionSummary
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * RC5's "AI Context Builder" — the ONE place raw domain objects are reduced
@@ -70,7 +71,7 @@ class AIContextBuilder @Inject constructor() {
         amountMinor = amount.minorUnits,
         currencyCode = amount.currencyCode.name,
         timestampEpochMillis = timestamp.toEpochMilli(),
-        merchant = rawText,
+        merchant = merchantOrRawText,
         type = type.name,
     )
 }

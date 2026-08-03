@@ -8,6 +8,7 @@ import com.sherif.ledger.core.domain.service.transaction.FingerprintGenerator
 import com.sherif.ledger.core.domain.usecase.transaction.InsertTransactionUseCase
 import java.time.Duration
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * Engine responsible for reconciling transaction candidates against existing data.
@@ -75,7 +76,7 @@ class ReconciliationEngine @Inject constructor(
         scored.forEach { (score, existing) ->
             LedgerLogger.d(
                 "Reconciliation: candidate vs existing#${existing.id} " +
-                    "(rawText='${existing.rawText}', tail=${existing.cardTail}, amount=${existing.amount.minorUnits}) " +
+                    "(rawText='${existing.merchantOrRawText}', tail=${existing.cardTail}, amount=${existing.amount.minorUnits}) " +
                     "-> score=${score.score} [${score.details}]"
             )
         }
@@ -195,7 +196,7 @@ class ReconciliationEngine @Inject constructor(
         var score = 40 // amount already confirmed equal above
         val details = mutableListOf("Amount: 40")
 
-        if (candidate.merchantName != null && candidate.merchantName == existing.rawText) {
+        if (candidate.merchantName != null && candidate.merchantName == existing.merchantOrRawText) {
             score += 30
             details.add("Merchant: 30")
         }

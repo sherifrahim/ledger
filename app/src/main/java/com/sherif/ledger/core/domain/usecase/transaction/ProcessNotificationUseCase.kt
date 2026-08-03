@@ -248,6 +248,7 @@ class ProcessNotificationUseCase @Inject constructor(
                     timestamp = candidate.timestamp,
                     source = envelope.source,
                     rawMerchantText = candidate.merchantName ?: "Unknown",
+                    rawMessageText = candidate.rawText,
                     cardTail = candidate.accountHint,
                     transferDirection = candidate.transferDirection,
                     origin = candidate.origin,

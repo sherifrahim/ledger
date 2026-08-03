@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * Backs the previously-mock `ReviewInboxScreen` with transactions that
@@ -96,7 +97,7 @@ class ReviewInboxViewModel @Inject constructor(
             }
             .sortedByDescending { it.timestamp }
             .map { t ->
-                val resolution = merchantResolver.resolve(t.rawText)
+                val resolution = merchantResolver.resolve(t.merchantOrRawText)
                 ReviewItemUi(
                     id = t.id.toString(),
                     merchant = resolution.displayName,
@@ -109,7 +110,7 @@ class ReviewInboxViewModel @Inject constructor(
                     confidence = 0,
                     reason = "No matching merchant — choose a category below",
                     timestamp = t.timestamp.atZone(ZoneId.systemDefault()).format(timeFormatter),
-                    rawMerchantText = t.rawText,
+                    rawMerchantText = t.merchantOrRawText,
                 )
             }
 

@@ -42,7 +42,7 @@ import com.sherif.ledger.core.database.entity.TransactionEntity
         LearnedDecisionEntity::class,
         FinancialEventEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)
@@ -63,7 +63,7 @@ abstract class LedgerDatabase : RoomDatabase() {
         // Kept in sync with the @Database(version = ...) annotation above by
         // hand — Room doesn't expose that value as a runtime constant, and
         // AppInfoCollector needs a real number for its diagnostic bundle.
-        const val DATABASE_VERSION = 12
+        const val DATABASE_VERSION = 13
     }
 }
 

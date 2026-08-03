@@ -26,6 +26,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * THE single source of truth for financial analytics. Every screen (Dashboard,
@@ -169,10 +170,10 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
         val core = analyzeCore(transactions)
         return transactions.associate { t ->
             val explanation = storyPresenter.format(t, core.relationships)
-            val resolution = merchantResolver.resolve(t.rawText)
+            val resolution = merchantResolver.resolve(t.merchantOrRawText)
             val category = (resolution as? MerchantResolution.Resolved)?.category?.name
-                ?: learnedMerchantCategoryStore.categoryFor(t.rawText)?.name
-                ?: GenericCategoryKeywords.classify(t.rawText)?.name
+                ?: learnedMerchantCategoryStore.categoryFor(t.merchantOrRawText)?.name
+                ?: GenericCategoryKeywords.classify(t.merchantOrRawText)?.name
                 ?: "UNKNOWN"
             t.id to TransactionStory(explanation, category)
         }
@@ -281,10 +282,10 @@ class GetFinancialAnalyticsUseCase @Inject constructor(
                             val day = t.timestamp.atZone(zone).toLocalDate()
                             dailyNet[day] = (dailyNet[day] ?: 0L) + effective
 
-                            val resolution = merchantResolver.resolve(t.rawText)
+                            val resolution = merchantResolver.resolve(t.merchantOrRawText)
                             val category = (resolution as? MerchantResolution.Resolved)?.category?.name
-                ?: learnedMerchantCategoryStore.categoryFor(t.rawText)?.name
-                ?: GenericCategoryKeywords.classify(t.rawText)?.name
+                ?: learnedMerchantCategoryStore.categoryFor(t.merchantOrRawText)?.name
+                ?: GenericCategoryKeywords.classify(t.merchantOrRawText)?.name
                 ?: "UNKNOWN"
                             val merchantName = resolution.displayName
                             categoryAgg.getOrPut(category) { mutableListOf() }.add(effective)

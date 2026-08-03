@@ -14,7 +14,21 @@ data class Transaction(
     val type: TransactionType,
     val timestamp: Instant,
     val source: IngestionSource,
+    /**
+     * The captured message, verbatim — the whole bank SMS or notification body.
+     * This is evidence, and nothing in the pipeline may overwrite it: extraction
+     * reads it, it does not get to replace it with its own output. See
+     * [merchantText], and prefer [merchantOrRawText] whenever you want "the
+     * merchant", which is almost always.
+     */
     val rawText: String?,
+    /**
+     * The merchant/description extracted out of [rawText], or null for a row
+     * written before the two were separated (in which case [rawText] still holds
+     * the old merchant-only value). Never read this directly to display or match a
+     * merchant — use [merchantOrRawText], which handles both eras.
+     */
+    val merchantText: String? = null,
     val cardTail: String? = null,
     val fingerprint: String,
     // See TransactionCandidate.transferDirection: normalized once upstream, never
@@ -28,6 +42,22 @@ data class Transaction(
     val note: String? = null,
     val noteUpdatedAt: Instant? = null,
 )
+
+/**
+ * The merchant string for this transaction, whichever era it was written in.
+ *
+ * Before the two were separated, [rawText] WAS the merchant — extraction wrote its
+ * output over its own input, so the database held "Kfc" and "Transfer" where the
+ * bank's message had been. Existing rows still look like that and cannot be
+ * recovered, so every merchant-shaped read goes through here: new rows answer from
+ * [merchantText], old rows from [rawText], and neither the display name, the
+ * category, nor any relationship match changes behaviour across the boundary.
+ *
+ * Use [Transaction.rawText] directly only when you genuinely want the captured
+ * message — diagnostics, and full-text search.
+ */
+val Transaction.merchantOrRawText: String?
+    get() = merchantText ?: rawText
 
 
 

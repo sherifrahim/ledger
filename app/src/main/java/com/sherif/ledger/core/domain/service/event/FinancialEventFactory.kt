@@ -5,6 +5,7 @@ import com.sherif.ledger.core.domain.model.FinancialEventStatus
 import com.sherif.ledger.core.domain.model.Transaction
 import java.time.Instant
 import java.util.UUID
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * Builds the canonical [FinancialEvent] that mirrors a persisted [Transaction]
@@ -41,7 +42,12 @@ object FinancialEventFactory {
         status = FinancialEventStatus.ACTIVE,
         supersedesEventId = null,
         fingerprint = transaction.fingerprint,
-        rawText = transaction.rawText,
+        // The event mirror carries ONE text field, and every event-first read is a
+        // merchant-shaped read (stories, categories, merchant aggregation, search).
+        // Mirroring the merchant rather than the whole captured message is what
+        // keeps those reads at exact parity with the legacy Transaction reads. The
+        // captured message itself stays where it is evidence: transactions.raw_text.
+        rawText = transaction.merchantOrRawText,
         createdAt = createdAt,
     )
 }

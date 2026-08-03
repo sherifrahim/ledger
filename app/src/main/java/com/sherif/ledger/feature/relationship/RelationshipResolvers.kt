@@ -8,6 +8,7 @@ import com.sherif.ledger.feature.relationship.RelationshipMath.sameAccount
 import com.sherif.ledger.feature.relationship.RelationshipMath.sameAmount
 import com.sherif.ledger.feature.relationship.RelationshipMath.sameCard
 import com.sherif.ledger.feature.relationship.RelationshipMath.secondsBetween
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /** Small helper to assemble a relationship + its diagnostics consistently. */
 private fun build(
@@ -95,7 +96,7 @@ class CreditCardPaymentResolver : RelationshipResolver {
         val txns = ctx.transactions
         val payments = txns.filter {
             (it.type == TransactionType.TRANSFER || it.type == TransactionType.EXPENSE) &&
-                (it.rawText?.lowercase()?.let { t -> cardWords.any { w -> t.contains(w) } } ?: false)
+                (it.merchantOrRawText?.lowercase()?.let { t -> cardWords.any { w -> t.contains(w) } } ?: false)
         }
         for (pay in payments) {
             // A confirmation is an income/transfer near in time with same amount on a different account.
@@ -144,7 +145,7 @@ class TransferBetweenAccountsResolver : RelationshipResolver {
                 .filter { secondsBetween(src, it) <= 2 * 86_400L }
                 .minByOrNull { secondsBetween(src, it) } ?: continue
             used += src.id; used += dst.id
-            val raw = (src.rawText.orEmpty() + " " + dst.rawText.orEmpty()).lowercase()
+            val raw = (src.merchantOrRawText.orEmpty() + " " + dst.merchantOrRawText.orEmpty()).lowercase()
             val (type, reason) = when {
                 investWords.any { raw.contains(it) } ->
                     RelationshipType.INVESTMENT_CONTRIBUTION to "Transfer into an investment destination"
@@ -173,7 +174,7 @@ class SalaryFundsExpenseResolver : RelationshipResolver {
         val txns = ctx.transactions
         val salaries = txns.filter {
             it.type == TransactionType.INCOME &&
-                (it.rawText?.lowercase()?.let { t -> salaryWords.any { w -> t.contains(w) } } ?: false)
+                (it.merchantOrRawText?.lowercase()?.let { t -> salaryWords.any { w -> t.contains(w) } } ?: false)
         }
         for (salary in salaries) {
             val nextIncome = txns
@@ -241,7 +242,7 @@ class RecurringBillResolver : RelationshipResolver {
         val out = mutableListOf<FinancialRelationship>()
         val bills = ctx.transactions.filter {
             it.type == TransactionType.EXPENSE &&
-                (it.rawText?.lowercase()?.let { t -> billWords.any { w -> t.contains(w) } } ?: false)
+                (it.merchantOrRawText?.lowercase()?.let { t -> billWords.any { w -> t.contains(w) } } ?: false)
         }
         // Group by account; look for monthly repetition.
         val byAccount = bills.groupBy { it.accountId }
@@ -266,7 +267,7 @@ class CashWithdrawalResolver : RelationshipResolver {
     override fun resolve(ctx: RelationshipContext): List<FinancialRelationship> =
         ctx.transactions.filter {
             it.type == TransactionType.EXPENSE &&
-                (it.rawText?.lowercase()?.let { t -> atmWords.any { w -> t.contains(w) } } ?: false)
+                (it.merchantOrRawText?.lowercase()?.let { t -> atmWords.any { w -> t.contains(w) } } ?: false)
         }.map {
             build(key, RelationshipType.CASH_WITHDRAWAL, it, null, RelationshipConfidence.high(85), listOf("ATM cash withdrawal"), ctx.engineVersion)
         }
@@ -279,7 +280,7 @@ class InterestCreditResolver : RelationshipResolver {
     override fun resolve(ctx: RelationshipContext): List<FinancialRelationship> =
         ctx.transactions.filter {
             it.type == TransactionType.INCOME &&
-                (it.rawText?.lowercase()?.let { t -> words.any { w -> t.contains(w) } } ?: false)
+                (it.merchantOrRawText?.lowercase()?.let { t -> words.any { w -> t.contains(w) } } ?: false)
         }.map {
             build(key, RelationshipType.INTEREST_CREDIT, it, null, RelationshipConfidence.high(86), listOf("Interest/profit credited"), ctx.engineVersion)
         }
@@ -297,7 +298,7 @@ class LoanRepaymentResolver : RelationshipResolver {
         val out = mutableListOf<FinancialRelationship>()
         val loans = ctx.transactions.filter {
             it.type == TransactionType.EXPENSE &&
-                (it.rawText?.lowercase()?.let { t -> words.any { w -> t.contains(w) } } ?: false)
+                (it.merchantOrRawText?.lowercase()?.let { t -> words.any { w -> t.contains(w) } } ?: false)
         }.sortedBy { it.timestamp }
         if (loans.isEmpty()) return out
         for (i in loans.indices) {

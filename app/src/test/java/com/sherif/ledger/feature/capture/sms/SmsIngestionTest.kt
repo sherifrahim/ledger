@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
@@ -157,6 +158,64 @@ class SmsIngestionTest {
         assertEquals(277000L, txn.amount.minorUnits)
         assertEquals(TransactionType.TRANSFER, txn.type)
         assertEquals(TransferDirection.OUTGOING, txn.transferDirection)
+    }
+
+    @Test
+    fun `the captured message survives into the database, with the merchant beside it`() = runBlocking {
+        // Extraction used to write its own output over its own input, so the
+        // database held "Kfc" / "Transfer" / "Income" where the bank's message had
+        // been. A confirmed capture bug — a card's available limit booked as an AED
+        // 8,225.16 purchase — could not be diagnosed from the database at all and
+        // had to be reconstructed from `dumpsys notification` on the device.
+        val body = "Purchase of AED 50.00 at AMAZON AE with card ending 1234. " +
+            "Available limit: AED 8093.63."
+        val sms = NotificationEnvelope(
+            packageName = "ADCB",
+            title = "SMS",
+            text = body,
+            subText = null,
+            timestamp = Instant.now(),
+            notificationKey = "sms_raw_1",
+            source = IngestionSource.SMS,
+        )
+
+        useCase.execute(sms)
+
+        val txn = transactionRepository.insertedTransactions.single()
+        // The captured content, exactly as the extractor saw it — the envelope's
+        // title is part of that, which is why this is a containment check and not
+        // an equality one.
+        assertTrue(
+            "the whole message must be recoverable from the row, was: ${txn.rawText}",
+            txn.rawText.orEmpty().contains(body),
+        )
+        assertTrue(
+            "including the balance clause that made an earlier capture bug undiagnosable",
+            txn.rawText.orEmpty().contains("Available limit: AED 8093.63"),
+        )
+        assertEquals(
+            "and the merchant must be beside it, not on top of it",
+            "Amazon", txn.merchantText,
+        )
+        assertEquals(
+            "merchant-shaped reads keep seeing the merchant",
+            "Amazon", txn.merchantOrRawText,
+        )
+    }
+
+    @Test
+    fun `a row written before the split still reads as a merchant`() {
+        // Existing rows have the merchant in raw_text and no merchant_text at all.
+        // They cannot be recovered, so every merchant-shaped read goes through
+        // merchantOrRawText and must be unchanged for them.
+        val legacy = Transaction(
+            id = 1L, accountId = 1L, brandId = null, categoryId = null,
+            amount = Money(5000L, CurrencyCode.AED), type = TransactionType.EXPENSE,
+            timestamp = Instant.now(), source = IngestionSource.SMS,
+            rawText = "Kfc", merchantText = null, fingerprint = "f",
+        )
+
+        assertEquals("Kfc", legacy.merchantOrRawText)
     }
 
     @Test

@@ -23,6 +23,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlin.math.absoluteValue
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * Merchant relationship intelligence (P2), computed from the user's real
@@ -45,7 +46,7 @@ class MerchantViewModel @Inject constructor(
 
     private fun build(result: LedgerResult<List<Transaction>>): MerchantUiState {
         val all = (result as? LedgerResult.Success)?.data ?: emptyList()
-        val mine = all.filter { it.rawText?.trim().equals(merchantKey.trim(), ignoreCase = true) }
+        val mine = all.filter { it.merchantOrRawText?.trim().equals(merchantKey.trim(), ignoreCase = true) }
         if (mine.isEmpty()) return MerchantUiState(name = prettify(merchantKey), loaded = true)
 
         val currency: CurrencyCode = mine.first().amount.currencyCode
@@ -71,9 +72,9 @@ class MerchantViewModel @Inject constructor(
 
         val topCatRaw = byCatMinor.maxByOrNull { it.value }?.key
         val related = all.asSequence()
-            .filter { it.rawText?.trim()?.equals(merchantKey.trim(), ignoreCase = true) == false }
+            .filter { it.merchantOrRawText?.trim()?.equals(merchantKey.trim(), ignoreCase = true) == false }
             .filter { topCatRaw == null || stories[it.id]?.category == topCatRaw }
-            .mapNotNull { it.rawText?.trim() }
+            .mapNotNull { it.merchantOrRawText?.trim() }
             .filter { it.isNotBlank() }
             .distinct().take(4).map { prettify(it) }.toList()
 

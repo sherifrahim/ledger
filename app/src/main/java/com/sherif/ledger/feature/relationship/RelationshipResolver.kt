@@ -4,6 +4,7 @@ import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.feature.merchant.MerchantResolution
 import com.sherif.ledger.feature.merchant.MerchantResolver
 import kotlin.math.abs
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * The extensible contract. Each resolver owns ONE relationship family, inspects
@@ -38,7 +39,7 @@ class RelationshipContext(
      * can then fall back to rawText reasoning. Never duplicates normalization.
      */
     fun canonicalMerchant(txn: Transaction): String? =
-        when (val r = merchantResolver.resolve(txn.rawText)) {
+        when (val r = merchantResolver.resolve(txn.merchantOrRawText)) {
             is MerchantResolution.Resolved -> r.canonicalName
             is MerchantResolution.Unresolved -> null
         }
@@ -53,8 +54,8 @@ class RelationshipContext(
     /** rawText fallback similarity: shared significant token. Used only when
      *  canonical resolution is unavailable for either side. */
     fun rawTextOverlap(a: Transaction, b: Transaction): Boolean {
-        val ta = significantTokens(a.rawText)
-        val tb = significantTokens(b.rawText)
+        val ta = significantTokens(a.merchantOrRawText)
+        val tb = significantTokens(b.merchantOrRawText)
         if (ta.isEmpty() || tb.isEmpty()) return false
         return ta.any { it in tb }
     }

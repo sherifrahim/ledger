@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * Ledger Split (v1) — wires the existing, fully-built Split backend
@@ -60,7 +61,7 @@ class SplitViewModel @Inject constructor(
 
         val total = txn.amount.minorUnits
         val currency = txn.amount.currencyCode
-        val merchant = txn.rawText ?: "Transaction"
+        val merchant = txn.merchantOrRawText ?: "Transaction"
         val split = (splitResult as? LedgerResult.Success)?.data
 
         if (split != null) {

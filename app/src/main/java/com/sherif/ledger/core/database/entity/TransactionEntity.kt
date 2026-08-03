@@ -66,8 +66,18 @@ data class TransactionEntity(
     
     val source: IngestionSource,
     
+    // The captured message, verbatim. Not the merchant — see [merchantText].
     @ColumnInfo(name = "raw_text")
     val rawText: String?,
+
+    // The merchant/description extracted FROM raw_text. Held separately so
+    // extraction can never destroy its own input: raw_text used to be overwritten
+    // with this value, which is why a real capture bug had to be diagnosed from
+    // `dumpsys notification` instead of from the database. Nullable because rows
+    // written before this column existed have no separated merchant; read them
+    // through Transaction.merchantOrRawText, never directly.
+    @ColumnInfo(name = "merchant_text")
+    val merchantText: String? = null,
 
     @ColumnInfo(name = "card_tail")
     val cardTail: String? = null,

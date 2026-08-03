@@ -13,6 +13,7 @@ import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseC
 import kotlinx.coroutines.flow.first
 import java.time.Instant
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * Read Parity Harness (ADR-0001, Milestone P6) — architectural verification, not UI.
@@ -88,11 +89,11 @@ class ReadParityHarness @Inject constructor(
         )
 
         // --- Merchant: aggregate the busiest merchant from both.
-        val topMerchant = transactions.mapNotNull { it.rawText?.trim() }.filter { it.isNotBlank() }
+        val topMerchant = transactions.mapNotNull { it.merchantOrRawText?.trim() }.filter { it.isNotBlank() }
             .groupingBy { it }.eachCount().maxByOrNull { it.value }?.key
         if (topMerchant != null) {
             fun agg(list: List<Transaction>): Pair<Long, Int> {
-                val mine = list.filter { it.rawText?.trim().equals(topMerchant, ignoreCase = true) }
+                val mine = list.filter { it.merchantOrRawText?.trim().equals(topMerchant, ignoreCase = true) }
                 return mine.sumOf { it.amount.minorUnits } to mine.size
             }
             val l = agg(transactions); val e = agg(eventTxns)
@@ -106,7 +107,7 @@ class ReadParityHarness @Inject constructor(
 
         // --- Search: match count for a representative term.
         val term = topMerchant?.take(3)?.lowercase() ?: "a"
-        fun matches(list: List<Transaction>) = list.count { it.rawText?.contains(term, ignoreCase = true) == true }
+        fun matches(list: List<Transaction>) = list.count { it.merchantOrRawText?.contains(term, ignoreCase = true) == true }
         val ls = matches(transactions); val es = matches(eventTxns)
         checks += FeatureParity("Search (q='$term')", ls.toString(), es.toString(), ls == es)
 

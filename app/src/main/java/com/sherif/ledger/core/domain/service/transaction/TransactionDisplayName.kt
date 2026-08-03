@@ -2,6 +2,7 @@ package com.sherif.ledger.core.domain.service.transaction
 
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.feature.merchant.MerchantResolver
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /**
  * The clean, human-readable merchant name to show for a transaction row.
@@ -29,7 +30,7 @@ object TransactionDisplayName {
         transaction.brandId?.let { id ->
             brandNamesById[id]?.takeIf { it.isNotBlank() }?.let { return it }
         }
-        return merchantResolver.resolve(transaction.rawText).displayName
+        return merchantResolver.resolve(transaction.merchantOrRawText).displayName
             .takeIf { it.isNotBlank() }
             ?: "Unknown"
     }

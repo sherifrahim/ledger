@@ -11,6 +11,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
 import kotlin.math.roundToLong
+import com.sherif.ledger.core.domain.model.merchantOrRawText
 
 /** RC8 Phase E: how often a [RecurringSchedule] repeats. */
 enum class RecurrenceFrequency { WEEKLY, MONTHLY, QUARTERLY, YEARLY, IRREGULAR }
@@ -101,7 +102,7 @@ class RecurringScheduleAnalyzer @Inject constructor(
         kind: RecurringKind,
     ): List<RecurringSchedule> {
         val matching = transactions.filter {
-            it.type == type && (it.rawText?.lowercase()?.let { t -> words.any { w -> t.contains(w) } } ?: false)
+            it.type == type && (it.merchantOrRawText?.lowercase()?.let { t -> words.any { w -> t.contains(w) } } ?: false)
         }
         return matching.groupBy { it.accountId }.values.mapNotNull { buildSchedule(it, kind) }
     }
@@ -117,7 +118,7 @@ class RecurringScheduleAnalyzer @Inject constructor(
         val confidence = confidenceFromVariance(variance, avgGap, sorted.size)
         val last = sorted.last()
         return RecurringSchedule(
-            label = last.rawText?.take(60) ?: kind.name,
+            label = last.merchantOrRawText?.take(60) ?: kind.name,
             kind = kind,
             frequency = frequency,
             averageAmountMinor = sorted.map { it.amount.minorUnits }.average().roundToLong(),

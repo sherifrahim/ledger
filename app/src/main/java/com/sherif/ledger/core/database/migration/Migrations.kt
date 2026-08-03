@@ -215,3 +215,26 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
 }
 
 
+
+/**
+ * Separates the captured message from the merchant extracted out of it.
+ *
+ * Until now `raw_text` was overwritten with the merchant name at insert time, so
+ * the database held "Kfc", "Transfer", "Income" where the original bank message
+ * had been. That destroyed the only durable record of what was actually received:
+ * a confirmed capture bug (a card's available limit being booked as an AED
+ * 8,225.16 purchase) could not be diagnosed from the database at all, and had to
+ * be reconstructed from `dumpsys notification` on the device.
+ *
+ * Additive and nullable — the safest migration shape, matching MIGRATION_11_12.
+ * Every existing row migrates to NULL, and existing rows keep their merchant name
+ * in `raw_text` exactly as before; nothing is read, rewritten or backfilled.
+ * [com.sherif.ledger.core.domain.model.Transaction.merchantOrRawText] is what makes
+ * that safe: it prefers the new column and falls back to the old meaning, so rows
+ * written on either side of this migration read identically.
+ */
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN merchant_text TEXT")
+    }
+}

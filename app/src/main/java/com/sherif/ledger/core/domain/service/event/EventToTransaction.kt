@@ -8,7 +8,12 @@ import com.sherif.ledger.core.domain.model.Transaction
  * (ADR-0001, P7 event-first reads; also used by the P6 parity harness).
  *
  * The FinancialEvent intentionally does NOT carry `cardTail`, `transferDirection`,
- * `origin` or `note`; those become null here. This is safe for the reads that are
+ * `origin` or `note`; those become null here. Its single text field holds the
+ * MERCHANT (see FinancialEventFactory), so it is reconstructed into both `rawText`
+ * and `merchantText` — every event-first read goes through `merchantOrRawText` and
+ * therefore sees exactly what the legacy Transaction read sees. The captured
+ * message is not recoverable from an event and was never meant to be; it lives in
+ * transactions.raw_text. This is safe for the reads that are
  * migrated event-first (analytics, stories, merchant, review, search) — none of them
  * consume those fields. The two reads that DO — balance (`BalanceCalculator`, via
  * `AccountBalanceService`) and the transaction-detail record view — remain deliberate,
@@ -24,6 +29,7 @@ fun FinancialEvent.toMirrorTransaction(): Transaction = Transaction(
     timestamp = timestamp,
     source = source,
     rawText = rawText,
+    merchantText = rawText,
     cardTail = null,
     fingerprint = fingerprint,
     transferDirection = null,
