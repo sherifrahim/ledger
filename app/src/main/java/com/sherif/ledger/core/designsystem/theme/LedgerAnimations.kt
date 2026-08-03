@@ -8,6 +8,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.ui.unit.IntOffset
 
 /**
  * Canonical animation vocabulary for Ledger.
@@ -48,6 +51,29 @@ object LedgerAnimations {
     /** Stagger delay for item at [index] in a list. */
     fun staggerDelay(index: Int, baseMs: Int = LedgerMotion.StaggerBaseMs): Int =
         index * baseMs
+
+    // ── Live list mutation ──
+    //
+    // What happens when a list CHANGES, as opposed to when it first appears.
+    // Acting on a Review card removes it; categorising one re-sorts the queue;
+    // a capture lands at the top of the feed. Without these the list jumps to its
+    // new arrangement between two frames, which reads as a glitch rather than as a
+    // consequence of what the user just did — and it is the difference most
+    // responsible for an app feeling unfinished while every individual screen
+    // looks correct.
+
+    /** Rows sliding to a new position. Springs, so an interrupted change redirects. */
+    fun itemPlacement(): FiniteAnimationSpec<IntOffset> = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMediumLow,
+        visibilityThreshold = IntOffset.VisibilityThreshold,
+    )
+
+    /** A row arriving. Slightly slower than the departure so the list settles behind it. */
+    fun itemAppear(): FiniteAnimationSpec<Float> = tween(LedgerMotion.Short, easing = LedgerMotion.Standard)
+
+    /** A row leaving. Quick — the user already decided; don't make them watch. */
+    fun itemDisappear(): FiniteAnimationSpec<Float> = tween(LedgerMotion.Immediate, easing = LedgerMotion.Standard)
 
     // ── Navigation transitions ──
 

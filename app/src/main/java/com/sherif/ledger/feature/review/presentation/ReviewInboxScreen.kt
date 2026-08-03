@@ -35,6 +35,7 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.review.presentation.components.ReviewCard
 import com.sherif.ledger.feature.review.presentation.viewmodel.ReviewInboxViewModel
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 
 /**
  * Review Queue (P3) — wired to live data only.
@@ -96,6 +97,14 @@ fun ReviewInboxScreen(
         } else {
             items(filtered, key = { it.id }) { item ->
                 ReviewCard(
+                    // Acting on a card removes it. Without this the queue jumps to
+                    // its new arrangement between two frames, so the decision the
+                    // user just made looks like a rendering fault.
+                    modifier = Modifier.animateItem(
+                        fadeInSpec = LedgerAnimations.itemAppear(),
+                        placementSpec = LedgerAnimations.itemPlacement(),
+                        fadeOutSpec = LedgerAnimations.itemDisappear(),
+                    ),
                     item = item,
                     onIgnore = { viewModel.ignore(item.id) },
                     onClick = { onReviewItemClick?.invoke(item.id) },

@@ -22,6 +22,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerSurfaceLevel
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 
 @Composable
 fun TransactionsScreen(
@@ -59,6 +60,11 @@ fun TransactionsScreen(
                 
                 items(group.transactions, key = { it.id }) { txn ->
                     LedgerTransactionRow(
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = LedgerAnimations.itemAppear(),
+                            placementSpec = LedgerAnimations.itemPlacement(),
+                            fadeOutSpec = LedgerAnimations.itemDisappear(),
+                        ),
                         title = txn.merchant,
                         amount = txn.amount,
                         explanation = if (txn.category == MerchantCategory.Salary) "Income" else txn.category.name,

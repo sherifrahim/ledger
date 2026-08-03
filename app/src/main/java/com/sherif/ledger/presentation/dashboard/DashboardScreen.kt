@@ -38,6 +38,11 @@ import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.settings.presentation.viewmodel.UserProfileViewModel
 import java.util.Calendar
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 
 /**
  * Dashboard — the flagship surface, wired to live data.
@@ -201,12 +206,30 @@ private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, m
             )
         }
         Spacer(Modifier.height(LedgerSpacing.Small))
-        LedgerAutoSizeText(
-            text = if (hidden) "••••••" else (if (isNegative) "-$balance" else balance),
-            style = LedgerTextStyles.Hero,
-            color = if (isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // Hiding and revealing the balance is a deliberate, privacy-motivated act —
+        // often performed with someone next to you — so it should read as the figure
+        // being covered and uncovered, not as one string being swapped for another
+        // between frames. The reveal lifts in; the mask drops down over it.
+        AnimatedContent(
+            targetState = hidden,
+            transitionSpec = {
+                if (targetState) {
+                    (slideInVertically(LedgerAnimations.itemPlacement()) { -it / 4 } + fadeIn(LedgerAnimations.itemAppear()))
+                        .togetherWith(fadeOut(LedgerAnimations.itemDisappear()))
+                } else {
+                    (slideInVertically(LedgerAnimations.itemPlacement()) { it / 4 } + fadeIn(LedgerAnimations.itemAppear()))
+                        .togetherWith(fadeOut(LedgerAnimations.itemDisappear()))
+                }
+            },
+            label = "balanceReveal",
+        ) { isHidden ->
+            LedgerAutoSizeText(
+                text = if (isHidden) "••••••" else (if (isNegative) "−$balance" else balance),
+                style = LedgerTextStyles.Hero,
+                color = if (isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         if (change != null || monthlySpend.isNotBlank()) {
             Spacer(Modifier.height(LedgerSpacing.Small))
             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -22,6 +22,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 
 /**
  * Financial Story — a primary destination (spec Chapter 34/36/80).
@@ -69,6 +70,11 @@ fun FinancialStoryScreen(
                     }
                     items(group.items, key = { it.id }) { item ->
                         LedgerTransactionRow(
+                            modifier = Modifier.animateItem(
+                            fadeInSpec = LedgerAnimations.itemAppear(),
+                            placementSpec = LedgerAnimations.itemPlacement(),
+                            fadeOutSpec = LedgerAnimations.itemDisappear(),
+                        ),
                             title = item.merchant,
                             amount = item.amount,
                             explanation = item.explanation,
