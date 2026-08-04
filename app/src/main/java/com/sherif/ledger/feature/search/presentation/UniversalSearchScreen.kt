@@ -141,7 +141,7 @@ fun UniversalSearchScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
                     ) {
-                        LedgerBrandIcon(name = r.merchant, size = 40.dp)
+                        LedgerBrandIcon(name = r.merchant, size = 34.dp)
                         Column(Modifier.weight(1f)) {
                             Text(
                                 r.merchant,

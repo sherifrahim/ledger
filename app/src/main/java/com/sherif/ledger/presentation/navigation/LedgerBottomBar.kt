@@ -95,7 +95,7 @@ fun LedgerBottomBar(navController: NavHostController) {
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Small)
+            .padding(horizontal = LedgerSpacing.Medium, vertical = LedgerSpacing.Tiny)
             .then(
                 if (!glass && !colors.isDark) Modifier.shadow(
                     elevation = 16.dp,
@@ -106,7 +106,7 @@ fun LedgerBottomBar(navController: NavHostController) {
                 ) else Modifier,
             )
             .then(surfaceMod)
-            .padding(horizontal = LedgerSpacing.Tiny, vertical = LedgerSpacing.Small),
+            .padding(horizontal = LedgerSpacing.Tiny, vertical = LedgerSpacing.Tiny),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -156,16 +156,16 @@ private fun LedgerTabItem(
     Column(
         modifier = modifier
             .ledgerClickable(onClick = onClick)
-            .padding(vertical = LedgerSpacing.Tiny),
+            .padding(vertical = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             tint = color,
             modifier = Modifier
-                .size(24.dp)
+                .size(21.dp)
                 .graphicsLayer {
                     scaleX = iconScale
                     scaleY = iconScale
@@ -174,7 +174,7 @@ private fun LedgerTabItem(
         Text(
             text = label,
             style = LedgerTextStyles.Caption.copy(
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.SemiBold
                              else androidx.compose.ui.text.font.FontWeight.Normal,
             ),

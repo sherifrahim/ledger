@@ -95,7 +95,7 @@ fun ReviewCard(
 
         Spacer(Modifier.height(LedgerSpacing.Medium))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            LedgerBrandIcon(name = item.merchant, size = 40.dp)
+            LedgerBrandIcon(name = item.merchant, size = 34.dp)
             Spacer(Modifier.width(LedgerSpacing.Small))
             Column(Modifier.weight(1f)) {
                 Text(

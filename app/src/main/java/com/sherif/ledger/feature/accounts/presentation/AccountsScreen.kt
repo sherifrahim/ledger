@@ -148,7 +148,7 @@ private fun AccountRow(account: AccountUi, currency: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
     ) {
-        LedgerBrandIcon(name = account.name, size = 40.dp)
+        LedgerBrandIcon(name = account.name, size = 34.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 account.name,

@@ -75,7 +75,11 @@ fun DashboardScreen(
                 end = LedgerSpacing.ScreenPadding,
                 bottom = ledgerScreenBottomPadding,
             ),
-            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
+            // Small, not Large: this arrangement applies between EVERY item,
+            // including each individual transaction row, so a section-sized gap
+            // here doubled the space around rows that already carry their own
+            // padding. Section headings add their own breathing room instead.
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
         ) {
             item { DashboardReveal(index = 0) { GreetingHeader() } }
 
@@ -114,7 +118,7 @@ fun DashboardScreen(
                             group.title,
                             style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold),
                             color = LedgerTheme.colors.textTertiary,
-                            modifier = Modifier.padding(top = LedgerSpacing.Tiny),
+                            modifier = Modifier.padding(top = LedgerSpacing.Small),
                         )
                     }
                     items(group.items, key = { it.id }) { item ->
@@ -254,7 +258,14 @@ private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, m
                     )
                     Spacer(Modifier.width(LedgerSpacing.Small))
                 }
-                Text("Spent $monthlySpend this month", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)
+                // One line. "this month" is already implied by the section it sits in, and
+                // spelling it out wrapped the line on a 360dp canvas.
+                Text(
+                    "Spent $monthlySpend",
+                    style = LedgerTextStyles.Caption,
+                    color = LedgerTheme.colors.textTertiary,
+                    maxLines = 1,
+                )
             }
         }
     }

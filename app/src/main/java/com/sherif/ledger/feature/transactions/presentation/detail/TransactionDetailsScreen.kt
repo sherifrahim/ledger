@@ -84,7 +84,7 @@ fun TransactionDetailsScreen(
         ) {
             item {
                 Spacer(Modifier.height(LedgerSpacing.Large))
-                LedgerBrandIcon(name = state.merchant, size = 80.dp)
+                LedgerBrandIcon(name = state.merchant, size = 64.dp)
                 Spacer(Modifier.height(LedgerSpacing.Medium))
                 Text(state.merchant, style = LedgerTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(state.merchantCategory, style = LedgerTheme.typography.bodyMedium, color = LedgerTheme.colors.textSecondary)

@@ -67,7 +67,7 @@ fun LedgerTransactionRow(
         // 1. Merchant Identity
         LedgerBrandIcon(
             name = title,
-            size = 40.dp
+            size = 34.dp
         )
 
         Spacer(Modifier.width(LedgerSpacing.Medium))

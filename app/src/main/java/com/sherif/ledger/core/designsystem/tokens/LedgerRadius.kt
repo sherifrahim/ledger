@@ -5,13 +5,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Ledger V3 Radius Scale (Soft Precision)
+ * Ledger's corner radii.
+ *
+ * Reduced alongside the spacing scale: at 24dp a card corner on a 360dp-wide
+ * canvas is a visible arc rather than a softened edge, which is most of what made
+ * cards and the nav island read as oversized blobs. Softness should be felt, not
+ * measured.
  */
 object LedgerRadius {
-    val SmallDp: Dp = 8.dp
-    val MediumDp: Dp = 16.dp
-    val LargeDp: Dp = 24.dp
-    val XLargeDp: Dp = 32.dp
+    val SmallDp: Dp = 6.dp
+    val MediumDp: Dp = 12.dp
+    val LargeDp: Dp = 18.dp
+    val XLargeDp: Dp = 24.dp
     val FullDp: Dp = 100.dp
 
     val Small = RoundedCornerShape(SmallDp)

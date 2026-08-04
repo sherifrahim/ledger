@@ -16,7 +16,15 @@ private val Inter = FontFamily(
 )
 
 /**
- * Ledger V3 Typography (Editorial & Authoritative)
+ * Ledger's type scale.
+ *
+ * Sized down roughly a fifth alongside the spacing and radius scales. A 52sp hero
+ * figure on a 360dp-wide canvas takes most of a line to itself and forces the card
+ * around it to grow to match; the authority of a financial figure comes from its
+ * weight, its tabular alignment and the space around it, not from sheer size.
+ *
+ * The hierarchy is unchanged — each step still reads as clearly distinct from the
+ * one above it, which is what the scale is actually for.
  */
 object LedgerTextStyles {
 
@@ -25,8 +33,8 @@ object LedgerTextStyles {
     val Hero = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Bold,
-        fontSize = 52.sp,
-        lineHeight = 56.sp,
+        fontSize = 38.sp,
+        lineHeight = 42.sp,
         letterSpacing = (-1.5).sp,
         fontFeatureSettings = "tnum",
     )
@@ -35,8 +43,8 @@ object LedgerTextStyles {
     val Display = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Bold,
-        fontSize = 44.sp,
-        lineHeight = 48.sp,
+        fontSize = 32.sp,
+        lineHeight = 36.sp,
         letterSpacing = (-1.0).sp,
         fontFeatureSettings = "tnum", // Tabular Numerals
     )
@@ -44,45 +52,45 @@ object LedgerTextStyles {
     val Headline = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        lineHeight = 34.sp,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
         letterSpacing = (-0.5).sp,
     )
 
     val Title = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        lineHeight = 26.sp,
+        fontSize = 17.sp,
+        lineHeight = 22.sp,
     )
 
     // Body & Narrative
     val BodyLarge = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Normal,
-        fontSize = 17.sp,
-        lineHeight = 24.sp,
+        fontSize = 15.sp,
+        lineHeight = 21.sp,
     )
 
     val BodyMedium = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
-        lineHeight = 22.sp,
+        fontSize = 14.sp,
+        lineHeight = 19.sp,
     )
 
     val Label = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Medium,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
     )
 
     val Caption = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
+        fontSize = 11.sp,
+        lineHeight = 15.sp,
     )
 
     // Money in a list. Same size as BodyMedium so a row's amount and its title sit
@@ -93,8 +101,8 @@ object LedgerTextStyles {
     val AmountRow = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 15.sp,
-        lineHeight = 22.sp,
+        fontSize = 14.sp,
+        lineHeight = 19.sp,
         fontFeatureSettings = "tnum",
     )
 
@@ -105,8 +113,8 @@ object LedgerTextStyles {
     val AmountCurrency = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 22.sp,
+        fontSize = 10.sp,
+        lineHeight = 19.sp,
         letterSpacing = 0.3.sp,
     )
 
@@ -114,8 +122,8 @@ object LedgerTextStyles {
     val Narrative = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
+        fontSize = 13.sp,
+        lineHeight = 18.sp,
         letterSpacing = 0.2.sp,
     )
 
