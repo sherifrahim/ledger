@@ -35,4 +35,11 @@ data class AccountUi(
     val accentHue: Long = 0xFF6E6E6E,
     val accountNumber: String = "",
     val lastActivity: String = "",
+    /**
+     * Last digits of the account or card, when the bank quoted them. Without this
+     * the owner's two ADCB accounts render as two identical rows called "ADCB
+     * Account", which is indistinguishable from a duplicate. Placed last because
+     * preview data constructs this positionally.
+     */
+    val accountTail: String? = null,
 )

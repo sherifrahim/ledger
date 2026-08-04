@@ -110,11 +110,14 @@ class TransactionDetailsViewModel @Inject constructor(
                 // and an INCOMING transfer both increase it. A TRANSFER with no
                 // normalized direction shows neither sign, matching
                 // BalanceCalculator's own "don't guess" rule for that gap.
+                // U+2212, not a hyphen — the hero is set in the same tabular face as
+                // every other amount, where a hyphen is padded to digit width and
+                // leaves a visible gap between the sign and the number.
                 val sign = when (txn.type) {
-                    TransactionType.EXPENSE -> "-"
+                    TransactionType.EXPENSE -> "−"
                     TransactionType.INCOME, TransactionType.REFUND -> "+"
                     TransactionType.TRANSFER -> when (txn.transferDirection) {
-                        TransferDirection.OUTGOING -> "-"
+                        TransferDirection.OUTGOING -> "−"
                         TransferDirection.INCOMING -> "+"
                         null -> ""
                     }

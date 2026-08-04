@@ -48,5 +48,8 @@ data class AccountBalanceSummary(
      * "AED -46.99".
      */
     val currencyCode: CurrencyCode,
+    /** Last digits of the account/card, when known — what tells two accounts at the
+     *  same institution apart in a list. */
+    val accountTail: String? = null,
 )
 

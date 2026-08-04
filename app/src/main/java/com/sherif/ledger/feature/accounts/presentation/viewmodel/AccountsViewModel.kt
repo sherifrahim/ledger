@@ -70,6 +70,7 @@ class AccountsViewModel @Inject constructor(
                 subtitle = summary.accountType.name,
                 balance = MoneyFormatter.format(Money(summary.balanceMinor, summary.currencyCode), includeSymbol = false),
                 currency = summary.currencyCode.name,
+                accountTail = summary.accountTail,
                 isNegative = if (summary.isLiability) summary.balanceMinor > 0 else summary.balanceMinor < 0,
             )
         }

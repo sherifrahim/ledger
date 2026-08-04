@@ -116,10 +116,13 @@ private fun AccountsHeader(onBackClick: () -> Unit) {
 @Composable
 private fun TotalBalanceCard(currency: String, netWorth: String, isNegative: Boolean, assets: String, liabilities: String) {
     LedgerCard(elevation = LedgerCardDefaults.Elevation) {
-        Text("Total Balance", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
+        // "Net Worth", not "Total Balance". This figure is assets MINUS card debt,
+        // while the Dashboard's "Total Balance" is the cash you hold — two different
+        // numbers under one label is how a user ends up not trusting either.
+        Text("Net Worth", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
         Spacer(Modifier.height(LedgerSpacing.Small))
         LedgerAutoSizeText(
-            text = (if (isNegative) "-" else "") + "$currency $netWorth",
+            text = (if (isNegative) "−" else "") + "$currency $netWorth",
             style = LedgerTextStyles.Hero,
             color = if (isNegative) LedgerTheme.colors.negative else LedgerTheme.colors.textPrimary,
             modifier = Modifier.fillMaxWidth(),
@@ -146,19 +149,26 @@ private fun AccountRow(account: AccountUi, currency: String) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
+        // Tighter than the default gap: every dp in the gutter is a dp taken from
+        // the account name, and names are what distinguish one row from another.
+        horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
     ) {
         LedgerBrandIcon(name = account.name, size = 34.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 account.name,
-                style = LedgerTextStyles.BodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                style = LedgerTextStyles.BodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = LedgerTheme.colors.textPrimary,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             Text(
-                account.subtitle.lowercase().replaceFirstChar { it.uppercase() },
+                // Type plus the tail, so "ADCB Account" twice reads as two accounts
+                // rather than as one shown twice.
+                listOfNotNull(
+                    account.subtitle.lowercase().replaceFirstChar { it.uppercase() },
+                    account.accountTail?.let { "···$it" },
+                ).joinToString(" "),
                 style = LedgerTextStyles.Caption,
                 color = LedgerTheme.colors.textTertiary,
                 maxLines = 1,
