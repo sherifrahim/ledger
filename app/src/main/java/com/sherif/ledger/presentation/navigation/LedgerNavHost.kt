@@ -140,6 +140,17 @@ fun LedgerNavHost(
             )
         }
 
+        composable(LedgerRoute.Goals.route) {
+            val viewModel: com.sherif.ledger.feature.goal.presentation.viewmodel.GoalViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.feature.goal.presentation.GoalScreen(
+                state = state,
+                onBackClick = { navController.popBackStack() },
+                onAddGoal = { name, target, accountId, currency -> viewModel.addGoal(name, target, accountId, currency) },
+                onRemoveGoal = { id -> viewModel.removeGoal(id) },
+            )
+        }
+
         composable(LedgerRoute.Insights.route) {
             val viewModel: InsightsViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsState()
@@ -160,6 +171,7 @@ fun LedgerNavHost(
                 onNavigateToReviewInbox = { navController.navigate(LedgerRoute.ReviewInbox.route) },
                 onNavigateToAiSettings = { navController.navigate(LedgerRoute.AiSettings.route) },
                 onNavigateToBudgets = { navController.navigate(LedgerRoute.Budgets.route) },
+                onNavigateToGoals = { navController.navigate(LedgerRoute.Goals.route) },
                 onNavigateToAccounts = { navController.navigate(LedgerRoute.Accounts.route) },
                 onNavigateToActivity = { navController.navigate(LedgerRoute.Transactions.route) },
                 onNavigateToInsights = { navController.navigate(LedgerRoute.Insights.route) },

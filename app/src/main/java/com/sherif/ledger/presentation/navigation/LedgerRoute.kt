@@ -22,6 +22,7 @@ sealed class LedgerRoute(val route: String) {
     data object Profile : LedgerRoute("profile")
     data object Settings : LedgerRoute("settings")
     data object Budgets : LedgerRoute("budgets")
+    data object Goals : LedgerRoute("goals")
     data object AdjustBalance : LedgerRoute("adjust_balance")
     data object EditProfile : LedgerRoute("edit_profile")
     data object AiSettings : LedgerRoute("ai_settings")

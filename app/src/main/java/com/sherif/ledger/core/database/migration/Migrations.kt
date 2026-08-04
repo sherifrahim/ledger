@@ -341,3 +341,33 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_budgets_category ON budgets(category)")
     }
 }
+
+/**
+ * Goals — something the user is saving towards, funded by one of their accounts.
+ *
+ * Progress is deliberately not a column: a goal's "saved so far" IS the funding
+ * account's balance, which AccountBalanceService already derives by replaying
+ * transactions. Storing it would give the user a number to maintain by hand and
+ * Ledger a second figure that can drift from the account it describes.
+ *
+ * Cascades on account delete, so a goal cannot outlive the account funding it.
+ */
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS goals (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                target_minor INTEGER NOT NULL,
+                currency_code TEXT NOT NULL,
+                account_id INTEGER NOT NULL,
+                target_date_millis INTEGER,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_goals_account_id ON goals(account_id)")
+    }
+}
