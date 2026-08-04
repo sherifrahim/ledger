@@ -101,6 +101,7 @@ fun LedgerNavHost(
             FinancialStoryScreen(
                 state = state,
                 onItemClick = { id -> navController.navigate(LedgerRoute.TransactionDetails.create(id)) },
+                onOpenGraph = { navController.navigate(LedgerRoute.StoryGraph.route) },
             )
         }
 
@@ -111,7 +112,6 @@ fun LedgerNavHost(
                 onOpenAccounts = { navController.navigate(LedgerRoute.Accounts.route) },
                 onOpenInsights = { navController.navigate(LedgerRoute.Insights.route) },
                 onOpenStory = { navController.navigate(LedgerRoute.Story.route) { launchSingleTop = true } },
-                onOpenStoryGraph = { navController.navigate(LedgerRoute.StoryGraph.route) },
                 onResultClick = { id -> navController.navigate(LedgerRoute.TransactionDetails.create(id)) },
             )
         }
@@ -161,6 +161,9 @@ fun LedgerNavHost(
                 onSelect = { viewModel.select(it) },
                 onSearch = { viewModel.search(it) },
                 onPaletteReady = { viewModel.setPalette(it) },
+                onOpenTransaction = { id ->
+                    navController.navigate(LedgerRoute.TransactionDetails.create(id.toString()))
+                },
             )
         }
 

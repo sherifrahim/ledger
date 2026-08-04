@@ -39,6 +39,14 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.storygraph.StoryGraphPalette
 import com.sherif.ledger.feature.storygraph.StoryNodeKind
 import com.sherif.ledger.feature.storygraph.presentation.viewmodel.StoryGraphUiState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.heightIn
+import com.sherif.ledger.core.designsystem.component.LedgerAmount
+import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
+import com.sherif.ledger.core.designsystem.component.LedgerDivider
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
+import com.sherif.ledger.core.designsystem.component.signedAmount
 
 /**
  * Story Graph — the whole ledger as a set of connected things rather than a list.
@@ -56,6 +64,7 @@ fun StoryGraphScreen(
     onSelect: (String?) -> Unit = {},
     onSearch: (String) -> Unit = {},
     onPaletteReady: (StoryGraphPalette) -> Unit = {},
+    onOpenTransaction: (Long) -> Unit = {},
 ) {
     val colors = LedgerTheme.colors
 
@@ -128,16 +137,21 @@ fun StoryGraphScreen(
 
         val selected = state.selectedId?.let { state.graph.nodesById[it] }
         if (selected != null) {
-            // A detail card rather than a hover tooltip: Android has no hover, so the
-            // information a desktop tool would hide behind one has to live somewhere
-            // a finger can reach.
+            // A detail card rather than a hover tooltip: Android has no hover, so what
+            // a desktop tool hides behind one has to live where a finger can reach.
+            //
+            // It lists the entity's real transactions, because a graph that can only
+            // tell you something EXISTS is a dead end. The point of selecting
+            // Carrefour is to see what you actually spent there — and to get from
+            // that to the transaction itself.
             LedgerCard(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(LedgerSpacing.Medium),
+                    .padding(LedgerSpacing.Medium)
+                    .fillMaxWidth(),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(12.dp).clip(CircleShape).background(selected.color))
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(selected.color))
                     Spacer(Modifier.width(LedgerSpacing.Small))
                     Column(Modifier.weight(1f)) {
                         Text(
@@ -147,13 +161,63 @@ fun StoryGraphScreen(
                             maxLines = 1,
                         )
                         Text(
-                            listOfNotNull(prettyKind(selected.kind), selected.subtitle).joinToString(" · "),
+                            listOfNotNull(prettyKind(selected.kind), selected.subtitle).joinToString(" \u00b7 "),
                             style = LedgerTextStyles.Caption,
                             color = colors.textSecondary,
                             maxLines = 1,
                         )
                     }
+                    Text(
+                        "Close",
+                        style = LedgerTextStyles.Caption,
+                        color = colors.textTertiary,
+                        modifier = Modifier.ledgerClickable { onSelect(null) },
+                    )
                 }
+
+                val transactions = state.selectedTransactions
+                if (transactions.isNotEmpty()) {
+                    Spacer(Modifier.height(LedgerSpacing.Small))
+                    LedgerDivider(alpha = 0.06f)
+                    Spacer(Modifier.height(LedgerSpacing.Tiny))
+                    Text(
+                        "TRANSACTIONS",
+                        style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+                        color = colors.textTertiary,
+                    )
+                    Spacer(Modifier.height(LedgerSpacing.Tiny))
+                    // Bounded so the panel never grows past roughly half the canvas —
+                    // the graph behind it is still the subject.
+                    LazyColumn(Modifier.heightIn(max = 200.dp)) {
+                        items(transactions, key = { it.id }) { txn ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .ledgerClickable { onOpenTransaction(txn.id) }
+                                    .padding(vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        txn.merchant,
+                                        style = LedgerTextStyles.Label,
+                                        color = colors.textPrimary,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    )
+                                    Text(txn.date, style = LedgerTextStyles.Caption, color = colors.textTertiary)
+                                }
+                                Spacer(Modifier.width(LedgerSpacing.Small))
+                                LedgerAmount(
+                                    amount = signedAmount(txn.amount, isExpense = txn.isOutflow),
+                                    style = LedgerAmountStyle.Small,
+                                    color = if (txn.isOutflow) colors.textPrimary else colors.positive,
+                                )
+                            }
+                        }
+                    }
+                }
+
                 val connected = state.graph.neighbours[selected.id].orEmpty()
                 if (connected.isNotEmpty()) {
                     Spacer(Modifier.height(LedgerSpacing.Small))
@@ -174,9 +238,12 @@ fun StoryGraphScreen(
                                     style = LedgerTextStyles.Caption,
                                     color = colors.textPrimary,
                                     maxLines = 1,
+                                    // Tapping a neighbour walks the graph, rather than
+                                    // making the user hunt for it on the canvas again.
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(colors.surfaceInset)
+                                        .ledgerClickable { onSelect(id) }
                                         .padding(horizontal = LedgerSpacing.Small, vertical = 4.dp),
                                 )
                             }

@@ -17,6 +17,37 @@ import javax.inject.Inject
 enum class StoryNodeKind { ACCOUNT, MERCHANT, CATEGORY, TAG, BUDGET, GOAL, INCOME }
 
 /**
+ * One real transaction behind a node, pre-formatted for display.
+ *
+ * Carries [id] so the graph can hand off to Transaction Details — the graph is a
+ * way *into* the ledger, not a dead end.
+ */
+data class GraphTransactionRef(
+    val id: Long,
+    val merchant: String,
+    val amount: String,
+    val date: String,
+    val isOutflow: Boolean,
+)
+
+/**
+ * The graph, plus the transactions sitting behind each node.
+ *
+ * Deliberately NOT folded into GraphNode. The layout and canvas are generic and
+ * know nothing about money; teaching GraphNode about transactions would put
+ * finance into the reusable engine and undo the separation the whole design rests
+ * on. The mapping lives here, in the feature, keyed by the same node ids.
+ */
+data class StoryGraphResult(
+    val graph: GraphData,
+    val transactionsByNode: Map<String, List<GraphTransactionRef>>,
+) {
+    companion object {
+        val EMPTY = StoryGraphResult(GraphData.EMPTY, emptyMap())
+    }
+}
+
+/**
  * Turns real Ledger data into a graph.
  *
  * **This is where all the finance lives.** The layout engine and the canvas are
@@ -54,11 +85,17 @@ class StoryGraphBuilder @Inject constructor() {
         budgets: List<Budget>,
         goals: List<Goal>,
         palette: StoryGraphPalette,
-    ): GraphData {
-        if (transactions.isEmpty()) return GraphData.EMPTY
+    ): StoryGraphResult {
+        if (transactions.isEmpty()) return StoryGraphResult.EMPTY
 
         val nodes = mutableListOf<GraphNode>()
         val edges = mutableListOf<GraphEdge>()
+        // Which real transactions sit behind each node, so selecting one can show
+        // them and hand off to Transaction Details.
+        val behind = mutableMapOf<String, MutableList<Transaction>>()
+        fun attribute(nodeId: String, list: List<Transaction>) {
+            behind.getOrPut(nodeId) { mutableListOf() }.addAll(list)
+        }
         val accountsById = accounts.associateBy { it.id }
 
         val outflows = transactions.filter { it.isOutflow }
@@ -68,6 +105,7 @@ class StoryGraphBuilder @Inject constructor() {
         val usedAccountIds = transactions.map { it.accountId }.toSet()
         accounts.filter { it.id in usedAccountIds }.forEach { account ->
             val own = transactions.filter { it.accountId == account.id }
+            attribute(accountId(account.id), own)
             nodes += GraphNode(
                 id = accountId(account.id),
                 label = account.name,
@@ -88,6 +126,7 @@ class StoryGraphBuilder @Inject constructor() {
         keptMerchants.forEach { merchant ->
             val spend = spendByMerchant[merchant] ?: 0L
             val sample = outflows.first { merchantNameOf(it) == merchant }
+            attribute(merchantId(merchant), outflows.filter { merchantNameOf(it) == merchant })
             nodes += GraphNode(
                 id = merchantId(merchant),
                 label = merchant,
@@ -109,6 +148,10 @@ class StoryGraphBuilder @Inject constructor() {
             .filter { it != "UNKNOWN" }
             .toSet()
         keptCategories.forEach { category ->
+            attribute(
+                categoryId(category),
+                outflows.filter { merchantNameOf(it) in keptMerchants && categoryOf(it) == category },
+            )
             nodes += GraphNode(
                 id = categoryId(category),
                 label = prettify(category),
@@ -147,6 +190,7 @@ class StoryGraphBuilder @Inject constructor() {
         val inflows = transactions.filterNot { it.isOutflow }
         if (inflows.isNotEmpty()) {
             val total = inflows.sumOf { it.amount.minorUnits }
+            attribute(INCOME_ID, inflows)
             nodes += GraphNode(
                 id = INCOME_ID,
                 label = "Income",
@@ -185,6 +229,7 @@ class StoryGraphBuilder @Inject constructor() {
         // the honest aggregate edge is tag → the merchant that transaction paid.
         tagsByTransaction.forEach { (transactionId, tags) ->
             val transaction = transactions.firstOrNull { it.id == transactionId } ?: return@forEach
+            tags.forEach { tag -> attribute(tagId(tag.id), listOf(transaction)) }
             val merchant = merchantNameOf(transaction)
             if (merchant !in keptMerchants) return@forEach
             tags.forEach { tag ->
@@ -203,6 +248,7 @@ class StoryGraphBuilder @Inject constructor() {
                 color = palette.budget,
                 weight = 0.5f,
             )
+            attribute(budgetId(budget.category), behind[categoryId(budget.category.uppercase())].orEmpty())
             edges += GraphEdge(budgetId(budget.category), categoryId(budget.category.uppercase()), "caps", 0.5f)
         }
 
@@ -217,15 +263,39 @@ class StoryGraphBuilder @Inject constructor() {
                 color = palette.goal,
                 weight = 0.6f,
             )
+            attribute(goalId(goal.id), behind[accountId(goal.accountId)].orEmpty())
             edges += GraphEdge(goalId(goal.id), accountId(goal.accountId), "funded by", 0.6f)
         }
 
         // Drop any edge whose endpoints did not survive the floors above, so the
         // canvas never has to defend itself against a dangling link.
         val ids = nodes.map { it.id }.toSet()
-        return GraphData(
+        val graph = GraphData(
             nodes = nodes.distinctBy { it.id },
             edges = edges.filter { it.fromId in ids && it.toId in ids }.distinct(),
+        )
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("d MMM")
+        val zone = java.time.ZoneId.systemDefault()
+        return StoryGraphResult(
+            graph = graph,
+            transactionsByNode = behind
+                .filterKeys { it in ids }
+                .mapValues { (_, list) ->
+                    // Newest first, and capped: a node with 226 transactions behind
+                    // it does not need all of them in a panel the size of a card.
+                    list.distinctBy { it.id }
+                        .sortedByDescending { it.timestamp }
+                        .take(MAX_TRANSACTIONS_PER_NODE)
+                        .map { txn ->
+                            GraphTransactionRef(
+                                id = txn.id,
+                                merchant = merchantNameOf(txn),
+                                amount = MoneyFormatter.format(txn.amount, includeSymbol = true),
+                                date = txn.timestamp.atZone(zone).format(formatter),
+                                isOutflow = txn.isOutflow,
+                            )
+                        }
+                },
         )
     }
 
@@ -234,6 +304,9 @@ class StoryGraphBuilder @Inject constructor() {
 
     companion object {
         const val INCOME_ID = "income"
+
+        /** A panel is not a list screen; the rest stay one tap away in Transactions. */
+        const val MAX_TRANSACTIONS_PER_NODE = 12
 
         /** A merchant must account for at least this share of spend to earn a node. */
         private const val MERCHANT_SHARE_FLOOR = 0.012f

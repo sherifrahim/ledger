@@ -50,7 +50,6 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.search.presentation.viewmodel.SearchViewModel
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
-import androidx.compose.material.icons.filled.Hub
 
 /**
  * Universal Search (Product Hardening, PART 1) — real, not a resting mock.
@@ -66,7 +65,6 @@ fun UniversalSearchScreen(
     onOpenAccounts: () -> Unit = {},
     onOpenInsights: () -> Unit = {},
     onOpenStory: () -> Unit = {},
-    onOpenStoryGraph: () -> Unit = {},
     onResultClick: (String) -> Unit = {},
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
@@ -76,7 +74,6 @@ fun UniversalSearchScreen(
         QuickAccess("Accounts", Icons.Filled.AccountBalanceWallet, onOpenAccounts),
         QuickAccess("Insights", Icons.Filled.PieChart, onOpenInsights),
         QuickAccess("Financial Story", Icons.AutoMirrored.Filled.MenuBook, onOpenStory),
-        QuickAccess("Story Graph", Icons.Filled.Hub, onOpenStoryGraph),
     )
 
     LazyColumn(

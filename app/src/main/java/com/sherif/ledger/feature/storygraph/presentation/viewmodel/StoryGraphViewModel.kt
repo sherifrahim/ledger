@@ -26,10 +26,15 @@ import javax.inject.Inject
 
 data class StoryGraphUiState(
     val graph: GraphData = GraphData.EMPTY,
+    /** The real transactions behind each node, so a selection can list them. */
+    val transactionsByNode: Map<String, List<com.sherif.ledger.feature.storygraph.GraphTransactionRef>> = emptyMap(),
     val selectedId: String? = null,
     val query: String = "",
     val isLoading: Boolean = true,
-)
+) {
+    val selectedTransactions: List<com.sherif.ledger.feature.storygraph.GraphTransactionRef>
+        get() = selectedId?.let { transactionsByNode[it] }.orEmpty()
+}
 
 @HiltViewModel
 class StoryGraphViewModel @Inject constructor(
@@ -82,8 +87,12 @@ class StoryGraphViewModel @Inject constructor(
                     goals = goals,
                     palette = palette,
                 )
-            }.collect { graph ->
-                _uiState.value = _uiState.value.copy(graph = graph, isLoading = false)
+            }.collect { result ->
+                _uiState.value = _uiState.value.copy(
+                    graph = result.graph,
+                    transactionsByNode = result.transactionsByNode,
+                    isLoading = false,
+                )
             }
         }
     }

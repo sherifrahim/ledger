@@ -9,6 +9,7 @@ import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.model.Tag
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.TransactionType
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -55,7 +56,7 @@ class StoryGraphBuilderTest {
         budgets = budgets,
         goals = goals,
         palette = palette,
-    )
+    ).graph
 
     @Test
     fun `no transactions means no graph, not an empty frame of nodes`() {
@@ -152,6 +153,63 @@ class StoryGraphBuilderTest {
 
         assertTrue(graph.nodes.any { it.id == StoryGraphBuilder.accountId(1L) })
         assertFalse(graph.nodes.any { it.id == StoryGraphBuilder.accountId(2L) })
+    }
+
+    private fun buildResult(
+        transactions: List<Transaction>,
+        accounts: List<Account>,
+        tags: Map<Long, List<Tag>> = emptyMap(),
+    ) = builder.build(
+        transactions = transactions,
+        accounts = accounts,
+        merchantNameOf = { it.merchantText ?: "?" },
+        categoryOf = { "GROCERIES" },
+        tagsByTransaction = tags,
+        budgets = emptyList(),
+        goals = emptyList(),
+        palette = palette,
+    )
+
+    @Test
+    fun `a node carries the real transactions behind it, newest first`() {
+        // The graph has to be a way INTO the ledger. A node that can only say
+        // something exists is a dead end.
+        val result = buildResult(
+            transactions = List(4) { txn(it.toLong(), 1L, 50_000L, "Carrefour") },
+            accounts = listOf(account(1L, "ADCB")),
+        )
+
+        val behind = result.transactionsByNode[StoryGraphBuilder.merchantId("Carrefour")]!!
+        assertEquals(4, behind.size)
+        // Newest first, so the panel opens on what just happened.
+        assertEquals(listOf(3L, 2L, 1L, 0L), behind.map { it.id })
+        assertTrue(behind.all { it.isOutflow })
+        assertTrue(behind.all { it.amount.isNotBlank() })
+    }
+
+    @Test
+    fun `the transaction list per node is capped`() {
+        // A 226-transaction account must not try to render 226 rows in a card.
+        val result = buildResult(
+            transactions = List(40) { txn(it.toLong(), 1L, 50_000L, "Carrefour") },
+            accounts = listOf(account(1L, "ADCB")),
+        )
+
+        assertEquals(
+            StoryGraphBuilder.MAX_TRANSACTIONS_PER_NODE,
+            result.transactionsByNode[StoryGraphBuilder.accountId(1L)]!!.size,
+        )
+    }
+
+    @Test
+    fun `no transaction list is kept for a node that was filtered out`() {
+        val result = buildResult(
+            transactions = List(20) { txn(it.toLong(), 1L, 100_000L, "Carrefour") } + txn(99L, 1L, 50L, "Tiny"),
+            accounts = listOf(account(1L, "ADCB")),
+        )
+
+        val ids = result.graph.nodes.map { it.id }.toSet()
+        assertTrue(result.transactionsByNode.keys.all { it in ids })
     }
 
     @Test

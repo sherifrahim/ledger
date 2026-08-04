@@ -23,6 +23,8 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
+import androidx.compose.material.icons.filled.Hub
+import com.sherif.ledger.core.designsystem.component.LedgerIconButton
 
 /**
  * Financial Story — a primary destination (spec Chapter 34/36/80).
@@ -37,9 +39,24 @@ fun FinancialStoryScreen(
     state: StoryUiState,
     modifier: Modifier = Modifier,
     onItemClick: (String) -> Unit = {},
+    onOpenGraph: () -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        LedgerTopBar(title = "Story", modifier = Modifier.statusBarsPadding())
+        // The graph is the same story told as connections rather than as a list, so
+        // it belongs here beside the feed — not buried in Search's quick-access,
+        // where nobody looking for their story would think to find it.
+        LedgerTopBar(
+            title = "Story",
+            modifier = Modifier.statusBarsPadding(),
+            actions = {
+                LedgerIconButton(
+                    icon = Icons.Filled.Hub,
+                    onClick = onOpenGraph,
+                    contentDescription = "Story Graph",
+                    tint = LedgerTheme.colors.textPrimary,
+                )
+            },
+        )
 
         if (state.groups.isEmpty()) {
             Spacer(Modifier.height(LedgerSpacing.XxLarge))
