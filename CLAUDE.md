@@ -90,4 +90,11 @@ Before marking a feature "done": confirm backend → ViewModel → screen → na
 
 All unit tests pass as of the RC1 hardening pass (2026-07-22), including the corpus regression suite and `regression.PipelineCorpusRunnerTest`. `compileReleaseKotlin` verified separately from `compileDebugKotlin`. Run `./gradlew testDebugUnitTest` to confirm current state before trusting this line — it drifts as work continues.
 
-**DB schema is now v13** (was v12): `MIGRATION_12_13` adds a nullable `merchant_text` column to `transactions` so the captured message stops being overwritten by the merchant name (read merchants via `Transaction.merchantOrRawText`, never `rawText`). `MIGRATION_11_12` added `opening_balance_as_of` on `accounts`. Both additive/nullable — v13 verified installing over the owner's real v12 database with **zero data loss** (383 transactions, 18 accounts intact). `AppInfoCollector` now also reports `BuildConfig.GIT_HASH` (injected via `providers.exec` in `build.gradle.kts`). RC1 review + Trust & Verification audit + fix history: `docs/RC1_TRUST_AND_VERIFICATION_AUDIT.md`, `rc1_review` artifact.
+**DB schema is now v17.** Migrations since v12, all additive and nullable/new-table only:
+- `MIGRATION_12_13` — `transactions.merchant_text`, so the captured message stops being overwritten by the merchant name. **Read merchants via `Transaction.merchantOrRawText`, never `rawText`** (rawText is now the verbatim message).
+- `MIGRATION_13_14` — `transactions.available_credit_minor` + `accounts.credit_limit_minor`. Credit-card outstanding = limit − the bank's latest stated available limit, NOT a replay of purchases. Payments need no detection: the bank restates the remaining limit in every message.
+- `MIGRATION_14_15` — `tags` + `transaction_tags`. The only user-authored classification in the app.
+- `MIGRATION_15_16` — `budgets` (limit only; spend comes from `GetFinancialAnalyticsUseCase` category totals, never stored).
+- `MIGRATION_16_17` — `goals` (target + funding account; progress IS that account's replayed balance, never stored).
+
+v13 verified installing over the owner's real v12 database with zero data loss; v14 verified over v13 the same way. RC1 review + Trust & Verification audit: `docs/RC1_TRUST_AND_VERIFICATION_AUDIT.md`, `rc1_review` artifact.
