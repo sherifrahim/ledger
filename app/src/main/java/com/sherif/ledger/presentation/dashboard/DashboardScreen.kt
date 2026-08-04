@@ -65,6 +65,7 @@ fun DashboardScreen(
 ) {
     val hasActivity = state.recentActivity.isNotEmpty()
     val hasInsights = state.intelligenceSummary.isNotEmpty()
+    val hasUpcoming = state.upcoming.isNotEmpty()
 
     Scaffold(containerColor = LedgerTheme.colors.surfaceBase) { padding ->
         LazyColumn(
@@ -89,13 +90,21 @@ fun DashboardScreen(
                 }
             }
 
+            if (hasUpcoming) {
+                item {
+                    DashboardReveal(index = 2) {
+                        UpcomingSection(state.upcoming)
+                    }
+                }
+            }
+
             if (hasInsights) {
-                item { DashboardReveal(index = 2) { InsightsSection(state.intelligenceSummary, onNavigateToInsights) } }
+                item { DashboardReveal(index = 3) { InsightsSection(state.intelligenceSummary, onNavigateToInsights) } }
             }
 
             if (hasActivity) {
                 item {
-                    DashboardReveal(index = 3) {
+                    DashboardReveal(index = 4) {
                         SectionLabel("RECENT ACTIVITY", trailing = "See all", onTrailing = onNavigateToTransactions)
                     }
                 }
@@ -301,5 +310,56 @@ private fun greeting(): String {
         h < 12 -> "Good Morning"
         h < 17 -> "Good Afternoon"
         else -> "Good Evening"
+    }
+}
+
+/**
+ * What Ledger expects to be charged next.
+ *
+ * Every row here is a projection, so each one carries the cadence it was derived
+ * from ("Monthly") and the engine's own confidence rather than presenting a
+ * forecast as a fact. The section simply does not appear until there is enough
+ * history for the engine to be sure — an empty "Upcoming" heading would imply
+ * Ledger had looked and found nothing, when the truth is it cannot know yet.
+ */
+@Composable
+private fun UpcomingSection(items: List<UpcomingUiModel>) {
+    val colors = LedgerTheme.colors
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionLabel("UPCOMING")
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        LedgerCard {
+            items.forEachIndexed { index, item ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = LedgerSpacing.Small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    LedgerBrandIcon(name = item.label, size = 36.dp)
+                    Spacer(Modifier.width(LedgerSpacing.Medium))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            item.label,
+                            style = LedgerTextStyles.BodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.textPrimary,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            "${item.cadence} · ${item.dueLabel}",
+                            style = LedgerTextStyles.Label,
+                            color = colors.textSecondary,
+                            maxLines = 1,
+                        )
+                    }
+                    Spacer(Modifier.width(LedgerSpacing.Small))
+                    LedgerAmount(
+                        amount = item.amount,
+                        style = LedgerAmountStyle.Regular,
+                        color = colors.textPrimary,
+                    )
+                }
+                if (index != items.lastIndex) LedgerDivider(alpha = 0.05f)
+            }
+        }
     }
 }

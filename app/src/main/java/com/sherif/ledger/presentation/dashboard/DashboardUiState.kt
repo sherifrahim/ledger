@@ -21,8 +21,28 @@ data class DashboardUiState(
     // FinancialAnalytics.intelligenceSummary. Empty when nothing was found yet —
     // never a fabricated confidence figure or static placeholder text.
     val intelligenceSummary: List<String> = emptyList(),
+    /**
+     * What Ledger expects to be charged next, from [com.sherif.ledger.core.domain.service.intelligence.RecurringScheduleAnalyzer].
+     * Empty until enough history exists to establish a rhythm — a projection with
+     * one observation behind it is a guess, and this screen does not guess.
+     */
+    val upcoming: List<UpcomingUiModel> = emptyList(),
     // V2 Compatibility
     val insights: List<InsightUiModel> = emptyList()
+)
+
+/**
+ * One expected future charge. Every field is derived from real captured history —
+ * [dueLabel] is a projection from the observed interval, not a promise, which is
+ * why [confidence] travels with it rather than being hidden.
+ */
+data class UpcomingUiModel(
+    val id: String,
+    val label: String,
+    val amount: String,
+    val dueLabel: String,
+    val cadence: String,
+    val confidence: Int,
 )
 
 data class CategoryFilterUiModel(

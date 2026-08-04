@@ -24,6 +24,10 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import com.sherif.ledger.core.domain.service.intelligence.RecurrenceFrequency
+import com.sherif.ledger.presentation.dashboard.UpcomingUiModel
+import com.sherif.ledger.core.domain.model.Transaction
+import java.time.Instant
 
 /**
  * Phase 10: consumes ONLY [GetFinancialAnalyticsUseCase] — never
@@ -45,6 +49,7 @@ class DashboardViewModel @Inject constructor(
     private val merchantRepository: MerchantRepository,
     private val merchantResolver: MerchantResolver,
     private val financialTraceCollector: FinancialTraceCollector, // RC4: permanent, replaces the disposable RC2/RC3 BalanceTraceDiagnostic
+    private val recurringScheduleAnalyzer: com.sherif.ledger.core.domain.service.intelligence.RecurringScheduleAnalyzer,
 ) : ViewModel() {
 
     // TEMPORARY: runs the diagnostic exactly once per ViewModel lifetime, purely
@@ -62,8 +67,13 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = combine(
         transactionReadSource.observeRecentTransactions(20),
         transactionReadSource.observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second),
-        accountRepository.observeAllAccounts()
-    ) { recentResult, monthResult, _ ->
+        accountRepository.observeAllAccounts(),
+        // Recurrence needs HISTORY: a monthly subscription appears once per month,
+        // so a one-month window can never contain enough occurrences to establish a
+        // rhythm. Reading the full set is not a new cost class here — computeNetWorth
+        // below already replays every transaction on this same screen.
+        transactionReadSource.observeAllTransactions(),
+    ) { recentResult, monthResult, _, allResult ->
 
         // Diagnostic-only, and debug-only: logs a structured report via LedgerLogger,
         // changes nothing displayed. Gated so it never runs in a release build.
@@ -127,6 +137,9 @@ class DashboardViewModel @Inject constructor(
             )
         }
 
+        val allTransactions = (allResult as? LedgerResult.Success)?.data ?: emptyList()
+        val upcoming = buildUpcoming(allTransactions)
+
         DashboardUiState(
             totalBalance = MoneyFormatter.format(Money(totalBalanceUnits, primaryCurrency), includeSymbol = true),
             isNegativeBalance = totalBalanceUnits < 0,
@@ -135,6 +148,7 @@ class DashboardViewModel @Inject constructor(
             categories = analytics.categoryTotals.map { CategoryFilterUiModel(it.category, it.category) },
             recentActivity = activityGroups,
             intelligenceSummary = analytics.intelligenceSummary,
+            upcoming = upcoming,
             insights = emptyList()
         )
     }.stateIn(
@@ -143,7 +157,39 @@ class DashboardViewModel @Inject constructor(
         initialValue = EMPTY_STATE
     )
 
+    /**
+     * The next few expected charges, from the recurring engine that until now was
+     * reachable only from a debug inspector.
+     *
+     * Three deliberate filters, all of them about not over-claiming:
+     *  - **Irregular series are dropped.** The engine labels a series it could not
+     *    fit to a cadence as IRREGULAR; projecting a date from one is fiction.
+     *  - **Low confidence is dropped.** Below the threshold the engine is telling
+     *    us it is not sure, and a dashboard is the wrong place to argue with it.
+     *  - **Already-past projections are dropped.** A "next expected" date that has
+     *    come and gone means the charge either arrived (and is in the feed) or the
+     *    series ended; either way it is not upcoming.
+     *
+     * Sorted by how soon, and capped, because this is a glance surface — the full
+     * list belongs on a screen of its own when one exists.
+     */
+    private fun buildUpcoming(transactions: List<Transaction>): List<UpcomingUiModel> {
+        if (transactions.isEmpty()) return emptyList()
+        val schedules = runCatching { recurringScheduleAnalyzer.analyze(transactions) }
+            .getOrElse {
+                com.sherif.ledger.core.common.logging.LedgerLogger.e("RecurringScheduleAnalyzer failed", it)
+                emptyList()
+            }
+        return UpcomingProjection.from(schedules, Instant.now())
+    }
+
     companion object {
+        /** Below this the engine is signalling doubt; the dashboard stays quiet. */
+        private const val MIN_UPCOMING_CONFIDENCE = 60
+
+        /** A glance surface, not a list screen. */
+        private const val MAX_UPCOMING = 3
+
         private val EMPTY_STATE = DashboardUiState(
             totalBalance = "0.00",
             balanceChangePercentage = null,
