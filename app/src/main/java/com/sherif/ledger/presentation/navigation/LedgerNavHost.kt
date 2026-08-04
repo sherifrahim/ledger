@@ -111,6 +111,7 @@ fun LedgerNavHost(
                 onOpenAccounts = { navController.navigate(LedgerRoute.Accounts.route) },
                 onOpenInsights = { navController.navigate(LedgerRoute.Insights.route) },
                 onOpenStory = { navController.navigate(LedgerRoute.Story.route) { launchSingleTop = true } },
+                onOpenStoryGraph = { navController.navigate(LedgerRoute.StoryGraph.route) },
                 onResultClick = { id -> navController.navigate(LedgerRoute.TransactionDetails.create(id)) },
             )
         }
@@ -148,6 +149,18 @@ fun LedgerNavHost(
                 onBackClick = { navController.popBackStack() },
                 onAddGoal = { name, target, accountId, currency -> viewModel.addGoal(name, target, accountId, currency) },
                 onRemoveGoal = { id -> viewModel.removeGoal(id) },
+            )
+        }
+
+        composable(LedgerRoute.StoryGraph.route) {
+            val viewModel: com.sherif.ledger.feature.storygraph.presentation.viewmodel.StoryGraphViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.feature.storygraph.presentation.StoryGraphScreen(
+                state = state,
+                onBackClick = { navController.popBackStack() },
+                onSelect = { viewModel.select(it) },
+                onSearch = { viewModel.search(it) },
+                onPaletteReady = { viewModel.setPalette(it) },
             )
         }
 
