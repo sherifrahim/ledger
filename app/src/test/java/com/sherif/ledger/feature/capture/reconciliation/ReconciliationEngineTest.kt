@@ -70,7 +70,12 @@ class ReconciliationEngineTest {
         // Guards the branch that was dead until the account id left the fingerprint:
         // the candidate is fingerprinted before it has an account, every persisted
         // row after it has one, so the two could never be equal.
-        val timestamp = Instant.now()
+        //
+        // Fixed instant, mid-hour, deliberately: the fingerprint buckets by hour, so
+        // with Instant.now() this passes or fails depending on what time of day the
+        // suite runs — within 15 minutes of the hour the two land in different
+        // buckets and stop matching.
+        val timestamp = Instant.parse("2026-08-02T14:40:00Z")
         val candidate = createCandidate("Amazon", 1000L, timestamp)
         val existing = listOf(createTransaction(1L, "Amazon", 1000L, timestamp.minus(15, ChronoUnit.MINUTES)))
 

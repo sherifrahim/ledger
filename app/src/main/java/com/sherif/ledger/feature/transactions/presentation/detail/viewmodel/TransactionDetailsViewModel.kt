@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * RC1: category comes from [GetFinancialAnalyticsUseCase.transactionStories]
@@ -50,6 +52,7 @@ class TransactionDetailsViewModel @Inject constructor(
     private val merchantRepository: MerchantRepository,
     private val merchantResolver: MerchantResolver,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
+    private val tagRepository: com.sherif.ledger.core.domain.repository.TagRepository,
 ) : ViewModel() {
 
     init {
@@ -57,6 +60,10 @@ class TransactionDetailsViewModel @Inject constructor(
     }
 
     private val transactionId: String? = savedStateHandle["transactionId"]
+
+    /** Every tag in use anywhere, offered as suggestions when adding one here. */
+    val knownTags: StateFlow<List<com.sherif.ledger.core.domain.model.Tag>> =
+        tagRepository.observeAllTags().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _uiState = MutableStateFlow<TransactionDetailsUiState?>(null)
     val uiState: StateFlow<TransactionDetailsUiState?> = _uiState.asStateFlow()
@@ -152,7 +159,8 @@ class TransactionDetailsViewModel @Inject constructor(
                         accountNumber = cardTail ?: account?.accountNumberTail ?: "",
                         reference = txn.fingerprint.take(8).uppercase(),
                         history = history,
-                        notes = txn.note
+                        notes = txn.note,
+                        tags = tagRepository.observeTagsFor(id).first(),
                     ).also { state ->
                         com.sherif.ledger.core.common.logging.LedgerLogger.d("TransactionDetailsViewModel: EMITTING uiState. Merchant=${state.merchant}, Amount=${state.amount}")
                     }
@@ -169,6 +177,35 @@ class TransactionDetailsViewModel @Inject constructor(
             transactionRepository.updateNote(id, text.trim().ifBlank { null })
             loadTransactionDetails()
         }
+    }
+
+    /**
+     * Adds a label to this transaction, creating it if the user has never used it
+     * before — those are one gesture, not two (see TagRepository.tagTransaction).
+     * A blank name is simply ignored rather than surfaced as an error; there is
+     * nothing for the user to correct.
+     */
+    fun addTag(name: String) {
+        val id = transactionId?.toLongOrNull() ?: return
+        viewModelScope.launch {
+            tagRepository.tagTransaction(id, name)
+            refreshTags(id)
+        }
+    }
+
+    fun removeTag(tagId: Long) {
+        val id = transactionId?.toLongOrNull() ?: return
+        viewModelScope.launch {
+            tagRepository.untagTransaction(id, tagId)
+            refreshTags(id)
+        }
+    }
+
+    /** Re-reads just the tags, rather than rebuilding the whole screen state —
+     *  tagging must not make the merchant history or analytics flicker. */
+    private suspend fun refreshTags(id: Long) {
+        val tags = tagRepository.observeTagsFor(id).first()
+        _uiState.value = _uiState.value?.copy(tags = tags)
     }
 }
 

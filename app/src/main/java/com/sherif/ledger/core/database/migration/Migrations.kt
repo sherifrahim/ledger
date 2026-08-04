@@ -270,3 +270,45 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
         db.execSQL("ALTER TABLE accounts ADD COLUMN credit_limit_minor INTEGER")
     }
 }
+
+/**
+ * Tags — the first thing in Ledger the user authors rather than the data implies.
+ *
+ * Two new tables and no change to any existing one. `tags` holds the vocabulary,
+ * unique on a normalized name so the same label cannot exist twice in different
+ * capitalisation; `transaction_tags` is the many-to-many join, with a composite
+ * primary key so the same tag cannot be attached to the same transaction twice,
+ * and cascading deletes on both sides so no edge can outlive what it connects.
+ *
+ * Column names, types, nullability and index names must match TagEntity and
+ * TransactionTagEntity exactly — Room validates the migrated schema against the
+ * entities the first time the database opens.
+ */
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS tags (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                normalized_name TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tags_normalized_name ON tags(normalized_name)")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS transaction_tags (
+                transaction_id INTEGER NOT NULL,
+                tag_id INTEGER NOT NULL,
+                tagged_at INTEGER NOT NULL,
+                PRIMARY KEY(transaction_id, tag_id),
+                FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+                FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_tags_tag_id ON transaction_tags(tag_id)")
+    }
+}

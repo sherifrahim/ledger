@@ -26,6 +26,9 @@ import com.sherif.ledger.core.database.entity.ParticipantEntity
 import com.sherif.ledger.core.database.entity.SplitEntity
 import com.sherif.ledger.core.database.entity.SplitShareEntity
 import com.sherif.ledger.core.database.entity.TransactionEntity
+import com.sherif.ledger.core.database.entity.TagEntity
+import com.sherif.ledger.core.database.entity.TransactionTagEntity
+import com.sherif.ledger.core.database.dao.TagDao
 
 @Database(
     entities = [
@@ -41,8 +44,10 @@ import com.sherif.ledger.core.database.entity.TransactionEntity
         AiAuditLogEntity::class,
         LearnedDecisionEntity::class,
         FinancialEventEntity::class,
+        TagEntity::class,
+        TransactionTagEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)
@@ -57,13 +62,14 @@ abstract class LedgerDatabase : RoomDatabase() {
     abstract fun aiAuditLogDao(): AiAuditLogDao
     abstract fun learnedDecisionDao(): LearnedDecisionDao
     abstract fun financialEventDao(): FinancialEventDao
+    abstract fun tagDao(): TagDao
 
     companion object {
         const val DATABASE_NAME = "ledger_db"
         // Kept in sync with the @Database(version = ...) annotation above by
         // hand — Room doesn't expose that value as a runtime constant, and
         // AppInfoCollector needs a real number for its diagnostic bundle.
-        const val DATABASE_VERSION = 14
+        const val DATABASE_VERSION = 15
     }
 }
 

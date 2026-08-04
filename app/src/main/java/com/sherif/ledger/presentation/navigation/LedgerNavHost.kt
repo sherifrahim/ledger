@@ -249,12 +249,17 @@ fun LedgerNavHost(
             val state by viewModel.uiState.collectAsState()
             com.sherif.ledger.core.common.logging.LedgerLogger.d("NavHost: COLLECTED TransactionDetailsState. Merchant=${state?.merchant}")
 
+            val knownTags by viewModel.knownTags.collectAsState()
+
             state?.let {
                 TransactionDetailsScreen(
                     state = it,
                     onBackClick = { navController.popBackStack() },
                     onSaveNote = { note -> viewModel.updateNote(note) },
                     onSplitClick = { transactionId?.let { id -> navController.navigate(LedgerRoute.Split.create(id)) } },
+                    onAddTag = { name -> viewModel.addTag(name) },
+                    onRemoveTag = { tagId -> viewModel.removeTag(tagId) },
+                    knownTags = knownTags,
                 )
             }
         }

@@ -16,6 +16,8 @@ data class TransactionDetailsUiState(
     val reference: String,
     val history: List<MerchantHistoryItem>,
     val notes: String? = null,
+    /** User-authored labels on this transaction. Empty until the user adds one. */
+    val tags: List<com.sherif.ledger.core.domain.model.Tag> = emptyList(),
 )
 
 data class MerchantHistoryItem(

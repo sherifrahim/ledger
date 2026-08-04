@@ -22,6 +22,17 @@ import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.component.*
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
+import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
+import com.sherif.ledger.core.designsystem.component.LedgerTextField
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
 
 @Composable
 fun TransactionDetailsScreen(
@@ -29,8 +40,24 @@ fun TransactionDetailsScreen(
     state: TransactionDetailsUiState,
     onSaveNote: (String) -> Unit = {},
     onSplitClick: () -> Unit = {},
+    onAddTag: (String) -> Unit = {},
+    onRemoveTag: (Long) -> Unit = {},
+    /** Tags already in use anywhere, offered as suggestions so the vocabulary
+     *  converges instead of accumulating near-duplicates. */
+    knownTags: List<com.sherif.ledger.core.domain.model.Tag> = emptyList(),
 ) {
     var editingNote by remember { mutableStateOf(false) }
+    var addingTag by remember { mutableStateOf(false) }
+    if (addingTag) {
+        TagEditorDialog(
+            suggestions = knownTags.filterNot { known -> state.tags.any { it.id == known.id } },
+            onDismiss = { addingTag = false },
+            onConfirm = { name ->
+                onAddTag(name)
+                addingTag = false
+            },
+        )
+    }
     if (editingNote) {
         NoteEditorDialog(
             initial = state.notes.orEmpty(),
@@ -91,6 +118,12 @@ fun TransactionDetailsScreen(
             }
 
             item {
+                Spacer(Modifier.height(LedgerSpacing.Large))
+                TagSection(
+                    tags = state.tags,
+                    onAdd = { addingTag = true },
+                    onRemove = onRemoveTag,
+                )
                 Spacer(Modifier.height(LedgerSpacing.Large))
                 NoteSection(note = state.notes, onEdit = { editingNote = true })
                 Spacer(Modifier.height(LedgerSpacing.Small))
@@ -201,7 +234,125 @@ private fun DetailRow(label: String, value: String) {
     }
 }
 
+/**
+ * The transaction's user-authored labels.
+ *
+ * Chips rather than a list because a tag is a short word and there may be
+ * several; each carries its own remove affordance, so removing one never means
+ * opening an editor. The add control sits inline at the end of the row rather
+ * than in the top bar, because it belongs to this group and nowhere else.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TagSection(
+    tags: List<com.sherif.ledger.core.domain.model.Tag>,
+    onAdd: () -> Unit,
+    onRemove: (Long) -> Unit,
+) {
+    val colors = LedgerTheme.colors
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "TAGS",
+            style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+            color = colors.textTertiary,
+        )
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Tiny),
+            verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Tiny),
+        ) {
+            tags.forEach { tag ->
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(colors.surfaceInset)
+                        .border(LedgerTheme.border.Hairline, colors.cardBorder, CircleShape)
+                        .padding(start = LedgerSpacing.Small, end = LedgerSpacing.Tiny)
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(tag.name, style = LedgerTextStyles.Label, color = colors.textPrimary)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Remove tag ${tag.name}",
+                        tint = colors.textTertiary,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .ledgerClickable { onRemove(tag.id) },
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .border(LedgerTheme.border.Hairline, colors.cardBorder, CircleShape)
+                    .ledgerClickable(onClick = onAdd)
+                    .padding(horizontal = LedgerSpacing.Small, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = if (tags.isEmpty()) "Add a tag" else "Add",
+                    style = LedgerTextStyles.Label,
+                    color = colors.textSecondary,
+                )
+            }
+        }
+    }
+}
 
-
-
-
+/** Names an existing tag or invents a new one — the field does not distinguish,
+ *  because from the user's side "tag this as X" is one action either way. */
+@Composable
+private fun TagEditorDialog(
+    suggestions: List<com.sherif.ledger.core.domain.model.Tag>,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add a tag") },
+        text = {
+            Column {
+                LedgerTextField(
+                    value = text,
+                    onValueChange = { text = it.take(com.sherif.ledger.core.domain.model.Tag.MAX_LENGTH) },
+                    placeholder = "e.g. Reimbursable",
+                )
+                if (suggestions.isNotEmpty()) {
+                    Spacer(Modifier.height(LedgerSpacing.Medium))
+                    Text(
+                        "Used before",
+                        style = LedgerTextStyles.Caption,
+                        color = LedgerTheme.colors.textTertiary,
+                    )
+                    Spacer(Modifier.height(LedgerSpacing.Tiny))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Tiny)) {
+                        items(suggestions, key = { it.id }) { tag ->
+                            Text(
+                                tag.name,
+                                style = LedgerTextStyles.Label,
+                                color = LedgerTheme.colors.textPrimary,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(LedgerTheme.colors.surfaceInset)
+                                    .ledgerClickable { onConfirm(tag.name) }
+                                    .padding(horizontal = LedgerSpacing.Small, vertical = 6.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            LedgerButton(text = "Add", onClick = { onConfirm(text) }, style = LedgerButtonStyle.Solid)
+        },
+        dismissButton = {
+            LedgerButton(text = "Cancel", onClick = onDismiss, style = LedgerButtonStyle.Ghost)
+        },
+    )
+}
