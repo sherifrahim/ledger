@@ -271,7 +271,7 @@ private fun BudgetEditorDialog(
                 value = text,
                 onValueChange = { text = it },
                 currencySymbol = currency.name,
-                placeholder = "e.g. 1500",
+                placeholder = "1500", // LedgerAmountInputField adds the "e.g." itself
             )
         },
         confirmButton = {

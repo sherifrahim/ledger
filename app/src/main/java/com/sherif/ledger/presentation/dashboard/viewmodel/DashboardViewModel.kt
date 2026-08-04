@@ -28,6 +28,8 @@ import com.sherif.ledger.core.domain.service.intelligence.RecurrenceFrequency
 import com.sherif.ledger.presentation.dashboard.UpcomingUiModel
 import com.sherif.ledger.core.domain.model.Transaction
 import java.time.Instant
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 
 /**
  * Phase 10: consumes ONLY [GetFinancialAnalyticsUseCase] — never
@@ -151,7 +153,17 @@ class DashboardViewModel @Inject constructor(
             upcoming = upcoming,
             insights = emptyList()
         )
-    }.stateIn(
+    }
+        // Every one of the steps above is real work over the full history — a
+        // balance replay, a relationship pass, and now recurrence detection — and
+        // a combine's transform runs on the collector's context, which for
+        // viewModelScope is the MAIN THREAD. Left there it renders the app at well
+        // under one frame per second and the navigation bar stops responding
+        // entirely, which is exactly what surfacing the recurring engine caused on
+        // a real 385-transaction library. The computation belongs on Default; only
+        // the resulting state belongs on Main.
+        .flowOn(Dispatchers.Default)
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = EMPTY_STATE

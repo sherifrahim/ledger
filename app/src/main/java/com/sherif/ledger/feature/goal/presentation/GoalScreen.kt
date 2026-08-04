@@ -220,7 +220,7 @@ private fun GoalEditorDialog(
                     value = target,
                     onValueChange = { target = it },
                     currencySymbol = selected?.currency?.name ?: "AED",
-                    placeholder = "e.g. 20000",
+                    placeholder = "20000", // LedgerAmountInputField adds the "e.g." itself
                 )
                 Spacer(Modifier.height(LedgerSpacing.Medium))
                 Text("Funded by", style = LedgerTextStyles.Caption, color = LedgerTheme.colors.textTertiary)

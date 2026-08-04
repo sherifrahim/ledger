@@ -27,8 +27,11 @@ data class NodePosition(val x: Float, val y: Float, val vx: Float = 0f, val vy: 
  * thousand nodes this needs Barnes-Hut, which is a change to this file alone.
  */
 class ForceDirectedLayout(
-    private val repulsion: Float = 9_000f,
-    private val springLength: Float = 130f,
+    // Tuned against the owner's real graph, where the first attempt drew a dense
+    // overlapping clump: repulsion has to overcome the *drawn* radius, not just
+    // keep centres apart, so it scales with how large nodes actually render.
+    private val repulsion: Float = 34_000f,
+    private val springLength: Float = 190f,
     private val springStiffness: Float = 0.045f,
     private val centering: Float = 0.006f,
     private val damping: Float = 0.86f,

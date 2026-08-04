@@ -230,7 +230,8 @@ fun LedgerGraphCanvas(
 
                 // Labels only when they can actually be read. Drawing them at every
                 // zoom turns a dense graph into a wall of overlapping text.
-                if (scale > LABEL_SCALE_THRESHOLD && !faded) {
+                val labelWorthDrawing = scale > 0.95f || node.weight >= 0.5f
+                if (scale > LABEL_SCALE_THRESHOLD && !faded && labelWorthDrawing) {
                     drawNodeLabel(textMeasurer, node, point, radius, colors.textPrimary, colors.textTertiary)
                 }
             }
@@ -262,14 +263,14 @@ private fun DrawScope.drawNodeLabel(
     primary: Color,
     secondary: Color,
 ) {
-    val labelStyle = TextStyle(fontSize = 11.sp, color = primary)
+    val labelStyle = TextStyle(fontSize = 9.sp, color = primary)
     val measured = measurer.measure(node.label, labelStyle, maxLines = 1)
     drawText(
         textLayoutResult = measured,
         topLeft = Offset(point.x - measured.size.width / 2f, point.y + radius + 6f),
     )
     node.subtitle?.let { subtitle ->
-        val subtitleStyle = TextStyle(fontSize = 9.sp, color = secondary)
+        val subtitleStyle = TextStyle(fontSize = 8.sp, color = secondary)
         val measuredSubtitle = measurer.measure(subtitle, subtitleStyle, maxLines = 1)
         drawText(
             textLayoutResult = measuredSubtitle,
@@ -281,11 +282,18 @@ private fun DrawScope.drawNodeLabel(
     }
 }
 
-/** Radius grows with the node's own weight, falling back to how connected it is. */
+/**
+ * Radius grows with the node's own weight, falling back to how connected it is.
+ *
+ * Kept small deliberately. The first version topped out at 22dp, which on a real
+ * graph produced circles wider than the gaps between them — every cluster read as
+ * one blob and no label was legible. A node only has to be big enough to hit and
+ * to rank; the label underneath carries the meaning.
+ */
 private fun nodeRadiusDp(node: GraphNode, graph: GraphData): Float {
     val degreeWeight = ((graph.degree[node.id] ?: 0).toFloat() / 12f).coerceIn(0f, 1f)
     val weight = maxOf(node.weight, degreeWeight)
-    return 9f + weight * 13f
+    return 6f + weight * 8f
 }
 
 private fun screenToWorld(point: Offset, scale: Float, offset: Offset, size: Size): Offset {
@@ -318,8 +326,8 @@ private fun nodeAt(
 
 private fun fitScale(bounds: ForceDirectedLayout.Bounds, size: Size): Float {
     if (size.width <= 0f || size.height <= 0f) return 1f
-    val scaleX = size.width / (bounds.width * 1.4f)
-    val scaleY = size.height / (bounds.height * 1.4f)
+    val scaleX = size.width / (bounds.width * 1.7f)
+    val scaleY = size.height / (bounds.height * 1.7f)
     return minOf(scaleX, scaleY).coerceIn(MIN_SCALE, 1.2f)
 }
 

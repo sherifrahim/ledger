@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 
 data class BudgetUiState(
     val statuses: List<BudgetStatus> = emptyList(),
@@ -60,7 +62,11 @@ class BudgetViewModel @Inject constructor(
                 .filterNot { category -> budgets.any { it.category.equals(category, ignoreCase = true) } },
             currency = analytics.currency,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BudgetUiState())
+    }
+        // Same reason as DashboardViewModel: a combine transform runs on the
+        // collector's context, and this one replays analytics over the month.
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BudgetUiState())
 
     fun setBudget(category: String, limitMinor: Long, currency: CurrencyCode) {
         viewModelScope.launch { budgetRepository.setBudget(category, limitMinor, currency) }

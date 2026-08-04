@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 
 /**
  * Phase 9: every figure here — net worth, assets, liabilities, each account's
@@ -49,6 +51,9 @@ class AccountsViewModel @Inject constructor(
     val uiState: StateFlow<AccountsUiState> = transactionReadSource
         .observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second)
         .map { monthResult -> buildUiState(monthResult) }
+        // Same reason as DashboardViewModel: a combine transform runs on the
+        // collector's context, and this one replays balances and analytics.
+        .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

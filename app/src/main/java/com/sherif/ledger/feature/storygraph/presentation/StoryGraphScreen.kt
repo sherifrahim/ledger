@@ -62,13 +62,15 @@ fun StoryGraphScreen(
     // The palette lives in the theme, which only a composable can read, so it is
     // handed to the ViewModel rather than the ViewModel reaching for it.
     val palette = StoryGraphPalette(
-        account = colors.accent,
-        merchant = Color(0xFF7C8CF8),
+        // Distinct from income below: accent and positive are both green in this
+        // theme, which made the two most important kinds indistinguishable.
+        account = Color(0xFF5B9BD5),
+        merchant = Color(0xFF9B8CF8),
         category = Color(0xFF4FB477),
         tag = Color(0xFFE0A458),
         budget = Color(0xFFB07CC6),
         goal = Color(0xFF3FBFB2),
-        income = colors.positive,
+        income = Color(0xFF43C08A),
     )
     LaunchedEffect(Unit) { onPaletteReady(palette) }
 
