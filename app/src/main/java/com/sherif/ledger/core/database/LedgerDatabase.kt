@@ -46,8 +46,9 @@ import com.sherif.ledger.core.database.dao.TagDao
         FinancialEventEntity::class,
         TagEntity::class,
         TransactionTagEntity::class,
+        com.sherif.ledger.core.database.entity.BudgetEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)
@@ -63,13 +64,14 @@ abstract class LedgerDatabase : RoomDatabase() {
     abstract fun learnedDecisionDao(): LearnedDecisionDao
     abstract fun financialEventDao(): FinancialEventDao
     abstract fun tagDao(): TagDao
+    abstract fun budgetDao(): com.sherif.ledger.core.database.dao.BudgetDao
 
     companion object {
         const val DATABASE_NAME = "ledger_db"
         // Kept in sync with the @Database(version = ...) annotation above by
         // hand — Room doesn't expose that value as a runtime constant, and
         // AppInfoCollector needs a real number for its diagnostic bundle.
-        const val DATABASE_VERSION = 15
+        const val DATABASE_VERSION = 16
     }
 }
 

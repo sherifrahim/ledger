@@ -312,3 +312,32 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
         db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_tags_tag_id ON transaction_tags(tag_id)")
     }
 }
+
+/**
+ * Budgets — one monthly ceiling per spending category.
+ *
+ * A single new table holding only the user's intention. Progress against a budget
+ * is deliberately NOT stored: how much went on groceries this month is already
+ * answered by GetFinancialAnalyticsUseCase's category totals, and caching it here
+ * would create a second figure to keep in sync with the first. That is the same
+ * mistake this codebase refuses to make with balances, none of which are stored.
+ *
+ * Unique on category, so setting a limit for a category that already has one is
+ * an edit rather than a duplicate.
+ */
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS budgets (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                limit_minor INTEGER NOT NULL,
+                currency_code TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_budgets_category ON budgets(category)")
+    }
+}

@@ -41,6 +41,10 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
+    abstract fun bindBudgetRepository(repo: com.sherif.ledger.core.database.repository.RoomBudgetRepository): com.sherif.ledger.core.domain.repository.BudgetRepository
+
+    @Binds
+    @Singleton
     abstract fun bindMerchantRepository(repo: RoomMerchantRepository): MerchantRepository
 
     @Binds

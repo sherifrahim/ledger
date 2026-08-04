@@ -24,6 +24,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.feature.settings.presentation.viewmodel.UserProfileViewModel
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import androidx.compose.material.icons.filled.PieChart
 
 @Composable
 fun ProfileScreen(
@@ -32,7 +33,7 @@ fun ProfileScreen(
     onNavigateToAdjustBalance: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToReviewInbox: () -> Unit = {},
-    onNavigateToAiSettings: () -> Unit = {},
+    onNavigateToAiSettings: () -> Unit, onNavigateToBudgets: () -> Unit = {},
     onNavigateToAccounts: () -> Unit = {},
     onNavigateToActivity: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
@@ -72,7 +73,7 @@ fun ProfileScreen(
             }
 
             item {
-                PreferencesSection(onNavigateToDebugConsole, onNavigateToAdjustBalance, onNavigateToReviewInbox, onNavigateToAiSettings)
+                PreferencesSection(onNavigateToDebugConsole, onNavigateToAdjustBalance, onNavigateToReviewInbox, onNavigateToAiSettings, onNavigateToBudgets)
             }
 
             item {
@@ -170,7 +171,7 @@ private fun OverviewSection(
 }
 
 @Composable
-private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceClick: () -> Unit, onReviewInboxClick: () -> Unit, onAiSettingsClick: () -> Unit) {
+private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceClick: () -> Unit, onReviewInboxClick: () -> Unit, onAiSettingsClick: () -> Unit, onBudgetsClick: () -> Unit) {
     Column {
         Text("PREFERENCES", style = LedgerTheme.typography.labelLarge.copy(letterSpacing = 1.sp), color = LedgerTheme.colors.textTertiary)
         Spacer(Modifier.height(LedgerSpacing.Small))
@@ -183,6 +184,8 @@ private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceC
             // Removed fabricated static rows (Currency/Theme/Language/Notifications/
             // Data & Privacy) — they displayed hard-coded values and did nothing. Theme
             // now lives in the gear → Settings. Only real, wired actions remain here.
+            PreferenceRow(icon = Icons.Default.PieChart, label = "Budgets", onClick = onBudgetsClick)
+            LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.AccountBalanceWallet, label = "Adjust Starting Balance", onClick = onAdjustBalanceClick)
             LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.RateReview, label = "Review Uncategorized Transactions", onClick = onReviewInboxClick)
