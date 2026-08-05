@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
@@ -31,7 +29,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.sherif.ledger.core.designsystem.component.LedgerButton
 import com.sherif.ledger.core.designsystem.component.LedgerButtonStyle
 import com.sherif.ledger.core.designsystem.component.LedgerDivider
-import com.sherif.ledger.core.designsystem.component.LedgerIconButton
 import com.sherif.ledger.core.designsystem.component.LedgerTextField
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
@@ -54,16 +51,10 @@ fun SplitScreen(
             .background(LedgerTheme.colors.surfaceLevel0)
             .padding(horizontal = LedgerSpacing.Screen),
     ) {
-        Row(Modifier.fillMaxWidth().padding(top = LedgerSpacing.Small), verticalAlignment = Alignment.CenterVertically) {
-            LedgerIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackClick, contentDescription = "Back")
-        }
-        Spacer(Modifier.height(LedgerSpacing.Medium))
-        Text("Split", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-        Spacer(Modifier.height(LedgerSpacing.Tiny))
-        Text(
-            "${state.merchant} · ${money(state.totalMinor)}",
-            style = LedgerTextStyles.BodyMedium,
-            color = LedgerTheme.colors.textSecondary,
+        com.sherif.ledger.core.designsystem.component.LedgerScreenHeader(
+            title = "Split",
+            subtitle = "${state.merchant} · ${money(state.totalMinor)}",
+            onBackClick = onBackClick,
         )
         Spacer(Modifier.height(LedgerSpacing.Large))
 

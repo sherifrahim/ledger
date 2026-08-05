@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -34,7 +33,15 @@ fun TransactionsScreen(
 ) {
     Scaffold(
         topBar = {
-            TransactionsTopBar(onSearchClick, onBackClick, onAddClick)
+            LedgerScreenHeader(
+                title = "Transactions",
+                onBackClick = onBackClick,
+                modifier = Modifier.padding(horizontal = LedgerSpacing.ScreenPadding),
+                actions = {
+                    LedgerIconButton(icon = Icons.Default.Add, onClick = onAddClick, contentDescription = "Add transaction", tint = LedgerTheme.colors.textPrimary)
+                    LedgerIconButton(icon = Icons.Default.Search, onClick = onSearchClick, contentDescription = "Search", tint = LedgerTheme.colors.textPrimary)
+                },
+            )
         },
         containerColor = LedgerTheme.colors.surfaceBase
     ) { padding ->
@@ -83,43 +90,4 @@ fun TransactionsScreen(
     }
 }
 
-@Composable
-private fun TransactionsTopBar(onSearchClick: () -> Unit, onBackClick: () -> Unit, onAddClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Medium),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        LedgerIconButton(
-            icon = Icons.AutoMirrored.Filled.ArrowBack,
-            onClick = onBackClick,
-            contentDescription = "Back",
-            tint = LedgerTheme.colors.textPrimary
-        )
-
-        Text(
-            text = "Transactions",
-            style = LedgerTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = LedgerTheme.colors.textPrimary
-        )
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            LedgerIconButton(
-                icon = Icons.Default.Add,
-                onClick = onAddClick,
-                contentDescription = "Add transaction",
-                tint = LedgerTheme.colors.textPrimary
-            )
-            LedgerIconButton(
-                icon = Icons.Default.Search,
-                onClick = onSearchClick,
-                contentDescription = "Search",
-                tint = LedgerTheme.colors.textPrimary
-            )
-        }
-    }
-}
 

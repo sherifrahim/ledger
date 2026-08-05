@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerDivider
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
-import com.sherif.ledger.core.designsystem.component.LedgerTopBar
 import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles

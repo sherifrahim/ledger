@@ -133,7 +133,7 @@ fun CreditCardScreen(
 @Composable
 private fun CardSummary(state: CreditCardUiState, onManageLimit: () -> Unit) {
     val colors = LedgerTheme.colors
-    LedgerCard(elevation = LedgerCardDefaults.Elevation) {
+    com.sherif.ledger.core.designsystem.component.LedgerHeroCard {
         Text("Outstanding", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = colors.textSecondary)
         Spacer(Modifier.height(LedgerSpacing.Small))
         LedgerAutoSizeText(

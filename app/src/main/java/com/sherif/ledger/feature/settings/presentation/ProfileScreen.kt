@@ -1,6 +1,7 @@
 package com.sherif.ledger.feature.settings.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -43,7 +44,18 @@ fun ProfileScreen(
 ) {
     Scaffold(
         topBar = {
-            ProfileTopBar(onNavigateToSettings)
+            LedgerScreenHeader(
+                title = "Settings",
+                modifier = Modifier.padding(horizontal = LedgerSpacing.ScreenPadding),
+                actions = {
+                    LedgerIconButton(
+                        icon = Icons.Default.Settings,
+                        onClick = onNavigateToSettings,
+                        contentDescription = "Settings",
+                        tint = LedgerTheme.colors.textPrimary,
+                    )
+                },
+            )
         },
         containerColor = LedgerTheme.colors.surfaceBase
     ) { padding ->
@@ -89,33 +101,6 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileTopBar(onSettingsClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Medium),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Spacer(Modifier.width(44.dp))
-
-        Text(
-            text = "Settings",
-            style = LedgerTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = LedgerTheme.colors.textPrimary
-        )
-
-        LedgerIconButton(
-            icon = Icons.Default.Settings,
-            onClick = onSettingsClick,
-            contentDescription = "Settings",
-            tint = LedgerTheme.colors.textPrimary
-        )
-    }
-}
-
-@Composable
 private fun UserProfileHeader(onEditClick: () -> Unit, viewModel: UserProfileViewModel = hiltViewModel()) {
     val profile by viewModel.uiState.collectAsState()
 
@@ -123,15 +108,23 @@ private fun UserProfileHeader(onEditClick: () -> Unit, viewModel: UserProfileVie
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Large Profile Avatar
+        // Large Profile Avatar — a signature gradient (the same accent/system
+        // pairing LedgerHeroCard and the Liquid Glass ambient backdrop use)
+        // rather than a flat inset fill, so the one truly personal element on
+        // this screen doesn't read as a placeholder.
         Box(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(LedgerTheme.colors.surfaceInset),
+                .background(
+                    androidx.compose.ui.graphics.Brush.linearGradient(
+                        listOf(LedgerTheme.colors.positive, LedgerTheme.colors.system),
+                    ),
+                )
+                .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(profile.initials, style = LedgerTheme.typography.headlineLarge, color = LedgerTheme.colors.textPrimary)
+            Text(profile.initials, style = LedgerTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
         }
 
         Spacer(Modifier.height(LedgerSpacing.Medium))
