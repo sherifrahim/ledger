@@ -50,6 +50,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.feature.search.presentation.viewmodel.SearchViewModel
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /**
  * Universal Search (Product Hardening, PART 1) — real, not a resting mock.
@@ -85,8 +86,8 @@ fun UniversalSearchScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
     ) {
         item {
-            Column(Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small)) {
-                Text("Search", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
+            Column {
+                LedgerScreenHeader(title = "Search")
                 Spacer(Modifier.height(LedgerSpacing.Medium))
                 Box(
                     Modifier.clip(LedgerRadius.Full).background(LedgerTheme.colors.surfaceInset)

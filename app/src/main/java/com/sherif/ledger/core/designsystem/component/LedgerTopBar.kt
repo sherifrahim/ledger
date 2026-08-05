@@ -23,10 +23,20 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
- * LDL top navigation bar.
+ * A compact, centered-title bar — kept specifically for dense action toolbars
+ * where several trailing icon buttons need the room, not for ordinary screen
+ * headers.
  *
- * Purged of Material 3 CenterAlignedTopAppBar. Follows the "Carved"
- * aesthetic where the top bar is a flat extension of the background.
+ * Every real screen in the app uses [LedgerScreenHeader] instead: a sweep
+ * found this bar's small centered title (12sp, in a fixed 56dp band) sitting
+ * beside eight-plus screens that had each independently converged on a large
+ * left-aligned headline with an optional back button and subtitle — one of
+ * several inconsistent "top bar treatments" across the app. Every user-facing
+ * screen was migrated. The one caller left is the debug-only Developer
+ * Console, which packs six trailing action icons into its bar; forcing that
+ * screen through [LedgerScreenHeader]'s large headline would leave those
+ * icons fighting a 22sp title for room on a single row. Do not add a new
+ * user-facing screen here — use [LedgerScreenHeader].
  */
 @Composable
 fun LedgerTopBar(

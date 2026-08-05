@@ -36,6 +36,7 @@ import com.sherif.ledger.feature.review.presentation.components.ReviewCard
 import com.sherif.ledger.feature.review.presentation.viewmodel.ReviewInboxViewModel
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /**
  * Review Queue (P3) — wired to live data only.
@@ -70,15 +71,10 @@ fun ReviewInboxScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
     ) {
         item("header") {
-            Column(modifier = Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small)) {
-                Text("Review Queue", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    if (filtered.isEmpty()) "You're all caught up" else "${filtered.size} items need a quick decision",
-                    style = LedgerTextStyles.BodyMedium,
-                    color = LedgerTheme.colors.textSecondary,
-                )
-            }
+            LedgerScreenHeader(
+                title = "Review Queue",
+                subtitle = if (filtered.isEmpty()) "You're all caught up" else "${filtered.size} items need a quick decision",
+            )
         }
 
         item("filters") {

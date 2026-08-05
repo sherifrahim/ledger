@@ -27,6 +27,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.theme.LedgerThemeType
 import com.sherif.ledger.feature.settings.presentation.viewmodel.SettingsViewModel
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 @Composable
 fun SettingsScreen(
@@ -45,20 +46,7 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Section),
     ) {
         item("nav") {
-            LedgerTopBar(
-                title = "Appearance",
-                modifier = Modifier.statusBarsPadding(),
-                navigationIcon = {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = LedgerTheme.colors.label,
-                        modifier = Modifier
-                            .size(LedgerTheme.iconSize.Medium)
-                            .ledgerClickable { onBackClick() }
-                    )
-                }
-            )
+            LedgerScreenHeader(title = "Appearance", onBackClick = onBackClick)
         }
 
         // Only genuinely-functional settings remain. The previous Dark-mode toggle

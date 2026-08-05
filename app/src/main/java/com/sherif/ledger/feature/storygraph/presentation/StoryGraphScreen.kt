@@ -47,6 +47,7 @@ import com.sherif.ledger.core.designsystem.component.LedgerAmountStyle
 import com.sherif.ledger.core.designsystem.component.LedgerDivider
 import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.component.signedAmount
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /**
  * Story Graph — the whole ledger as a set of connected things rather than a list.
@@ -109,29 +110,21 @@ fun StoryGraphScreen(
 
         // Controls float over the canvas rather than shrinking it — the canvas is
         // the point, and a graph in a letterbox is a graph you cannot explore.
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(LedgerSpacing.Medium),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                LedgerIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    onClick = onBackClick,
-                    contentDescription = "Back",
-                    tint = colors.textPrimary,
-                )
-                Spacer(Modifier.width(LedgerSpacing.Small))
-                Text("Story Graph", style = LedgerTextStyles.Title, color = colors.textPrimary)
-            }
+        Column(Modifier.fillMaxWidth()) {
+            LedgerScreenHeader(
+                title = "Story Graph",
+                onBackClick = onBackClick,
+                modifier = Modifier.padding(horizontal = LedgerSpacing.Medium),
+            )
             if (!state.graph.isEmpty) {
                 Spacer(Modifier.height(LedgerSpacing.Small))
-                LedgerSearchBar(
-                    query = state.query,
-                    onQueryChange = onSearch,
-                    placeholder = "Find a merchant, account or tag",
-                )
+                Box(Modifier.padding(horizontal = LedgerSpacing.Medium)) {
+                    LedgerSearchBar(
+                        query = state.query,
+                        onQueryChange = onSearch,
+                        placeholder = "Find a merchant, account or tag",
+                    )
+                }
             }
         }
 

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.sherif.ledger.core.designsystem.component.LedgerCard
 import com.sherif.ledger.core.designsystem.component.LedgerCardDefaults
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 import com.sherif.ledger.core.designsystem.component.LedgerIconButton
 import com.sherif.ledger.core.designsystem.component.LedgerInteractiveLineChart
 import com.sherif.ledger.core.designsystem.component.LedgerInteractivePieChart
@@ -53,28 +54,11 @@ fun InsightsScreen(state: InsightsUiState, onBackClick: () -> Unit = {}) {
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Large),
         ) {
             item {
-                // Title and subtitle share one text column to the right of the back
-                // button. Previously the subtitle was a sibling of the whole Row, so
-                // it started at the screen edge while the title started past the
-                // button — two left edges where the eye expects one.
-                Row(
-                    modifier = Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    LedgerIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        onClick = onBackClick,
-                        contentDescription = "Back",
-                        tint = LedgerTheme.colors.textPrimary,
-                    )
-                    Spacer(Modifier.width(LedgerSpacing.Small))
-                    Column {
-                        Text("Insights", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-                        if (state.dateRange.isNotBlank()) {
-                            Text(state.dateRange, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textSecondary)
-                        }
-                    }
-                }
+                LedgerScreenHeader(
+                    title = "Insights",
+                    subtitle = state.dateRange.takeIf { it.isNotBlank() },
+                    onBackClick = onBackClick,
+                )
             }
 
             item { CashflowCard(state.incomeTotal, state.spentTotal) }

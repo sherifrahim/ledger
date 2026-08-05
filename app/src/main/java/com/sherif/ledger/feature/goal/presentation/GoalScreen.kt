@@ -52,6 +52,7 @@ import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.core.domain.util.parsePlainDecimalToMinor
 import com.sherif.ledger.feature.goal.presentation.viewmodel.FundingAccountUi
 import com.sherif.ledger.feature.goal.presentation.viewmodel.GoalUiState
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /**
  * Goals — what the user is saving towards, measured by the funding account's
@@ -88,19 +89,7 @@ fun GoalScreen(
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
         ) {
             item {
-                Row(
-                    modifier = Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    LedgerIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        onClick = onBackClick,
-                        contentDescription = "Back",
-                        tint = LedgerTheme.colors.textPrimary,
-                    )
-                    Spacer(Modifier.width(LedgerSpacing.Small))
-                    Text("Goals", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-                }
+                LedgerScreenHeader(title = "Goals", onBackClick = onBackClick)
             }
 
             if (state.goals.isEmpty()) {

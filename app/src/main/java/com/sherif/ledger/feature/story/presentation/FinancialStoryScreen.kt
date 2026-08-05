@@ -25,6 +25,7 @@ import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
 import com.sherif.ledger.core.designsystem.theme.LedgerAnimations
 import androidx.compose.material.icons.filled.Hub
 import com.sherif.ledger.core.designsystem.component.LedgerIconButton
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /**
  * Financial Story — a primary destination (spec Chapter 34/36/80).
@@ -45,9 +46,9 @@ fun FinancialStoryScreen(
         // The graph is the same story told as connections rather than as a list, so
         // it belongs here beside the feed — not buried in Search's quick-access,
         // where nobody looking for their story would think to find it.
-        LedgerTopBar(
+        LedgerScreenHeader(
             title = "Story",
-            modifier = Modifier.statusBarsPadding(),
+            modifier = Modifier.padding(horizontal = LedgerSpacing.ScreenPadding),
             actions = {
                 LedgerIconButton(
                     icon = Icons.Filled.Hub,

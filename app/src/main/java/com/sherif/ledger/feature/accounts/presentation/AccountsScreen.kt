@@ -24,6 +24,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /**
  * Accounts — wired to live data (Milestone P1).
@@ -98,19 +99,7 @@ fun AccountsScreen(
 
 @Composable
 private fun AccountsHeader(onBackClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = LedgerSpacing.Small),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        LedgerIconButton(
-            icon = Icons.AutoMirrored.Filled.ArrowBack,
-            onClick = onBackClick,
-            contentDescription = "Back",
-            tint = LedgerTheme.colors.textPrimary,
-        )
-        Spacer(Modifier.width(LedgerSpacing.Small))
-        Text("Accounts", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-    }
+    LedgerScreenHeader(title = "Accounts", onBackClick = onBackClick)
 }
 
 @Composable

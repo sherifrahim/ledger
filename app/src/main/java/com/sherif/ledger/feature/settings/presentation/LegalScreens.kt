@@ -25,6 +25,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import androidx.compose.material3.Text
 import com.sherif.ledger.core.designsystem.theme.ledgerScreenBottomPadding
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /** A section of legal / informational copy: an optional heading + body paragraph. */
 private data class LegalSection(val heading: String?, val body: String)
@@ -44,18 +45,7 @@ private fun LegalScaffold(
         verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
     ) {
         item("nav") {
-            LedgerTopBar(
-                title = title,
-                modifier = Modifier.statusBarsPadding(),
-                navigationIcon = {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = LedgerTheme.colors.label,
-                        modifier = Modifier.size(LedgerTheme.iconSize.Medium).ledgerClickable { onBackClick() },
-                    )
-                },
-            )
+            LedgerScreenHeader(title = title, onBackClick = onBackClick)
         }
 
         item("intro") {

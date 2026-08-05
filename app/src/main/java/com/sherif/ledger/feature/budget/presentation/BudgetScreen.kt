@@ -56,6 +56,7 @@ import com.sherif.ledger.core.domain.model.Money
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.core.domain.util.parsePlainDecimalToMinor
 import com.sherif.ledger.feature.budget.presentation.viewmodel.BudgetUiState
+import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 
 /**
  * Budgets — a monthly ceiling per category, and how close this month is to it.
@@ -97,26 +98,7 @@ fun BudgetScreen(
             verticalArrangement = Arrangement.spacedBy(LedgerSpacing.Medium),
         ) {
             item {
-                Row(
-                    modifier = Modifier.statusBarsPadding().padding(top = LedgerSpacing.Small),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    LedgerIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        onClick = onBackClick,
-                        contentDescription = "Back",
-                        tint = LedgerTheme.colors.textPrimary,
-                    )
-                    Spacer(Modifier.width(LedgerSpacing.Small))
-                    Column {
-                        Text("Budgets", style = LedgerTextStyles.Headline, color = LedgerTheme.colors.textPrimary)
-                        Text(
-                            "This month",
-                            style = LedgerTextStyles.BodyMedium,
-                            color = LedgerTheme.colors.textSecondary,
-                        )
-                    }
-                }
+                LedgerScreenHeader(title = "Budgets", subtitle = "This month", onBackClick = onBackClick)
             }
 
             if (state.statuses.isEmpty()) {
