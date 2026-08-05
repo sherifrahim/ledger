@@ -86,6 +86,16 @@ interface TransactionDao {
         packageName: String,
         toAccountId: Long,
     ): Int
+
+    /**
+     * Every transaction on [fromAccountId], regardless of origin signature —
+     * unlike [reassignByOriginSignature]/[reassignUntailedByOrigin], which only
+     * ever move what a specific identity match justifies. This is the blanket
+     * move a user-initiated account merge needs: "everything on this account now
+     * belongs to that one," not "everything matching this one signature."
+     */
+    @Query("UPDATE transactions SET account_id = :toAccountId WHERE account_id = :fromAccountId AND is_deleted = 0")
+    suspend fun reassignAllByAccount(fromAccountId: Long, toAccountId: Long): Int
 }
 
 /** Room projection for [countByOriginSignature]. */

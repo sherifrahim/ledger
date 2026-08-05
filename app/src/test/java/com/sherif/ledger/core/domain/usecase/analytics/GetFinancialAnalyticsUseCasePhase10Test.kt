@@ -54,6 +54,7 @@ class GetFinancialAnalyticsUseCasePhase10Test {
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> = emptyList()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
         override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long) = 0
+        override suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long) = 0
     }
 
     private object FakeUnusedAccountRepository : AccountRepository {

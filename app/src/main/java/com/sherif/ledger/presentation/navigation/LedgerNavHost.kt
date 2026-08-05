@@ -130,6 +130,19 @@ fun LedgerNavHost(
                 onAccountClick = { accountId ->
                     navController.navigate(LedgerRoute.CreditCard.create(accountId))
                 },
+                onMergeAccountsClick = { navController.navigate(LedgerRoute.MergeAccounts.route) },
+            )
+        }
+
+        composable(LedgerRoute.MergeAccounts.route) {
+            val viewModel: com.sherif.ledger.feature.accounts.presentation.viewmodel.MergeAccountsViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.feature.accounts.presentation.MergeAccountsScreen(
+                state = state,
+                onBackClick = { navController.popBackStack() },
+                onSelectKeep = { viewModel.selectKeep(it) },
+                onSelectMerge = { viewModel.selectMerge(it) },
+                onConfirm = { viewModel.confirmMerge() },
             )
         }
 

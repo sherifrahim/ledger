@@ -1,5 +1,13 @@
 # Account Identity — diagnosis and plan
 
+**Status: all 5 steps done (2026-08-05).** Step 1 (explicit `isDefault`
+identity) shipped earlier; Steps 2-5 (lazy default-account creation, untailed-
+account adoption, the Merge Accounts screen, and opening-balance recombination
+on merge) shipped together, each verified by unit tests plus a full
+`--rerun-tasks` regression pass and on-device confirmation. Kept as historical
+record of the diagnosis — the mechanism it describes is why the fix looks the
+way it does.
+
 The last correctness gap behind wrong balances. Evidence is real-device data
 (see `DEVICE_FINDINGS.md`).
 

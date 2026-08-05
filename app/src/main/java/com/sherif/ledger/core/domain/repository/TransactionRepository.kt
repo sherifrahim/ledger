@@ -51,6 +51,11 @@ interface TransactionRepository {
         packageName: String,
         toAccountId: Long,
     ): Int
+
+    /** Every transaction on [fromAccountId] moved to [toAccountId], regardless of
+     *  origin signature — the blanket move a user-initiated account merge needs.
+     *  Returns the number of rows affected. */
+    suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long): Int
 }
 
 

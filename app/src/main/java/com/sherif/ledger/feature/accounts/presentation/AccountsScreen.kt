@@ -41,9 +41,11 @@ fun AccountsScreen(
     onNavigateToInsights: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onAccountClick: (Long) -> Unit = {},
+    onMergeAccountsClick: () -> Unit = {},
 ) {
     val currency = state.netWorthCurrency
     val hasAccounts = state.sections.any { it.accounts.isNotEmpty() }
+    val accountCount = state.sections.sumOf { it.accounts.size }
 
     Scaffold(containerColor = LedgerTheme.colors.surfaceBase) { padding ->
         LazyColumn(
@@ -97,6 +99,22 @@ fun AccountsScreen(
                         Spacer(Modifier.height(LedgerSpacing.Tiny))
                         Text(insight.subtitle, style = LedgerTextStyles.BodyMedium, color = LedgerTheme.colors.textPrimary)
                     }
+                }
+            }
+
+            // Two rows for what is really one bank account does happen — an
+            // institution the resolver hadn't learned yet, or data from before its
+            // duplicate-prevention existed. Merging needs two accounts to pick from.
+            if (accountCount >= 2) {
+                item {
+                    Text(
+                        "Merge duplicate accounts",
+                        style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.SemiBold),
+                        color = LedgerTheme.colors.accent,
+                        modifier = Modifier
+                            .ledgerClickable(onClick = onMergeAccountsClick)
+                            .padding(vertical = LedgerSpacing.Small),
+                    )
                 }
             }
         }

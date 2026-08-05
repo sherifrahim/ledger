@@ -44,6 +44,7 @@ class ProcessNotificationUseCaseTest {
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<com.sherif.ledger.core.domain.repository.AccountOriginCount> = emptyList()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
         override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long): Int = 0
+        override suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long): Int = 0
     }
 
     private val accountRepository = object : AccountRepository {

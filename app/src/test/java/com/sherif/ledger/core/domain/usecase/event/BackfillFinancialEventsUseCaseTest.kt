@@ -96,4 +96,5 @@ private class FakeTransactionRepo(private val txns: List<Transaction>) : Transac
     override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String): List<AccountOriginCount> = emptyList()
     override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long): Int = 0
     override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long): Int = 0
+    override suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long): Int = 0
 }

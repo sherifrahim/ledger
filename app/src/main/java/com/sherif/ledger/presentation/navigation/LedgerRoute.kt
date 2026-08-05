@@ -27,6 +27,7 @@ sealed class LedgerRoute(val route: String) {
     data object CreditCard : LedgerRoute("credit_card/{accountId}") {
         fun create(accountId: Long): String = "credit_card/$accountId"
     }
+    data object MergeAccounts : LedgerRoute("merge_accounts")
     data object AdjustBalance : LedgerRoute("adjust_balance")
     data object EditProfile : LedgerRoute("edit_profile")
     data object AiSettings : LedgerRoute("ai_settings")

@@ -294,6 +294,7 @@ class FinancialInvariantsTest {
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String) = emptyList<com.sherif.ledger.core.domain.repository.AccountOriginCount>()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = 0
         override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long) = 0
+        override suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long) = 0
     }
 
     /** Never invoked: compute() is exercised directly, execute()'s repository path is not under test here. */
@@ -309,6 +310,7 @@ class FinancialInvariantsTest {
         override suspend fun countTransactionsByOrigin(packageName: String, cardTail: String) = throw NotImplementedError()
         override suspend fun reassignTransactions(fromAccountId: Long, packageName: String, cardTail: String, toAccountId: Long) = throw NotImplementedError()
         override suspend fun reassignUntailedTransactions(fromAccountId: Long, packageName: String, toAccountId: Long) = throw NotImplementedError()
+        override suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long) = throw NotImplementedError()
     }
 
     /** Never invoked: AccountBalanceService is only constructor-required here, never exercised. */

@@ -172,6 +172,9 @@ class RoomTransactionRepository @Inject constructor(
         packageName: String,
         toAccountId: Long,
     ): Int = transactionDao.reassignUntailedByOrigin(fromAccountId, packageName, toAccountId)
+
+    override suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long): Int =
+        transactionDao.reassignAllByAccount(fromAccountId, toAccountId)
 }
 
 

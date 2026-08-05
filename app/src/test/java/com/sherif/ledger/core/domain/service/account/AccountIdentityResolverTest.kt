@@ -87,6 +87,7 @@ class AccountIdentityResolverTest {
             bySignature.merge(toAccountId, moved) { a, b -> a + b }
             return moved
         }
+        override suspend fun reassignAllTransactions(fromAccountId: Long, toAccountId: Long): Int = 0
 
         /** Transactions currently attributed to [accountId] for this signature. */
         fun countFor(packageName: String, tail: String, accountId: Long): Int =
