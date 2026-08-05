@@ -11,6 +11,8 @@ import com.sherif.ledger.core.domain.model.Tag
 import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.util.MoneyFormatter
+import com.sherif.ledger.feature.relationship.RelationshipEngine
+import com.sherif.ledger.feature.relationship.RelationshipType
 import javax.inject.Inject
 
 /** What a node represents. Used for colour and for the legend. */
@@ -74,7 +76,9 @@ data class StoryGraphResult(
  * Nothing here is invented: every node corresponds to a row that exists, and
  * entity types Ledger does not have are simply absent rather than stubbed.
  */
-class StoryGraphBuilder @Inject constructor() {
+class StoryGraphBuilder @Inject constructor(
+    private val relationshipEngine: RelationshipEngine,
+) {
 
     fun build(
         transactions: List<Transaction>,
@@ -185,6 +189,39 @@ class StoryGraphBuilder @Inject constructor() {
             .forEach { (merchant, category) ->
                 edges += GraphEdge(merchantId(merchant), categoryId(category), label = "is", strength = 0.35f)
             }
+
+        // ---- Cross-account money movement (RelationshipEngine) ----
+        //
+        // Everything above is one account's own spend aggregated outward. This is
+        // the one place the graph draws a line BETWEEN two accounts — a card
+        // payment, an internal transfer, money moved to savings or invested. It is
+        // what makes the picture closer to a real incident graph: a path money
+        // actually took, not just where each account's own spend went. Built from
+        // the SAME RelationshipEngine every other screen's narrative comes from —
+        // no separate matching logic invented here.
+        run {
+            val txnById = transactions.associateBy { it.id }
+            relationshipEngine.analyze(transactions)
+                .filter { it.type in CROSS_ACCOUNT_RELATIONSHIP_TYPES && it.targetTransactionId != null }
+                .mapNotNull { rel ->
+                    val source = txnById[rel.sourceTransactionId] ?: return@mapNotNull null
+                    val target = txnById[rel.targetTransactionId] ?: return@mapNotNull null
+                    if (source.accountId == target.accountId) return@mapNotNull null
+                    if (source.accountId !in usedAccountIds || target.accountId !in usedAccountIds) return@mapNotNull null
+                    Triple(source.accountId, target.accountId, rel.type)
+                }
+                .groupingBy { it }
+                .eachCount()
+                .forEach { (movement, count) ->
+                    val (fromAcc, toAcc, type) = movement
+                    edges += GraphEdge(
+                        fromId = accountId(fromAcc),
+                        toId = accountId(toAcc),
+                        label = movementLabel(type, count),
+                        strength = 0.75f,
+                    )
+                }
+        }
 
         // ---- Income: where the money comes from, on top of where it goes ----
         val inflows = transactions.filterNot { it.isOutflow }
@@ -302,6 +339,17 @@ class StoryGraphBuilder @Inject constructor() {
     private fun prettify(raw: String) =
         raw.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }
 
+    private fun movementLabel(type: RelationshipType, count: Int): String {
+        val base = when (type) {
+            RelationshipType.CREDIT_CARD_PAYMENT -> "card payment"
+            RelationshipType.TRANSFER_BETWEEN_ACCOUNTS -> "transfer"
+            RelationshipType.SAVINGS_MOVEMENT -> "to savings"
+            RelationshipType.INVESTMENT_CONTRIBUTION -> "invested"
+            else -> "moved"
+        }
+        return if (count > 1) "$base ($count)" else base
+    }
+
     companion object {
         const val INCOME_ID = "income"
 
@@ -310,6 +358,20 @@ class StoryGraphBuilder @Inject constructor() {
 
         /** A merchant must account for at least this share of spend to earn a node. */
         private const val MERCHANT_SHARE_FLOOR = 0.012f
+
+        /**
+         * Relationship types that connect two DIFFERENT accounts, and are
+         * therefore drawable as an edge between them. The rest (recurring
+         * merchant, salary-funds-expense, cash withdrawal, interest, ...) describe
+         * a single account's own activity and already show up through the
+         * account→merchant/category edges above.
+         */
+        private val CROSS_ACCOUNT_RELATIONSHIP_TYPES = setOf(
+            RelationshipType.CREDIT_CARD_PAYMENT,
+            RelationshipType.TRANSFER_BETWEEN_ACCOUNTS,
+            RelationshipType.SAVINGS_MOVEMENT,
+            RelationshipType.INVESTMENT_CONTRIBUTION,
+        )
 
         fun accountId(id: Long) = "account:$id"
         fun merchantId(name: String) = "merchant:$name"

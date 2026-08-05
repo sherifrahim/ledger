@@ -182,6 +182,12 @@ fun LedgerNavHost(
                 onOpenTransaction = { id ->
                     navController.navigate(LedgerRoute.TransactionDetails.create(id.toString()))
                 },
+                onDateRangeSelected = { viewModel.setDateRange(it) },
+                onToggleAccountFilter = { viewModel.toggleAccountFilter(it) },
+                onToggleCategoryFilter = { viewModel.toggleCategoryFilter(it) },
+                onToggleTagFilter = { viewModel.toggleTagFilter(it) },
+                onToggleKindVisible = { viewModel.toggleKindVisible(it) },
+                onClearFilters = { viewModel.clearFilters() },
             )
         }
 

@@ -17,7 +17,7 @@ import java.time.Instant
 
 class StoryGraphBuilderTest {
 
-    private val builder = StoryGraphBuilder()
+    private val builder = StoryGraphBuilder(com.sherif.ledger.feature.relationship.RelationshipEngine.default())
 
     private val palette = StoryGraphPalette(
         account = Color.Gray, merchant = Color.Gray, category = Color.Gray,
@@ -210,6 +210,40 @@ class StoryGraphBuilderTest {
 
         val ids = result.graph.nodes.map { it.id }.toSet()
         assertTrue(result.transactionsByNode.keys.all { it in ids })
+    }
+
+    @Test
+    fun `a credit card payment draws an edge between the paying and card accounts`() {
+        // RelationshipEngine already identifies this pair; the graph must draw it
+        // rather than showing two accounts with no line connecting them at all.
+        val pay = Transaction(
+            id = 100L, accountId = 1L, brandId = null, categoryId = null,
+            amount = Money(50_000L, CurrencyCode.AED), type = TransactionType.TRANSFER,
+            timestamp = Instant.parse("2026-08-01T09:00:00Z"),
+            source = IngestionSource.SMS, rawText = "Card payment towards Mashreq", merchantText = "Card payment towards Mashreq",
+            fingerprint = "fp-pay",
+        )
+        val confirmation = Transaction(
+            id = 101L, accountId = 2L, brandId = null, categoryId = null,
+            amount = Money(50_000L, CurrencyCode.AED), type = TransactionType.INCOME,
+            timestamp = Instant.parse("2026-08-01T09:05:00Z"),
+            source = IngestionSource.SMS, rawText = "Payment received", merchantText = "Payment received",
+            fingerprint = "fp-conf",
+        )
+        // Padding so the paying account's own spend clears the merchant floor and
+        // both accounts survive as nodes.
+        val filler = List(10) { txn(200L + it, 1L, 10_000L, "Carrefour") }
+
+        val graph = build(
+            transactions = filler + listOf(pay, confirmation),
+            accounts = listOf(account(1L, "ADCB"), account(2L, "Mashreq Credit Card")),
+        )
+
+        assertTrue(
+            graph.edges.any {
+                it.fromId == StoryGraphBuilder.accountId(1L) && it.toId == StoryGraphBuilder.accountId(2L)
+            },
+        )
     }
 
     @Test
