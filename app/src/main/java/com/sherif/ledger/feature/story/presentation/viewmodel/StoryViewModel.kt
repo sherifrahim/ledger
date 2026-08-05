@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
+import com.sherif.ledger.core.domain.model.Transaction
 import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.repository.MerchantRepository
@@ -18,7 +19,7 @@ import com.sherif.ledger.feature.story.presentation.StoryUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
 import java.time.LocalDate
@@ -42,20 +43,24 @@ class StoryViewModel @Inject constructor(
     private val merchantResolver: MerchantResolver,
 ) : ViewModel() {
 
-    private val weekRange = run {
-        val now = Instant.now()
-        now.minus(7, ChronoUnit.DAYS) to now
-    }
-
-    val uiState: StateFlow<StoryUiState> = combine(
-        transactionReadSource.observeRecentTransactions(50),
-        transactionReadSource.observeTransactionsBetween(weekRange.first, weekRange.second),
-    ) { result, weekResult ->
+    val uiState: StateFlow<StoryUiState> = transactionReadSource.observeRecentTransactions(50)
+        .map { result ->
             val txns = (result as? LedgerResult.Success)?.data ?: emptyList()
-            if (txns.isEmpty()) return@combine StoryUiState()
+            if (txns.isEmpty()) return@map StoryUiState()
 
-            val weekTxns = (weekResult as? LedgerResult.Success)?.data ?: emptyList()
-            val weeklyNarrative = buildWeeklyNarrative(weekTxns)
+            // Bug found in on-device verification (2026-08-06): this used to be a
+            // SEPARATE observeTransactionsBetween(start, end) query with `end` a
+            // ViewModel-construction-time Instant.now() -- frozen for the whole
+            // ViewModel's lifetime. Any transaction captured AFTER the ViewModel
+            // was created (i.e. any transaction arriving while the app is actually
+            // running) fell after that frozen upper bound and was silently
+            // excluded from its own "this week" summary. Filtering the
+            // already-fetched `txns` with a freshly-read Instant.now() on every
+            // recomputation has no such staleness -- there is no frozen bound to
+            // go stale.
+            val weekCutoff = Instant.now().minus(7, ChronoUnit.DAYS)
+            val weekTxns = txns.filter { it.timestamp.isAfter(weekCutoff) }
+            val weeklyNarrative = buildWeeklyNarrative(weekTxns, weekCutoff)
 
             val stories = getFinancialAnalyticsUseCase.transactionStories(txns)
             val brandNames = (merchantRepository.getAllBrands() as? LedgerResult.Success)
@@ -95,11 +100,11 @@ class StoryViewModel @Inject constructor(
      * reads — no separate narrative engine, nothing fabricated. Null below
      * [MIN_NARRATIVE_TRANSACTIONS]: one transaction isn't a story, it's a receipt.
      */
-    private fun buildWeeklyNarrative(weekTxns: List<com.sherif.ledger.core.domain.model.Transaction>): String? {
+    private fun buildWeeklyNarrative(weekTxns: List<Transaction>, weekCutoff: Instant): String? {
         val expenseCount = weekTxns.count { it.type == TransactionType.EXPENSE }
         if (expenseCount < MIN_NARRATIVE_TRANSACTIONS) return null
 
-        val analytics = getFinancialAnalyticsUseCase.compute(weekTxns, weekRange.first, weekRange.second)
+        val analytics = getFinancialAnalyticsUseCase.compute(weekTxns, weekCutoff, Instant.now())
         if (analytics.netSpendMinor <= 0) return null
 
         val spent = MoneyFormatter.format(Money(analytics.netSpendMinor, analytics.currency), includeSymbol = true)
