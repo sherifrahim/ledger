@@ -34,4 +34,11 @@ data class ReviewItemUi(
     // title-cased display fallback) — the key a category correction must be
     // learned against so MerchantResolver's own normalization matches it later.
     val rawMerchantText: String? = null,
+    // The verbatim captured message (Transaction.rawText) — genuinely different
+    // from [rawMerchantText] above, which can itself be an extracted/title-cased
+    // name for newer rows (see Transaction.merchantOrRawText). Real user testing:
+    // "user doesn't understand in one look which transaction the app is
+    // referring to" — shown on the card so a person can just read the actual
+    // bank SMS and categorize from that, the way they naturally would.
+    val rawMessage: String? = null,
 )

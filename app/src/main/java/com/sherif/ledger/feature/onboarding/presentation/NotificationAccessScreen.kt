@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.onboarding.presentation
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,7 +42,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 
 @Composable
-fun NotificationAccessScreen() {
+fun NotificationAccessScreen(onSkip: () -> Unit = {}) {
     val context = LocalContext.current
     val diagnostics = remember { DiagnosticUtils.getIngestionDiagnostics(context) }
     val scrollState = rememberScrollState()
@@ -79,7 +80,7 @@ fun NotificationAccessScreen() {
         Spacer(Modifier.height(LedgerSpacing.Medium))
 
         Text(
-            text = "Ledger automatically detects transactions from your bank notifications. This requires 'Notification Access' in Android settings.",
+            text = "Ledger can also catch transactions from bank APP NOTIFICATIONS (not just SMS) — payments through Careem, wallet apps, and anything your bank sends as a push alert rather than a text. That needs 'Notification Access' in Android settings.",
             style = LedgerTextStyles.Caption.copy(lineHeight = 22.sp),
             color = LedgerTheme.colors.secondaryLabel,
             textAlign = TextAlign.Center
@@ -115,6 +116,26 @@ fun NotificationAccessScreen() {
         Spacer(Modifier.height(LedgerSpacing.Small))
         Text(
             text = "Recommended — lets Ledger keep capturing transactions even when the app is closed.",
+            style = LedgerTextStyles.Caption,
+            color = LedgerTheme.colors.tertiaryLabel,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(Modifier.height(LedgerSpacing.XxLarge))
+
+        // Bank SMS is the core capture path and works standalone — this whole
+        // screen is about a SECOND, optional source. Skipping it must not
+        // block using the app at all; it can be granted later from Profile.
+        Text(
+            text = "Skip for now — use SMS only",
+            style = LedgerTextStyles.BodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = LedgerTheme.colors.system,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onSkip).padding(LedgerSpacing.Small),
+        )
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        Text(
+            text = "You can turn this on anytime from Profile → Notification Access.",
             style = LedgerTextStyles.Caption,
             color = LedgerTheme.colors.tertiaryLabel,
             textAlign = TextAlign.Center,

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.Icon
@@ -116,6 +117,11 @@ fun ReviewCard(
             )
         }
 
+        item.rawMessage?.let { message ->
+            Spacer(Modifier.height(LedgerSpacing.Medium))
+            RawMessagePreview(message)
+        }
+
         Spacer(Modifier.height(LedgerSpacing.Medium))
         LedgerDivider(alpha = 0.06f)
         Spacer(Modifier.height(LedgerSpacing.Small))
@@ -162,6 +168,40 @@ fun ReviewCard(
                 LedgerButton("Change", onClick = onEdit, style = LedgerButtonStyle.Tonal, modifier = Modifier.weight(1f))
             }
         }
+    }
+}
+
+/**
+ * The actual captured bank SMS/notification, verbatim — real user testing:
+ * "user doesn't understand in one look which transaction the app is
+ * referring to, so if we can show the raw messages preview... then they can
+ * categorise it easily." A merchant name alone can be ambiguous or oddly
+ * extracted; the original message is what a person actually recognizes.
+ */
+@Composable
+private fun RawMessagePreview(message: String) {
+    val colors = LedgerTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(com.sherif.ledger.core.designsystem.tokens.LedgerRadius.Medium)
+            .background(colors.surfaceInset)
+            .padding(LedgerSpacing.Small),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Info,
+            contentDescription = null,
+            tint = colors.textTertiary,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(LedgerSpacing.Small))
+        Text(
+            message,
+            style = LedgerTextStyles.Caption,
+            color = colors.textSecondary,
+            maxLines = 3,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
     }
 }
 

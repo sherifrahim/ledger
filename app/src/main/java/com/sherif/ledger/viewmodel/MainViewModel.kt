@@ -8,11 +8,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     val isSmsImported: StateFlow<Boolean> = userPreferencesRepository.isSmsImported
@@ -21,6 +22,17 @@ class MainViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = true
         )
+
+    val isNotificationAccessSkipped: StateFlow<Boolean> = userPreferencesRepository.isNotificationAccessSkipped
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
+    fun skipNotificationAccess() {
+        viewModelScope.launch { userPreferencesRepository.setNotificationAccessSkipped(true) }
+    }
 
     val isProfileSetup: StateFlow<Boolean> = userPreferencesRepository.isProfileSetup
         .stateIn(

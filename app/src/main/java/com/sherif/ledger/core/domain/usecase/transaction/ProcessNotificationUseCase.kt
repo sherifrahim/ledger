@@ -243,6 +243,16 @@ class ProcessNotificationUseCase @Inject constructor(
                     "${identity.decision} accountId=${identity.accountId} confidence=${identity.confidence}: ${identity.evidence.joinToString("; ")}",
                 )
 
+                // A known non-financial sender (telecom/loyalty/marketing) never
+                // becomes a transaction, however "financial-shaped" its wording
+                // looked to extraction — see AccountIdentityDecision.DISCARD.
+                if (identity.decision == com.sherif.ledger.core.domain.service.account.AccountIdentityDecision.DISCARD) {
+                    LedgerLogger.pipeline("Router", "Discarded: non-financial sender, never a real transaction")
+                    emitTrace(tracer, PipelineResult.IGNORED)
+                    LedgerLogger.setTraceId(null)
+                    return ProcessNotificationOutcome(filterAccepted = true, category = ProcessNotificationOutcome.Category.DISCARDED)
+                }
+
                 val params = InsertTransactionUseCase.Params(
                     accountId = identity.accountId,
                     amountMinor = candidate.amountMinor ?: 0L,

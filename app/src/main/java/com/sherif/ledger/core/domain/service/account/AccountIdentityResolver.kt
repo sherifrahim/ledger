@@ -30,6 +30,18 @@ enum class AccountIdentityDecision {
      *  class of bug behind the confirmed HDFC Bank currency-mixing incident
      *  (RC6) at the source, for any future unrecognized institution too. */
     CANDIDATE,
+
+    /**
+     * The sender is a known [com.sherif.ledger.core.domain.service.account.SenderKind.NON_FINANCIAL]
+     * source (telecom operator, loyalty programme, marketing shortcode) — never
+     * becomes a transaction at all, not even an unattributed one. Real user
+     * testing confirmed exactly the shape this closes: a "chance to win AED 100
+     * voucher" message from a loyalty sender, and a telecom recharge-offer
+     * promotion, both showing up as real line items in the transaction list.
+     * [accountId] is meaningless for this decision (never read) — there is
+     * deliberately no account to check it against.
+     */
+    DISCARD,
 }
 
 /**

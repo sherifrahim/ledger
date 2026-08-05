@@ -34,6 +34,16 @@ class UserPreferencesRepository @Inject constructor(
     private val userEmailKey = stringPreferencesKey("user_email")
     private val hasCompletedProfileSetupKey = booleanPreferencesKey("has_completed_profile_setup")
 
+    // Notification Listener access (Settings > Notification access) is a
+    // heavyweight, unfamiliar system flow — not a normal runtime permission
+    // dialog — and SMS-only capture (SmsImporter/SmsReceiver) works standalone
+    // without it. Real user testing confirmed this gate, mandatory and
+    // un-skippable, was the single biggest onboarding blocker. This flag lets
+    // the user explicitly defer it and proceed with SMS-only capture; they can
+    // still grant it later from Profile for app-notification captures (Careem,
+    // wallet apps) that never arrive as SMS.
+    private val notificationAccessSkippedKey = booleanPreferencesKey("notification_access_skipped")
+
     // The user's chosen historical-import window (Part 2/3: onboarding range
     // selection) and a summary of what the last import run actually did with
     // it — persisted so the Developer Console can explain the import long
@@ -80,13 +90,15 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    // Real backdrop-blur glass (see LedgerGlass.kt) — on by default. This is
-    // what gives the app the frosted-material depth premium finance apps (Apple
-    // Wallet, etc.) have and a flat solid-fill UI does not; it was built and
-    // fully working but shipped off, which is a large part of why the app read
-    // as generic despite the system existing.
+    // Real backdrop-blur glass (see LedgerGlass.kt) — back to OFF by default.
+    // Briefly defaulted on for the visual depth it gives (Apple Wallet-style
+    // frosted material), but it's a continuous RenderEffect blur recomposited
+    // behind the nav island on every scroll frame — genuinely GPU-costly, and
+    // real user testing reported the app feeling "sluggish" / "not smooth"
+    // immediately after this went live. Correctness > polish: available as an
+    // opt-in in Settings for whoever wants it and has the hardware for it.
     val isLiquidGlassEnabled: Flow<Boolean> = context.dataStore.data
-        .map { it[liquidGlassKey] ?: true }
+        .map { it[liquidGlassKey] ?: false }
 
     suspend fun setLiquidGlassEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
@@ -120,6 +132,15 @@ class UserPreferencesRepository @Inject constructor(
             preferences[userNameKey] = name
             preferences[userEmailKey] = email
             preferences[hasCompletedProfileSetupKey] = true
+        }
+    }
+
+    val isNotificationAccessSkipped: Flow<Boolean> = context.dataStore.data
+        .map { it[notificationAccessSkippedKey] ?: false }
+
+    suspend fun setNotificationAccessSkipped(skipped: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[notificationAccessSkippedKey] = skipped
         }
     }
 

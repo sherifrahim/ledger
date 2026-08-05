@@ -166,6 +166,7 @@ private fun OverviewSection(
 
 @Composable
 private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceClick: () -> Unit, onReviewInboxClick: () -> Unit, onAiSettingsClick: () -> Unit, onBudgetsClick: () -> Unit, onGoalsClick: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column {
         Text("PREFERENCES", style = LedgerTheme.typography.labelLarge.copy(letterSpacing = 1.sp), color = LedgerTheme.colors.textTertiary)
         Spacer(Modifier.height(LedgerSpacing.Small))
@@ -187,6 +188,19 @@ private fun PreferencesSection(onDebugConsoleClick: () -> Unit, onAdjustBalanceC
             PreferenceRow(icon = Icons.Default.RateReview, label = "Review Uncategorized Transactions", onClick = onReviewInboxClick)
             LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.SmartToy, label = "AI Settings", onClick = onAiSettingsClick)
+            LedgerDivider(alpha = 0.05f)
+            // Skippable during onboarding (SMS-only capture works standalone) —
+            // this is where a user who skipped it comes back to enable
+            // app-notification capture (Careem, wallet apps) later.
+            PreferenceRow(
+                icon = Icons.Default.NotificationsActive,
+                label = "Notification Access",
+                onClick = {
+                    runCatching {
+                        context.startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    }
+                },
+            )
 
             if (com.sherif.ledger.BuildConfig.DEBUG) {
                 LedgerDivider(alpha = 0.05f)

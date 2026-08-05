@@ -114,6 +114,8 @@ class MainActivity : ComponentActivity() {
                     isPermissionGranted = PermissionUtils.isNotificationServiceEnabled(context)
                 }
 
+                val notificationAccessSkipped by mainViewModel.isNotificationAccessSkipped.collectAsState()
+
                 val cardHazeState = LocalCardHazeState.current
 
                 Surface(
@@ -143,7 +145,7 @@ class MainActivity : ComponentActivity() {
                             ProfileSetupScreen(onComplete = {
                                 // No-op, isProfileSetup will update automatically
                             })
-                        } else if (isPermissionGranted) {
+                        } else if (isPermissionGranted || notificationAccessSkipped) {
                             if (isSmsImported) {
                                 com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: SMS Imported=true. Launching Dashboard.")
                                 LedgerApp(deepLinkTransactionId = deepLinkTransactionId, deepLinkOpenSplit = deepLinkOpenSplit)
@@ -155,7 +157,7 @@ class MainActivity : ComponentActivity() {
                             }
                         } else {
                             com.sherif.ledger.core.common.logging.LedgerLogger.d("MainActivity: Notification Access=false. Launching Onboarding.")
-                            NotificationAccessScreen()
+                            NotificationAccessScreen(onSkip = { mainViewModel.skipNotificationAccess() })
                         }
 
                         var showSplash by remember { mutableStateOf(true) }

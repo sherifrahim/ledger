@@ -205,13 +205,30 @@ class AccountIdentityResolverTest {
         assertEquals("Unattributed Capture (AED)", accountRepository.accounts.first { it.isCandidate }.name)
     }
 
-    @Test fun `an unattributable sender never lands on the account holding the users opening balance`() = runBlocking {
-        // The fallback account carries the balance the user typed in at onboarding.
-        // Parking telecom captures there would move a number they read as their money.
+    @Test fun `a non-financial senders message is discarded, never even an unattributed transaction`() = runBlocking {
+        // Real user testing: a "chance to win AED 100 voucher" message from
+        // Smiles, and a telecom recharge-offer promotion, both cleared the
+        // amount+verb extraction bar and showed up as real line items in the
+        // transaction list. Nothing here should even reach persistence — not
+        // the default account, not a candidate, not the shared unattributed
+        // bucket. There is no transaction to attribute.
         val result = resolver.resolve(envelope("Smiles"), candidate("AED 500 cashback", null))
 
+        assertEquals(AccountIdentityDecision.DISCARD, result.decision)
         assertTrue("Must never be the default account", result.accountId != 1L)
-        assertTrue(accountRepository.accounts.first { it.id == result.accountId }.isCandidate)
+        assertTrue("No account should be touched at all", accountRepository.accounts.none { it.isCandidate })
+    }
+
+    @Test fun `a transport apps relayed message still becomes a real transaction, unlike a non-financial senders`() = runBlocking {
+        // A messaging app (Google Messages, Truecaller) only DISPLAYED a real
+        // bank's message — that's still a real transaction, just needs
+        // somewhere to land until a future pass identifies the actual bank
+        // from the text. This must not be swept into the same discard as
+        // SenderKind.NON_FINANCIAL, or real transactions would silently vanish.
+        val result = resolver.resolve(envelope("com.google.android.apps.messaging"), candidate("AED 50 charged", null))
+
+        assertEquals(AccountIdentityDecision.CANDIDATE, result.decision)
+        assertTrue("Must land on the shared unattributed bucket, not be discarded", accountRepository.accounts.any { it.isCandidate })
     }
 
     @Test fun `a wallet is not swept up with the telecom senders that share its prefix`() = runBlocking {

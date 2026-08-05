@@ -70,9 +70,9 @@ fun SettingsScreen(
 }
 
 /**
- * Liquid Glass — on by default. When on, content cards and the nav island
- * become translucent frosted glass over the base light/dark theme. A single
- * honest switch: what it says is what it does.
+ * Liquid Glass — an optional, off-by-default surface style. When on, content
+ * cards and the nav island become translucent frosted glass over the base
+ * light/dark theme. A single honest switch: what it says is what it does.
  */
 @Composable
 private fun LiquidGlassRow(

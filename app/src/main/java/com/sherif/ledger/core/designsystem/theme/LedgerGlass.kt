@@ -16,9 +16,14 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
- * Liquid Glass — a surface style layered on top of whichever base theme
- * (light or dark) is active. On by default (Settings → Appearance can turn it
- * off, for anyone who prefers flat solid surfaces or is on a low-power device).
+ * Liquid Glass — an *optional*, off-by-default surface style layered on top of
+ * whichever base theme (light or dark) is active. Turned on in Settings →
+ * Appearance; the solid surfaces are the default. Briefly defaulted on for
+ * its visual depth, reverted after real user testing reported the app
+ * feeling sluggish — this is a continuous `RenderEffect` blur recomposited
+ * on every scroll frame behind the nav island, genuinely GPU-costly, not a
+ * one-time cost. Correctness/smoothness over polish; opt-in for whoever
+ * wants it and has the hardware for it.
  *
  * ## Real backdrop blur (not a fake)
  *

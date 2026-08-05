@@ -384,8 +384,29 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         // Google Messages that held the same card tail as the user's actual Mashreq
         // card, so one card's spending was split across two accounts.
         val senderKind = senderClassifier.classify(envelope.packageName)
-        if (senderKind != SenderKind.UNKNOWN) {
-            return resolveOrCreateUnattributed(senderKind, envelope, currency, typeHint, evidence)
+
+        // NON_FINANCIAL is a stronger fact than TRANSPORT: a messaging app is
+        // relaying a REAL bank's message (still a real transaction, just needs
+        // somewhere to land), but a telecom/loyalty/marketing sender's own
+        // message was never a transaction in the first place — "chance to win
+        // AED 100" and "recharge for AED 50, get X free" both cleared the
+        // amount+verb extraction bar in real testing and became visible line
+        // items in the transaction list. Discarding outright (not even parking
+        // on the shared unattributed bucket, which candidate accounts don't
+        // fully hide from list/feed screens the way they hide from balances)
+        // is the fix — there is nothing here to review or promote, because
+        // there was never a transaction here.
+        if (senderKind == SenderKind.NON_FINANCIAL) {
+            return AccountIdentityResult(
+                accountId = 0L,
+                decision = AccountIdentityDecision.DISCARD,
+                confidence = 0,
+                inferredType = typeHint,
+                evidence = evidence + "'${envelope.packageName}' is a known non-financial sender (telecom/loyalty/marketing) — discarded, never becomes a transaction",
+            )
+        }
+        if (senderKind == SenderKind.TRANSPORT) {
+            return resolveOrCreateUnattributed(envelope, currency, typeHint, evidence)
         }
 
         val expectedName = CandidateAccountNaming.nameFor(envelope.packageName, tail)
@@ -422,10 +443,15 @@ class DeterministicAccountIdentityResolver @Inject constructor(
     }
 
     /**
-     * The shared, per-currency holding account for captures from a sender that can
-     * never own one ([SenderClassifier]). Never carries the sender's name — that is
-     * the whole point — and never a card tail, since a tail seen through a
-     * messaging app belongs to the bank that issued it, not to the app.
+     * The shared, per-currency holding account for captures from a
+     * [SenderKind.TRANSPORT] sender — a messaging app that only displayed
+     * someone else's message. Unlike [SenderKind.NON_FINANCIAL] (discarded
+     * outright, see the caller), a transport-relayed message is still a REAL
+     * transaction from a real bank; it just needs somewhere to land until a
+     * future pass can identify the actual institution from the text. Never
+     * carries the sender's name — that is the whole point — and never a card
+     * tail, since a tail seen through a messaging app belongs to the bank
+     * that issued it, not to the app.
      *
      * Always CHECKING and never [typeHint]-typed: a liability account inverts the
      * sign of every transaction on it ([com.sherif.ledger.core.domain.service.transaction.BalanceCalculator]),
@@ -433,19 +459,12 @@ class DeterministicAccountIdentityResolver @Inject constructor(
      * that for all the others.
      */
     private suspend fun resolveOrCreateUnattributed(
-        senderKind: SenderKind,
         envelope: NotificationEnvelope,
         currency: CurrencyCode,
         typeHint: AccountType?,
         evidence: List<String>,
     ): AccountIdentityResult {
-        val reason = when (senderKind) {
-            SenderKind.TRANSPORT ->
-                "'${envelope.packageName}' is a messaging app, not an institution — it displayed this message, it did not issue it"
-            SenderKind.NON_FINANCIAL ->
-                "'${envelope.packageName}' is a known non-financial sender (telecom/loyalty) with no account to hold"
-            SenderKind.UNKNOWN -> "" // unreachable: the caller only routes here for the two kinds above
-        }
+        val reason = "'${envelope.packageName}' is a messaging app, not an institution — it displayed this message, it did not issue it"
         val name = CandidateAccountNaming.unattributedName(currency.name)
 
         val existingCandidates = (accountRepository.observeCandidateAccounts().first() as? LedgerResult.Success)?.data ?: emptyList()

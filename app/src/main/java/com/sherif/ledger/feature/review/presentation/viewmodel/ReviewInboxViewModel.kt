@@ -111,6 +111,7 @@ class ReviewInboxViewModel @Inject constructor(
                     reason = "No matching merchant — choose a category below",
                     timestamp = t.timestamp.atZone(ZoneId.systemDefault()).format(timeFormatter),
                     rawMerchantText = t.merchantOrRawText,
+                    rawMessage = t.rawText?.takeIf { it.isNotBlank() },
                 )
             }
 
