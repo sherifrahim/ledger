@@ -127,6 +127,24 @@ fun LedgerNavHost(
                     navController.navigate(LedgerRoute.Insights.route)
                 },
                 onBackClick = { navController.popBackStack() },
+                onAccountClick = { accountId ->
+                    navController.navigate(LedgerRoute.CreditCard.create(accountId))
+                },
+            )
+        }
+
+        composable(
+            route = LedgerRoute.CreditCard.route,
+            arguments = listOf(navArgument("accountId") { type = NavType.StringType }),
+        ) {
+            val viewModel: com.sherif.ledger.feature.creditcard.presentation.viewmodel.CreditCardViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsState()
+            com.sherif.ledger.feature.creditcard.presentation.CreditCardScreen(
+                state = state,
+                onBackClick = { navController.popBackStack() },
+                onTransactionClick = { id ->
+                    navController.navigate(LedgerRoute.TransactionDetails.create(id.toString()))
+                },
             )
         }
 

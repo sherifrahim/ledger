@@ -24,6 +24,9 @@ sealed class LedgerRoute(val route: String) {
     data object Budgets : LedgerRoute("budgets")
     data object Goals : LedgerRoute("goals")
     data object StoryGraph : LedgerRoute("story_graph")
+    data object CreditCard : LedgerRoute("credit_card/{accountId}") {
+        fun create(accountId: Long): String = "credit_card/$accountId"
+    }
     data object AdjustBalance : LedgerRoute("adjust_balance")
     data object EditProfile : LedgerRoute("edit_profile")
     data object AiSettings : LedgerRoute("ai_settings")

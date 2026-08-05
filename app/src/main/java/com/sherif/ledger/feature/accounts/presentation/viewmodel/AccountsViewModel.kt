@@ -72,6 +72,7 @@ class AccountsViewModel @Inject constructor(
                 currency = summary.currencyCode.name,
                 accountTail = summary.accountTail,
                 isNegative = if (summary.isLiability) summary.balanceMinor > 0 else summary.balanceMinor < 0,
+                isCreditCard = summary.accountType == com.sherif.ledger.core.domain.model.AccountType.CREDIT,
             )
         }
         // Read the currency-scoped figures the use case already computes; do NOT

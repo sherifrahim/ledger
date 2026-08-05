@@ -25,6 +25,9 @@ data class AccountUi(
     val name: String,
     val subtitle: String,
     val balance: String,
+    /** True for a CREDIT-type account — the only kind the Credit Card Manager
+     *  screen has anything to show, so only these rows navigate there. */
+    val isCreditCard: Boolean = false,
     /**
      * The currency THIS account is denominated in — not the screen's primary one.
      * The row used to be labelled with the net-worth currency, which printed the

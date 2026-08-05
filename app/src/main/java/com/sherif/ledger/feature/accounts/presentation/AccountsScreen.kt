@@ -40,6 +40,7 @@ fun AccountsScreen(
     state: AccountsUiState,
     onNavigateToInsights: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onAccountClick: (Long) -> Unit = {},
 ) {
     val currency = state.netWorthCurrency
     val hasAccounts = state.sections.any { it.accounts.isNotEmpty() }
@@ -65,7 +66,12 @@ fun AccountsScreen(
                             Spacer(Modifier.height(LedgerSpacing.Small))
                             LedgerSurface(level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large, contentPadding = PaddingValues(0.dp)) {
                                 section.accounts.forEachIndexed { i, account ->
-                                    AccountRow(account, currency)
+                                    AccountRow(
+                                        account, currency,
+                                        onClick = account.id.toLongOrNull()
+                                            ?.takeIf { account.isCreditCard }
+                                            ?.let { id -> { onAccountClick(id) } },
+                                    )
                                     if (i < section.accounts.lastIndex) LedgerDivider(alpha = 0.05f)
                                 }
                             }
@@ -134,9 +140,12 @@ private fun Breakdown(label: String, value: String, valueColor: androidx.compose
 }
 
 @Composable
-private fun AccountRow(account: AccountUi, currency: String) {
+private fun AccountRow(account: AccountUi, currency: String, onClick: (() -> Unit)? = null) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(LedgerSpacing.Medium),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.ledgerClickable(onClick = onClick) else Modifier)
+            .padding(LedgerSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
         // Tighter than the default gap: every dp in the gutter is a dp taken from
         // the account name, and names are what distinguish one row from another.
