@@ -145,6 +145,7 @@ fun LedgerNavHost(
                 onTransactionClick = { id ->
                     navController.navigate(LedgerRoute.TransactionDetails.create(id.toString()))
                 },
+                onManageLimit = { navController.navigate(LedgerRoute.AdjustBalance.route) },
             )
         }
 

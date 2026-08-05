@@ -1,6 +1,8 @@
 package com.sherif.ledger.feature.creditcard.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,12 +13,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherif.ledger.core.designsystem.component.LedgerAutoSizeText
@@ -26,6 +30,7 @@ import com.sherif.ledger.core.designsystem.component.LedgerDivider
 import com.sherif.ledger.core.designsystem.component.LedgerEmptyState
 import com.sherif.ledger.core.designsystem.component.LedgerScreenHeader
 import com.sherif.ledger.core.designsystem.component.LedgerTransactionRow
+import com.sherif.ledger.core.designsystem.component.ledgerClickable
 import com.sherif.ledger.core.designsystem.theme.LedgerSpacing
 import com.sherif.ledger.core.designsystem.theme.LedgerTextStyles
 import com.sherif.ledger.core.designsystem.theme.LedgerTheme
@@ -45,6 +50,7 @@ fun CreditCardScreen(
     state: CreditCardUiState,
     onBackClick: () -> Unit = {},
     onTransactionClick: (Long) -> Unit = {},
+    onManageLimit: () -> Unit = {},
 ) {
     Scaffold(containerColor = LedgerTheme.colors.surfaceBase) { padding ->
         if (!state.isLoading && !state.found) {
@@ -80,7 +86,7 @@ fun CreditCardScreen(
                 )
             }
 
-            item { CardSummary(state) }
+            item { CardSummary(state, onManageLimit) }
 
             if (state.transactions.isNotEmpty()) {
                 item {
@@ -118,22 +124,54 @@ fun CreditCardScreen(
 }
 
 @Composable
-private fun CardSummary(state: CreditCardUiState) {
+private fun CardSummary(state: CreditCardUiState, onManageLimit: () -> Unit) {
+    val colors = LedgerTheme.colors
     LedgerCard(elevation = LedgerCardDefaults.Elevation) {
-        Text("Outstanding", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
+        Text("Outstanding", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = colors.textSecondary)
         Spacer(Modifier.height(LedgerSpacing.Small))
         LedgerAutoSizeText(
             text = "${state.currency} ${state.outstanding}",
             style = LedgerTextStyles.Hero,
-            color = LedgerTheme.colors.textPrimary,
+            color = colors.textPrimary,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        state.utilization?.let { fraction ->
+            Spacer(Modifier.height(LedgerSpacing.Small))
+            // Above 90% of the limit is the zone a decline becomes likely on the
+            // next purchase — worth a colour change, not just a number.
+            val barColor = if (fraction >= 0.9f) colors.negative else colors.accent
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(colors.surfaceInset)) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                        .height(6.dp)
+                        .clip(CircleShape)
+                        .background(barColor),
+                )
+            }
+            Spacer(Modifier.height(LedgerSpacing.Tiny))
+            Text(
+                "${(fraction * 100).toInt()}% of limit used",
+                style = LedgerTextStyles.Caption,
+                color = colors.textTertiary,
+            )
+        }
+
         Spacer(Modifier.height(LedgerSpacing.Medium))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
             SummaryStat("Limit", state.limit?.let { "${state.currency} $it" } ?: "Not set", Modifier.weight(1f))
             SummaryStat("Available", state.available?.let { "${state.currency} $it" } ?: "—", Modifier.weight(1f))
             SummaryStat("Spent this month", "${state.currency} ${state.monthSpend}", Modifier.weight(1f))
         }
+
+        Spacer(Modifier.height(LedgerSpacing.Small))
+        Text(
+            if (state.limit == null) "Set credit limit" else "Edit credit limit",
+            style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+            color = colors.accent,
+            modifier = Modifier.ledgerClickable(onClick = onManageLimit),
+        )
     }
 }
 
