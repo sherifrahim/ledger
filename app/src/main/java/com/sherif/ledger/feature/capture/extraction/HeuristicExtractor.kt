@@ -44,13 +44,34 @@ class HeuristicExtractor @Inject constructor(
     // Merchant patterns, bank-agnostic. A shared STOP boundary prevents greedy
     // over-capture (stops before on/using/via/from/with/to/of/card/account/...).
     // Order matters: specific "received from" / "sent to" before generic "to".
-    private val stop = "(?:\\s+(?:on|using|via|from|with|to|of|card|account|a\\/c|for|ref|dated|avl|available)\\b|,\\s*[A-Z]{2,3}\\b|\\.|$)"
+    //
+    // "is"/"was" and "(" were added after real captures ran the merchant name into
+    // the sentence that followed it — "Your AED 160.00 purchase at Ounass UAE is
+    // confirmed..." captured "Ounass Uae Is Confirmed" because nothing stopped
+    // before the verb, and "ETISALAT HEAD OFFICE (PAY" (a message truncated
+    // mid-abbreviation) failed to match at all, because "(" was outside the
+    // capturable character class with no boundary to stop at instead — losing the
+    // merchant entirely and rendering the row "Unknown".
+    private val stop = "(?:\\s+(?:on|using|via|from|with|to|of|card|account|a\\/c|for|ref|dated|avl|available|is|was)\\b|,\\s*[A-Z]{2,3}\\b|\\(|\\.|$)"
+    // The "at MERCHANT" pattern deliberately does NOT stop on "to": a real store
+    // name can contain it ("DAY TO DAY HYPMKT"), and "at X to Y" is not a shape
+    // this pattern otherwise needs to defend against. Every other pattern here
+    // captures text that follows the word "to" itself, so removing it from their
+    // boundary would risk swallowing a genuine second "to" clause; "at" is the one
+    // pattern where "to" was never a real delimiter, only a false stop.
+    private val stopAt = "(?:\\s+(?:on|using|via|from|with|of|card|account|a\\/c|for|ref|dated|avl|available|is|was)\\b|,\\s*[A-Z]{2,3}\\b|\\(|\\.|$)"
     private val merchantPatterns: List<Pattern> = listOf(
         Pattern.compile("\\breceived\\s+from\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-]+?)$stop", Pattern.CASE_INSENSITIVE),
         Pattern.compile("\\bsent\\s+to\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-]+?)$stop", Pattern.CASE_INSENSITIVE),
         Pattern.compile("\\bupi\\s+to\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-]+?)$stop", Pattern.CASE_INSENSITIVE),
         Pattern.compile("\\bpayment\\s+to\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-]+?)$stop", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bat\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-\\.]+?)$stop", Pattern.CASE_INSENSITIVE),
+        // Comma is allowed here (and only here) because "at MERCHANT, CITY." is a
+        // real message shape — GenericBankParser's equivalent pattern already
+        // permits it. Without it, "at LULU HYPERMARKET WAHDA, ABUDHABI." could not
+        // match at all: the comma fell outside the capturable characters with no
+        // stop boundary positioned there either, so the whole pattern failed and
+        // the row lost its merchant.
+        Pattern.compile("\\bat\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-\\.,]+?)$stopAt", Pattern.CASE_INSENSITIVE),
         Pattern.compile("\\b(?:pos|merchant)\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-]+?)$stop", Pattern.CASE_INSENSITIVE),
         Pattern.compile("\\bto\\s+([A-Za-z0-9][A-Za-z0-9 &'\\-]+?)$stop", Pattern.CASE_INSENSITIVE),
     )
