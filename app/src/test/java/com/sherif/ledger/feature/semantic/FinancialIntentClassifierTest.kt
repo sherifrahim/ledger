@@ -156,6 +156,30 @@ class FinancialIntentClassifierTest {
         assertEquals(FinancialIntent.FINANCIAL_CONFIRMATION, result.intent)
     }
 
+    // ---- Bug report 2026-08-05: Tabby (BNPL) sends its OWN "payment received"
+    //      confirmation after a purchase is already correctly debited from the
+    //      user's real bank account. Real-world wording puts "received" BEFORE
+    //      "payment" ("we've received your payment"), which none of the
+    //      confirmationSignals phrases matched (they all require "payment"
+    //      first, or the un-contracted "we have received"), so "payment of" -- a
+    //      movementVerb -- fell through to branch 3 and asserted a brand-new
+    //      FINANCIAL_EVENT, turning Tabby's receipt acknowledgement into a
+    //      phantom credit transaction. ----
+    @Test fun `BNPL payment-received confirmation with received-before-payment wording is not a new event`() {
+        val text = "We've received your payment of AED 375.00 for your Tabby plan. Thank you!"
+        val result = classifier.classify(envelope(text), neutralOutcome())
+        assertEquals(FinancialIntent.FINANCIAL_CONFIRMATION, result.intent)
+    }
+
+    @Test fun `payment of alone with no other movement or confirmation signal is not asserted as an event`() {
+        val text = "Payment of AED 100.00 is being reviewed."
+        val result = classifier.classify(envelope(text), neutralOutcome())
+        assertTrue(
+            "Bare 'payment of' with no corroborating signal must not reach FINANCIAL_EVENT at 90% confidence",
+            result.intent != FinancialIntent.FINANCIAL_EVENT || result.confidence < 90,
+        )
+    }
+
     // ---- Duplicate confirmation chain: exactly one event ----
     @Test fun `duplicate confirmation chain yields one event`() {
         val chain = listOf(

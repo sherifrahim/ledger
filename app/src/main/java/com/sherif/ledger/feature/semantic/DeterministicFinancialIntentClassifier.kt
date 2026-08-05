@@ -52,6 +52,16 @@ class DeterministicFinancialIntentClassifier @Inject constructor() : FinancialIn
         "loan payment received", "loan installment received",
         "emi payment received", "installment payment received",
         "your payment has been received",
+        // Bug report 2026-08-05 (Tabby BNPL "payment received" SMS becoming a
+        // phantom credit): natural subject-verb-object phrasing -- "we've
+        // received your payment of AED X" / "we have received your payment"
+        // -- was never matched by the phrases above, all of which require
+        // "payment"/"received" adjacent or in the OPPOSITE order. Contraction
+        // ("we've") also never matched the spelled-out "we have received".
+        // Without this, "payment of" (a movementVerb) fell through to branch 3
+        // and asserted FINANCIAL_EVENT, turning a BNPL provider's receipt
+        // acknowledgement into a brand-new inflow.
+        "received your payment",
     )
 
     // Pure information: statements, reminders, balance/limit notices. Not money moving.
@@ -113,12 +123,22 @@ class DeterministicFinancialIntentClassifier @Inject constructor() : FinancialIn
         }
 
         // 3. PRIMARY: a movement verb in our own vocabulary. Money actually moved.
-        if (movement.isNotEmpty()) {
+        //    "payment of" alone is excluded here for the same reason branch 1
+        //    excludes it (see movementExcludingPaymentOf above): "payment of
+        //    AED X" is the ambiguous half of phrases like "we've received your
+        //    payment of AED X" or "your payment of AED X has been processed" --
+        //    retrospective language this file's confirmation list cannot
+        //    promise to catch verbatim in every real wording. A message relying
+        //    SOLELY on "payment of", with no other movement verb and no
+        //    confirmation phrase, falls through to the extraction-outcome
+        //    fallback tiers below (still an event if extraction succeeded, just
+        //    at lower confidence) instead of being asserted at 90% here.
+        if (movementExcludingPaymentOf.isNotEmpty()) {
             return FinancialIntentResult(
                 intent = FinancialIntent.FINANCIAL_EVENT,
                 confidence = 90,
-                reasoning = listOf("Money-movement verb present: ${movement.first()}"),
-                matchedSignals = movement,
+                reasoning = listOf("Money-movement verb present: ${movementExcludingPaymentOf.first()}"),
+                matchedSignals = movementExcludingPaymentOf,
             )
         }
 

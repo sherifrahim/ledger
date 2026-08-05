@@ -8,6 +8,7 @@
   {"text": "Payment of Rs 2500 processed successfully for your SBI Card. Thank you.", "expected": "FINANCIAL_CONFIRMATION", "note": "India: processed successfully"},
   {"text": "Your card payment has been acknowledged. Available credit updated.", "expected": "FINANCIAL_CONFIRMATION", "note": "acknowledged + available credit updated"},
   {"text": "Payment posted to your ICICI credit card account. Minimum amount due cleared.", "expected": "FINANCIAL_CONFIRMATION", "note": "India: payment posted"},
+  {"text": "We've received your payment of AED 375.00 for your Tabby plan. Thank you!", "expected": "FINANCIAL_CONFIRMATION", "note": "Tabby BNPL payment-received bug 2026-08-05: contraction + received-before-payment word order, no other movement verb"},
   {"text": "AED 200 debited from ADCB account XXX920001. Avl. bal. AED 7955.36.", "expected": "FINANCIAL_EVENT", "note": "The real ADCB debit that must persist"},
   {"text": "AED660.00 transferred via ADCB Personal Internet Banking from acc. no. XXX920001", "expected": "FINANCIAL_EVENT", "note": "outgoing transfer"},
   {"text": "AED 37.00 spent at CARREFOUR with card ending 1959", "expected": "FINANCIAL_EVENT", "note": "genuine purchase"},
