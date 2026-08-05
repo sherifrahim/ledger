@@ -128,7 +128,7 @@ private fun AccountsHeader(onBackClick: () -> Unit) {
 
 @Composable
 private fun TotalBalanceCard(currency: String, netWorth: String, isNegative: Boolean, assets: String, liabilities: String) {
-    LedgerCard(elevation = LedgerCardDefaults.Elevation) {
+    LedgerHeroCard {
         // "Net Worth", not "Total Balance". This figure is assets MINUS card debt,
         // while the Dashboard's "Total Balance" is the cash you hold — two different
         // numbers under one label is how a user ends up not trusting either.
@@ -169,7 +169,7 @@ private fun AccountRow(account: AccountUi, currency: String, onClick: (() -> Uni
         // the account name, and names are what distinguish one row from another.
         horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small),
     ) {
-        LedgerBrandIcon(name = account.name, size = 34.dp)
+        LedgerBrandIcon(name = account.name, type = LedgerIdentityType.Bank, size = 34.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 account.name,

@@ -19,9 +19,14 @@ object LedgerRadius {
     val XLargeDp: Dp = 24.dp
     val FullDp: Dp = 100.dp
 
-    val Small = RoundedCornerShape(SmallDp)
-    val Medium = RoundedCornerShape(MediumDp)
-    val Large = RoundedCornerShape(LargeDp)
-    val XLarge = RoundedCornerShape(XLargeDp)
+    // Continuous ("squircle") corners rather than circular arcs — see
+    // SquircleShape. This one change is what most separates the app's actual
+    // look from generic Android Material Design, since every card, surface,
+    // chip and button in the app draws its corner from here.
+    val Small = SquircleShape(SmallDp)
+    val Medium = SquircleShape(MediumDp)
+    val Large = SquircleShape(LargeDp)
+    val XLarge = SquircleShape(XLargeDp)
+    // A pill is already a continuous curve — no corner transition to smooth.
     val Full = RoundedCornerShape(FullDp)
 }

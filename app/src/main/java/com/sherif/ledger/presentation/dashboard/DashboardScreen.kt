@@ -203,7 +203,7 @@ private fun GreetingHeader(viewModel: UserProfileViewModel = hiltViewModel()) {
 @Composable
 private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, monthlySpend: String) {
     var hidden by remember { mutableStateOf(false) }
-    LedgerCard(elevation = LedgerCardDefaults.Elevation) {
+    LedgerHeroCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Total Balance",

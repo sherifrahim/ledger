@@ -86,6 +86,13 @@ fun CreditCardScreen(
                 )
             }
 
+            item {
+                com.sherif.ledger.core.designsystem.component.CreditCardVisual(
+                    bankName = state.cardName.ifBlank { "Card" },
+                    tail = state.cardTail,
+                )
+            }
+
             item { CardSummary(state, onManageLimit) }
 
             if (state.transactions.isNotEmpty()) {

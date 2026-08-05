@@ -80,8 +80,13 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    // Real backdrop-blur glass (see LedgerGlass.kt) — on by default. This is
+    // what gives the app the frosted-material depth premium finance apps (Apple
+    // Wallet, etc.) have and a flat solid-fill UI does not; it was built and
+    // fully working but shipped off, which is a large part of why the app read
+    // as generic despite the system existing.
     val isLiquidGlassEnabled: Flow<Boolean> = context.dataStore.data
-        .map { it[liquidGlassKey] ?: false }
+        .map { it[liquidGlassKey] ?: true }
 
     suspend fun setLiquidGlassEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->

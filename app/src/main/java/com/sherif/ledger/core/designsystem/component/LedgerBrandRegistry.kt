@@ -6,9 +6,18 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.LocalGroceryStore
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.LocalPharmacy
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Wallet
@@ -36,6 +45,14 @@ data class BrandIdentity(
 
 /**
  * Global registry for Ledger brand identities.
+ *
+ * A bank/merchant with no entry here — real trademarked logos aren't
+ * something this app can ship without licensing them — still gets an honest
+ * fallback: a bank gets the generic institution glyph rather than a bare
+ * initial, and an unrecognised merchant is matched against its OWN NAME for
+ * a category-shaped icon (a taxi company gets a car, a "mart" gets a grocery
+ * cart) rather than falling straight to a random letter in a circle, which
+ * is what every unregistered row looked like before this. See [resolve].
  */
 object LedgerBrandRegistry {
     private val registry = mutableMapOf<String, BrandIdentity>()
@@ -52,12 +69,29 @@ object LedgerBrandRegistry {
         register("starbucks", BrandIdentity(icon = Icons.Filled.Coffee, color = Color(0xFF00704A)))
         register("uber", BrandIdentity(monogram = "U"))
         register("careem", BrandIdentity(monogram = "C", color = Color(0xFF47D366)))
+        register("makemytrip", BrandIdentity(icon = Icons.Filled.Flight, color = Color(0xFFE74C3C)))
+        register("oracle", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color(0xFFF80000)))
 
-        // --- 2. BANKS ---
+        // --- 2. BANKS — real, verifiable brand colours per institution. An
+        // unlisted bank still isn't a letter (see the Bank fallback below),
+        // but a recognised one gets its own colour instead of the shared
+        // generic azure every unlisted institution defaults to.
         register("adcb", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFE21E26)))
         register("fab", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF003865)))
         register("wio", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFCCFF00)))
         register("hsbc", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFDB0011)))
+        register("mashreq", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFEE3831)))
+        register("emirates nbd", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF9E1B34)))
+        register("emirates islamic", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF00A651)))
+        register("rakbank", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFF7941D)))
+        register("cbd", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF0072BC)))
+        register("dib", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF00549F)))
+        register("axis bank", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF97144D)))
+        register("hdfc", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF004C8F)))
+        register("icici", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFA4272C)))
+        register("sbi", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFF2D5FA8)))
+        register("kotak", BrandIdentity(icon = Icons.Filled.AccountBalance, color = Color(0xFFED1C24)))
+        register("primary account", BrandIdentity(icon = Icons.Filled.Wallet))
 
         // --- 3. CARDS ---
         register("visa", BrandIdentity(icon = Icons.Filled.CreditCard, color = Color(0xFF1A1F71)))
@@ -79,10 +113,10 @@ object LedgerBrandRegistry {
 
     fun resolve(name: String, type: LedgerIdentityType): BrandIdentity {
         val normalized = name.lowercase().trim()
-        
+
         // Match specific registry entry
         registry[normalized]?.let { return it }
-        
+
         // Partial match
         registry.entries.find { normalized.contains(it.key) }?.value?.let { return it }
 
@@ -92,7 +126,7 @@ object LedgerBrandRegistry {
             LedgerIdentityType.Card -> BrandIdentity(icon = Icons.Filled.CreditCard)
             LedgerIdentityType.Category -> resolveCategory(normalized)
             LedgerIdentityType.Action -> if (normalized.contains("add")) BrandIdentity(icon = Icons.Filled.Add) else BrandIdentity()
-            else -> BrandIdentity()
+            LedgerIdentityType.Merchant -> resolveMerchantByKeyword(normalized)
         }
     }
 
@@ -101,6 +135,38 @@ object LedgerBrandRegistry {
         if (name.contains("grocer")) return BrandIdentity(icon = Icons.Filled.LocalGroceryStore)
         if (name.contains("shop")) return BrandIdentity(icon = Icons.Filled.ShoppingBag)
         if (name.contains("salary")) return BrandIdentity(icon = Icons.Filled.Payments)
+        return BrandIdentity()
+    }
+
+    /**
+     * A merchant nobody registered a real brand mark for is still not a
+     * stranger — its own name almost always says what kind of business it is
+     * ("... Taxi", "... Fresh Mart", "... Restaurant"). Matching on that
+     * gives a real, meaningful icon instead of a random letter for the
+     * overwhelming majority of small/local merchants an app like this
+     * captures, which registering by exact name could never keep up with.
+     */
+    private fun resolveMerchantByKeyword(name: String): BrandIdentity {
+        val rules: List<Pair<List<String>, ImageVector>> = listOf(
+            listOf("taxi", "cab", "careem", "uber") to Icons.Filled.DirectionsCar,
+            listOf("transport", "travel", "trip", "tourism", "cargo", "shipping") to Icons.Filled.DirectionsCar,
+            listOf("flight", "airline", "airways") to Icons.Filled.Flight,
+            listOf("hotel", "resort", "inn ") to Icons.Filled.Hotel,
+            listOf("fitness", "gym", " fit") to Icons.Filled.FitnessCenter,
+            listOf("mart", "grocer", "hypermarket", "supermarket", "fresh") to Icons.Filled.LocalGroceryStore,
+            listOf("restaurant", "cafe", "cafteria", "cafeteria", "kitchen", "food", "diner", "bakery", "grill") to Icons.Filled.Restaurant,
+            listOf("coffee", "tea trust", " tea ") to Icons.Filled.Coffee,
+            listOf("pharmacy", "medical", "clinic") to Icons.Filled.LocalPharmacy,
+            listOf("hospital") to Icons.Filled.LocalHospital,
+            listOf("fuel", "petrol", "enoc", "adnoc", "gas station") to Icons.Filled.LocalGasStation,
+            listOf("cinema", "movie", "theatre", "theater") to Icons.Filled.Movie,
+            listOf("school", "university", "academy", "institute") to Icons.Filled.School,
+            listOf("mobile", "telecom", "etisalat", "du ") to Icons.Filled.Smartphone,
+        )
+        val padded = " $name "
+        for ((keywords, icon) in rules) {
+            if (keywords.any { padded.contains(it) }) return BrandIdentity(icon = icon)
+        }
         return BrandIdentity()
     }
 }

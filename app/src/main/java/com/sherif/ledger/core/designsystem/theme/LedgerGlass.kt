@@ -16,9 +16,9 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
- * Liquid Glass — an *optional*, off-by-default surface style layered on top of
- * whichever base theme (light or dark) is active. Turned on in Settings →
- * Appearance; the solid surfaces are the default.
+ * Liquid Glass — a surface style layered on top of whichever base theme
+ * (light or dark) is active. On by default (Settings → Appearance can turn it
+ * off, for anyone who prefers flat solid surfaces or is on a low-power device).
  *
  * ## Real backdrop blur (not a fake)
  *
