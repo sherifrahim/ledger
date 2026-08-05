@@ -10,6 +10,7 @@ import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.service.account.AccountIdentityResolver
 import com.sherif.ledger.core.domain.usecase.intelligence.AiCategorizationTrigger
+import com.sherif.ledger.core.domain.usecase.intelligence.AiFalsePositiveGuardTrigger
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
@@ -84,7 +85,15 @@ class ProcessNotificationUseCase @Inject constructor(
     private val financialIntentClassifier: FinancialIntentClassifier,
     private val transactionNotifier: TransactionNotifier,
     private val aiCategorizationTrigger: AiCategorizationTrigger,
+    private val aiFalsePositiveGuardTrigger: AiFalsePositiveGuardTrigger,
 ) {
+    companion object {
+        /** Below this, DeterministicFinancialIntentClassifier's own decisive-tier
+         *  confidence (90) was not reached — its extraction-fallback tiers (70) or
+         *  lower are what an AI second opinion is for. See AiFalsePositiveGuardUseCase. */
+        private const val AI_REVIEW_CONFIDENCE_THRESHOLD = 90
+    }
+
     init {
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
     }
@@ -285,6 +294,23 @@ class ProcessNotificationUseCase @Inject constructor(
                     // captured UNKNOWN merchant gets categorised within seconds
                     // instead of sitting in the Review Queue until next cold start.
                     aiCategorizationTrigger.triggerAsync()
+
+                    // Optional AI second opinion, live: only for a capture the
+                    // DETERMINISTIC pipeline itself was unsure about (fallback-tier
+                    // intent confidence, or an unrecognized-institution Candidate
+                    // Account) — never a confidently-classified capture. See
+                    // AiFalsePositiveGuardUseCase's own doc for why this gate exists
+                    // and what it is/isn't allowed to do. No-op unless the user
+                    // enabled AI (default off).
+                    if (intent.confidence < AI_REVIEW_CONFIDENCE_THRESHOLD ||
+                        identity.decision == com.sherif.ledger.core.domain.service.account.AccountIdentityDecision.CANDIDATE
+                    ) {
+                        aiFalsePositiveGuardTrigger.reviewAsync(
+                            transaction = result.data,
+                            senderIdentifier = envelope.packageName,
+                            deterministicReasoning = intent.reasoning + identity.evidence,
+                        )
+                    }
 
                     // Never let a notification-posting issue undermine an
                     // already-successful persist — this is purely a UX

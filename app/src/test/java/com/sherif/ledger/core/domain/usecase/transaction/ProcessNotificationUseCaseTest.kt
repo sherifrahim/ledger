@@ -116,6 +116,7 @@ class ProcessNotificationUseCaseTest {
             DeterministicFinancialIntentClassifier(),
             FakeTransactionNotifier,
             FakeAiCategorizationTrigger,
+            FakeAiFalsePositiveGuardTrigger,
         )
 
         useCase.execute(envelope)

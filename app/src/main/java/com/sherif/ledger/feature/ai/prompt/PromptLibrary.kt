@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.ai.prompt
 import com.sherif.ledger.feature.ai.domain.AICapability
 import com.sherif.ledger.feature.ai.domain.AIContext
 import com.sherif.ledger.feature.ai.domain.DuplicateAnalysisContext
+import com.sherif.ledger.feature.ai.domain.FalsePositiveReviewContext
 import com.sherif.ledger.feature.ai.domain.ForecastAnalysisContext
 import com.sherif.ledger.feature.ai.domain.InsightAnalysisContext
 import com.sherif.ledger.feature.ai.domain.MerchantAnalysisContext
@@ -30,6 +31,7 @@ Respond with ONLY a single JSON object, no other text, matching exactly this sha
         is InsightAnalysisContext -> insight(context)
         is ForecastAnalysisContext -> forecast(context)
         is SearchAnalysisContext -> search(context)
+        is FalsePositiveReviewContext -> falsePositiveReview(context)
     }
 
     fun merchant(context: MerchantAnalysisContext): String = """
@@ -89,6 +91,30 @@ Currency: ${context.currencyCode}
 
 Task: estimate next month's likely total spend and explain the trend briefly.
 Include "estimatedNextMonthMinor" in fields.
+$RESPONSE_FORMAT
+""".trimIndent()
+
+    fun falsePositiveReview(context: FalsePositiveReviewContext): String = """
+You are a careful financial-reality-check assistant for a personal finance app.
+A deterministic rules engine captured the message below as a transaction on the
+user's OWN account, but its own confidence was low, and it is asking for a second
+opinion before trusting the capture. It gave these reasons for its uncertainty:
+${context.deterministicReasoning.joinToString("\n") { "- $it" }}
+
+Raw captured message: "${context.rawMessageText}"
+Sender: ${context.senderIdentifier}
+Extracted amount: ${context.amountMinor / 100.0} ${context.currencyCode}
+Extracted merchant/description: "${context.merchant}"
+Extracted direction: ${context.transactionType}
+
+Task: decide whether this message is genuine evidence that money moved into or
+out of the user's OWN personal account (a real purchase, transfer, salary,
+refund, etc.) — as opposed to a promotion/marketing message, a balance or
+statement notice, or a third party's OWN acknowledgement that IT received a
+payment the user already made elsewhere (e.g. a buy-now-pay-later provider's
+"payment received" receipt, which confirms an EARLIER movement rather than
+describing a new one).
+Include "isRealTransaction" ("true" or "false") in fields.
 $RESPONSE_FORMAT
 """.trimIndent()
 

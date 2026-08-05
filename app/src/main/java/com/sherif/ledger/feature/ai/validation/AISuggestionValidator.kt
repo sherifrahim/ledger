@@ -35,6 +35,7 @@ class AISuggestionValidator @Inject constructor() {
         return when (capability) {
             AICapability.MERCHANT_CLASSIFICATION -> validateMerchantClassification(suggestion)
             AICapability.DUPLICATE_DETECTION -> validateBooleanField(suggestion, "isDuplicate")
+            AICapability.FALSE_POSITIVE_REVIEW -> validateBooleanField(suggestion, "isRealTransaction")
             else -> AIValidationResult.Valid // Other capabilities' fields are free-form text (relationshipType, summary, etc.) — nothing further to structurally check yet.
         }
     }

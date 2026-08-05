@@ -119,6 +119,7 @@ class LiveCaptureIntegrationTest {
             DeterministicFinancialIntentClassifier(),
             FakeTransactionNotifier,
             FakeAiCategorizationTrigger,
+            FakeAiFalsePositiveGuardTrigger,
     )
 
     @Test
@@ -151,6 +152,17 @@ private object FakeTransactionNotifier : com.sherif.ledger.feature.notification.
 
 private object FakeAiCategorizationTrigger : com.sherif.ledger.core.domain.usecase.intelligence.AiCategorizationTrigger {
     override fun triggerAsync() {
+        // no-op: the real trigger's dependency chain bottoms out in Android's
+        // DataStore (Context), out of scope for these plain JVM tests
+    }
+}
+
+private object FakeAiFalsePositiveGuardTrigger : com.sherif.ledger.core.domain.usecase.intelligence.AiFalsePositiveGuardTrigger {
+    override fun reviewAsync(
+        transaction: com.sherif.ledger.core.domain.model.Transaction,
+        senderIdentifier: String,
+        deterministicReasoning: List<String>,
+    ) {
         // no-op: the real trigger's dependency chain bottoms out in Android's
         // DataStore (Context), out of scope for these plain JVM tests
     }

@@ -15,4 +15,5 @@ enum class AICapability(val displayName: String) {
     FINANCIAL_INSIGHTS("Financial Insights"),
     FORECASTING("Forecasting"),
     NATURAL_LANGUAGE_SEARCH("Natural Language Search"),
+    FALSE_POSITIVE_REVIEW("False Positive Review"),
 }

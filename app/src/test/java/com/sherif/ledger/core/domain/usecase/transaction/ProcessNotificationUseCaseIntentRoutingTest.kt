@@ -125,6 +125,7 @@ class ProcessNotificationUseCaseIntentRoutingTest {
             DeterministicFinancialIntentClassifier(),
             FakeTransactionNotifier,
             FakeAiCategorizationTrigger,
+            FakeAiFalsePositiveGuardTrigger,
         )
     }
 
