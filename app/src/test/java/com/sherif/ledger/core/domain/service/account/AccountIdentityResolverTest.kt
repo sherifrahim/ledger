@@ -25,10 +25,12 @@ import java.time.Instant
 
 class AccountIdentityResolverTest {
 
-    private class FakeAccountRepository : AccountRepository {
-        val accounts = mutableListOf(
+    private class FakeAccountRepository(
+        seed: List<Account> = listOf(
             Account(1L, "Primary Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), null, null, isDefault = true),
-        )
+        ),
+    ) : AccountRepository {
+        val accounts = seed.toMutableList()
         override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.toList()))
         override suspend fun getAccountById(id: Long): LedgerResult<Account> =
             accounts.find { it.id == id }?.let { LedgerResult.Success(it) } ?: LedgerResult.Failure(com.sherif.ledger.core.domain.model.LedgerError.AccountNotFound)
@@ -237,6 +239,95 @@ class AccountIdentityResolverTest {
             "Unrecognized Institution (MBANKAlert) •000001",
             accountRepository.accounts.first { it.id == result.accountId }.name,
         )
+    }
+
+    // ---- ACCOUNT_IDENTITY_PLAN Step 2: the default account is created only
+    // when a message actually needs it as a fallback target ----
+
+    @Test fun `the default account is never created when the first message resolves cleanly to a real institution`() = runBlocking {
+        val emptyAccounts = FakeAccountRepository(seed = emptyList())
+        val resolver = DeterministicAccountIdentityResolver(
+            InstitutionRegistry(), emptyAccounts, transactionRepository,
+            EnsureDefaultAccountUseCase(emptyAccounts), learnedDecisionStore, SenderClassifier(),
+        )
+
+        val result = resolver.resolve(
+            envelope("com.fab.personalbanking"),
+            candidate("AED 200.00 paid towards your FAB credit card ending 6989", "6989"),
+        )
+
+        assertEquals(AccountIdentityDecision.CREATED_NEW, result.decision)
+        assertEquals(
+            "Only the real FAB account should exist — no separate fallback row",
+            1, emptyAccounts.accounts.size,
+        )
+        assertTrue(emptyAccounts.accounts.single().name.contains("FAB"))
+    }
+
+    @Test fun `the default account is still created lazily when a message genuinely needs to fall back`() = runBlocking {
+        val emptyAccounts = FakeAccountRepository(seed = emptyList())
+        val resolver = DeterministicAccountIdentityResolver(
+            InstitutionRegistry(), emptyAccounts, transactionRepository,
+            EnsureDefaultAccountUseCase(emptyAccounts), learnedDecisionStore, SenderClassifier(),
+        )
+
+        assertTrue("No account should exist before any message is processed", emptyAccounts.accounts.isEmpty())
+        val result = resolver.resolve(envelope("com.fab.personalbanking"), candidate("some text", null))
+
+        assertEquals(AccountIdentityDecision.FALLBACK_DEFAULT, result.decision)
+        assertTrue(emptyAccounts.accounts.single { it.id == result.accountId }.isDefault)
+    }
+
+    // ---- ACCOUNT_IDENTITY_PLAN Step 3: adopt an untailed real account
+    // instead of creating a sibling ----
+
+    @Test fun `a tailed message adopts an existing untailed account at the same institution instead of duplicating it`() = runBlocking {
+        accountRepository.accounts += Account(
+            id = 50L, name = "ADCB Account", type = AccountType.CHECKING,
+            openingBalance = Money(150_000L, CurrencyCode.AED), accountNumberTail = null, bankBrandId = null,
+        )
+
+        val result = resolver.resolve(
+            envelope("com.adcb.nexgen"),
+            candidate("AED 200 debited from account", "920001"),
+        )
+
+        assertEquals(AccountIdentityDecision.BOUND_EXISTING, result.decision)
+        assertEquals(50L, result.accountId)
+        assertEquals(
+            "No sibling ADCB account should be created",
+            1, accountRepository.accounts.count { it.name.contains("ADCB") },
+        )
+        assertEquals("920001", accountRepository.accounts.first { it.id == 50L }.accountNumberTail)
+    }
+
+    @Test fun `adoption never touches the default account itself`() = runBlocking {
+        // The default account is untailed too — RC7 Phase B's invariant that it is
+        // never bound to as a real institution's identity must still hold here.
+        val result = resolver.resolve(
+            envelope("com.adcb.nexgen"),
+            candidate("AED 200.00 paid towards your FAB credit card ending 6989", "6989"),
+        )
+        assertTrue(result.accountId != 1L)
+    }
+
+    @Test fun `two untailed accounts at the same institution is ambiguous, so adoption is skipped`() = runBlocking {
+        accountRepository.accounts += Account(
+            id = 50L, name = "ADCB Account A", type = AccountType.CHECKING,
+            openingBalance = Money.zero(CurrencyCode.AED), accountNumberTail = null, bankBrandId = null,
+        )
+        accountRepository.accounts += Account(
+            id = 51L, name = "ADCB Account B", type = AccountType.CHECKING,
+            openingBalance = Money.zero(CurrencyCode.AED), accountNumberTail = null, bankBrandId = null,
+        )
+
+        val result = resolver.resolve(
+            envelope("com.adcb.nexgen"),
+            candidate("AED 200.00 paid towards your FAB credit card ending 6989", "6989"),
+        )
+
+        assertEquals(AccountIdentityDecision.CREATED_NEW, result.decision)
+        assertTrue(accountRepository.accounts.none { it.accountNumberTail == "6989" && it.id != result.accountId })
     }
 
     @Test fun `known institution with no tail falls back`() = runBlocking {

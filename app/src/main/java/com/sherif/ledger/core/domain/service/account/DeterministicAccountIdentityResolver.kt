@@ -140,7 +140,16 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         envelope: NotificationEnvelope,
         candidate: TransactionCandidate,
     ): AccountIdentityResult {
-        val defaultAccountId = ensureDefaultAccountUseCase.execute()
+        // ACCOUNT_IDENTITY_PLAN Step 2: the default/fallback account is a real
+        // row the first message ever needs it for creates — never a side effect
+        // of processing a message that turns out to resolve cleanly to a real
+        // institution. Get-or-create is deferred to the specific branches below
+        // that actually return or consume it, and memoized so this still costs
+        // at most one call within a single resolve().
+        var cachedDefaultAccountId: Long? = null
+        suspend fun defaultAccountId(): Long =
+            cachedDefaultAccountId ?: ensureDefaultAccountUseCase.execute().also { cachedDefaultAccountId = it }
+
         val tail = candidate.accountHint
         val institution = institutionRegistry.resolve(envelope.packageName)
         val currency = candidate.currencyCode ?: CurrencyCode.AED
@@ -180,11 +189,15 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         // protects against a currency mismatch if the default account happens
         // to differ, contributing zero effect rather than mixing units.
         if (tail == null) {
-            return AccountIdentityResult(defaultAccountId, AccountIdentityDecision.FALLBACK_DEFAULT, 0, typeHint, evidence)
+            return AccountIdentityResult(defaultAccountId(), AccountIdentityDecision.FALLBACK_DEFAULT, 0, typeHint, evidence)
         }
 
         val existingAccounts = (accountRepository.observeAllAccounts().first() as? LedgerResult.Success)?.data ?: emptyList()
-        val candidateAccounts = existingAccounts.filter { it.id != defaultAccountId }
+        // Step 1's explicit isDefault flag replaces the old "exclude by id" check —
+        // which needed the default account's id, which meant CREATING it just to
+        // find out what to exclude. A row that doesn't exist yet excludes itself.
+        val candidateAccounts = existingAccounts.filterNot { it.isDefault }
+        val existingDefaultAccountId = existingAccounts.firstOrNull { it.isDefault }?.id
 
         // 1. Try to bind to an existing, already-established account.
         val bestMatch = candidateAccounts
@@ -201,12 +214,39 @@ class DeterministicAccountIdentityResolver @Inject constructor(
             )
         }
 
+        // 1b. ACCOUNT_IDENTITY_PLAN Step 3: adopt an existing untailed real
+        // account at this institution instead of creating a sibling. This is
+        // the exact shape of the confirmed original bug — a real account
+        // existed before this transaction's tail was ever seen, and the
+        // resolver created a second, tailed account rather than recognising
+        // them as the same one. Unlike the default/fallback account (never
+        // adoptable — RC7 Phase B), an ordinary untailed account IS a real,
+        // confirmed institution row; it just hasn't had a tail attached yet.
+        // Only when exactly one such account exists — an ambiguous match
+        // (two untailed accounts at the same bank) is not a safe guess.
+        val untailedMatch = candidateAccounts.singleOrNull {
+            it.accountNumberTail == null &&
+                it.name.contains(institution.name, ignoreCase = true) &&
+                it.openingBalance.currencyCode == currency &&
+                (typeHint == null || it.type == typeHint)
+        }
+        if (untailedMatch != null) {
+            accountRepository.updateAccount(untailedMatch.copy(accountNumberTail = tail))
+            return AccountIdentityResult(
+                untailedMatch.id,
+                AccountIdentityDecision.BOUND_EXISTING,
+                90,
+                typeHint,
+                evidence + "Adopted existing untailed account '${untailedMatch.name}' — backfilled tail $tail rather than creating a duplicate",
+            )
+        }
+
         // 2. Consider creating a new account. Score this single observation as if
         // it were being matched against a hypothetical, perfectly-named account.
         val singleShotScore = scoreHypothetical(institution, tail, currency, typeHint)
 
         if (singleShotScore >= CREATE_SINGLE_SHOT_THRESHOLD) {
-            val accountId = createAccount(institution, tail, currency, typeHint, envelope.packageName, defaultAccountId)
+            val accountId = createAccount(institution, tail, currency, typeHint, envelope.packageName, existingDefaultAccountId)
             return AccountIdentityResult(
                 accountId,
                 AccountIdentityDecision.CREATED_NEW,
@@ -222,13 +262,15 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         // is correct -- it only counts toward "this identity keeps reappearing and
         // deserves its own account."
         if (singleShotScore >= CREATE_OBSERVATION_MIN_SCORE) {
-            val priorFallbackCount = transactionRepository
-                .countTransactionsByOrigin(envelope.packageName, tail)
-                .filter { it.accountId == defaultAccountId }
-                .sumOf { it.count }
+            val priorFallbackCount = if (existingDefaultAccountId != null) {
+                transactionRepository
+                    .countTransactionsByOrigin(envelope.packageName, tail)
+                    .filter { it.accountId == existingDefaultAccountId }
+                    .sumOf { it.count }
+            } else 0
             val totalObservations = priorFallbackCount + 1 // including this one
             if (totalObservations >= CREATE_OBSERVATION_COUNT) {
-                val accountId = createAccount(institution, tail, currency, typeHint, envelope.packageName, defaultAccountId)
+                val accountId = createAccount(institution, tail, currency, typeHint, envelope.packageName, existingDefaultAccountId)
                 return AccountIdentityResult(
                     accountId,
                     AccountIdentityDecision.CREATED_NEW,
@@ -241,7 +283,7 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         }
 
         // 4. Insufficient evidence either way. Fall back, visibly.
-        return AccountIdentityResult(defaultAccountId, AccountIdentityDecision.FALLBACK_DEFAULT, singleShotScore, typeHint, evidence)
+        return AccountIdentityResult(defaultAccountId(), AccountIdentityDecision.FALLBACK_DEFAULT, singleShotScore, typeHint, evidence)
     }
 
     /** Semantic type hint from wording alone -- a lightweight check, not the full
@@ -451,7 +493,11 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         currency: CurrencyCode,
         typeHint: AccountType?,
         packageName: String,
-        defaultAccountId: Long,
+        // Null when no default/fallback account has ever been created on this
+        // install — Step 2: nothing could possibly be stranded on a row that
+        // doesn't exist, so there is nothing to reclaim and no reason to force
+        // its creation just to check.
+        defaultAccountId: Long?,
     ): Long {
         val type = typeHint ?: AccountType.CHECKING
         val name = "${institution.name} ${if (type == AccountType.CREDIT) "Credit Card" else "Account"}"
@@ -481,6 +527,7 @@ class DeterministicAccountIdentityResolver @Inject constructor(
         // signature that justified creating this account) and it preserves the
         // invariant that the default account is never *bound* to as an identity:
         // it stays the fallback, it just stops keeping what was never really its.
+        if (defaultAccountId == null) return newAccountId
         runCatching {
             var moved = transactionRepository.reassignTransactions(
                 fromAccountId = defaultAccountId,
