@@ -115,6 +115,7 @@ class ProcessNotificationUseCaseTest {
             PipelineTraceSink(),
             DeterministicFinancialIntentClassifier(),
             FakeTransactionNotifier,
+            FakeAiCategorizationTrigger,
         )
 
         useCase.execute(envelope)

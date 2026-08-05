@@ -118,6 +118,7 @@ class LiveCaptureIntegrationTest {
             PipelineTraceSink(),
             DeterministicFinancialIntentClassifier(),
             FakeTransactionNotifier,
+            FakeAiCategorizationTrigger,
     )
 
     @Test
@@ -145,6 +146,13 @@ private object FakeTransactionNotifier : com.sherif.ledger.feature.notification.
     ) {
         // no-op: notification posting requires the Android framework, out of
         // scope for these plain JVM tests
+    }
+}
+
+private object FakeAiCategorizationTrigger : com.sherif.ledger.core.domain.usecase.intelligence.AiCategorizationTrigger {
+    override fun triggerAsync() {
+        // no-op: the real trigger's dependency chain bottoms out in Android's
+        // DataStore (Context), out of scope for these plain JVM tests
     }
 }
 

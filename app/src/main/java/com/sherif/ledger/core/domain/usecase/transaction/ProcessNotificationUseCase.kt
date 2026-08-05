@@ -9,6 +9,7 @@ import com.sherif.ledger.core.domain.model.TransactionType
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.repository.TransactionRepository
 import com.sherif.ledger.core.domain.service.account.AccountIdentityResolver
+import com.sherif.ledger.core.domain.usecase.intelligence.AiCategorizationTrigger
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import com.sherif.ledger.feature.capture.parsing.extraction.ExtractionHelpers
 import com.sherif.ledger.feature.capture.notification.NotificationFilter
@@ -82,6 +83,7 @@ class ProcessNotificationUseCase @Inject constructor(
     private val pipelineTraceSink: PipelineTraceSink,
     private val financialIntentClassifier: FinancialIntentClassifier,
     private val transactionNotifier: TransactionNotifier,
+    private val aiCategorizationTrigger: AiCategorizationTrigger,
 ) {
     init {
         com.sherif.ledger.core.common.logging.LedgerLogger.d("EXECUTING: ProcessNotificationUseCase")
@@ -266,6 +268,13 @@ class ProcessNotificationUseCase @Inject constructor(
                     tracer.recordPersistence(true, "Transaction inserted: ${result.data.id}", 0)
                     pipelineResult = PipelineResult.PERSISTED
                     outcomeCategory = ProcessNotificationOutcome.Category.CREATED
+
+                    // Optional AI categorisation, live: a no-op unless the user
+                    // enabled AI (default off) — see AiCategorizationTrigger. Fired
+                    // here rather than waiting for the next app launch, so a freshly
+                    // captured UNKNOWN merchant gets categorised within seconds
+                    // instead of sitting in the Review Queue until next cold start.
+                    aiCategorizationTrigger.triggerAsync()
 
                     // Never let a notification-posting issue undermine an
                     // already-successful persist — this is purely a UX

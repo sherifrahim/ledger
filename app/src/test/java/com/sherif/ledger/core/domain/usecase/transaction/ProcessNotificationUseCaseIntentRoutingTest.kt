@@ -124,6 +124,7 @@ class ProcessNotificationUseCaseIntentRoutingTest {
             traceSink,
             DeterministicFinancialIntentClassifier(),
             FakeTransactionNotifier,
+            FakeAiCategorizationTrigger,
         )
     }
 
