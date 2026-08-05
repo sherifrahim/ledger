@@ -12,6 +12,8 @@ data class AccountsUiState(
     val liabilitiesTotal: String,
     val sections: List<AccountSectionUi>,
     val insight: com.sherif.ledger.presentation.dashboard.InsightUiModel? = null,
+    /** See DashboardUiState.unattributedCount — same finding, same reasoning. */
+    val unattributedCount: Int = 0,
 )
 
 data class AccountSectionUi(

@@ -58,6 +58,24 @@ fun FinancialStoryScreen(
             },
         )
 
+        state.weeklyNarrative?.let { narrative ->
+            com.sherif.ledger.core.designsystem.component.LedgerHeroCard(
+                modifier = Modifier.padding(horizontal = LedgerSpacing.ScreenPadding, vertical = LedgerSpacing.Small),
+            ) {
+                androidx.compose.material3.Text(
+                    "THIS WEEK",
+                    style = LedgerTextStyles.Caption.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                    color = LedgerTheme.colors.textTertiary,
+                )
+                Spacer(Modifier.height(LedgerSpacing.Tiny))
+                androidx.compose.material3.Text(
+                    narrative,
+                    style = LedgerTextStyles.Title,
+                    color = LedgerTheme.colors.textPrimary,
+                )
+            }
+        }
+
         if (state.groups.isEmpty()) {
             Spacer(Modifier.height(LedgerSpacing.XxLarge))
             LedgerEmptyState(

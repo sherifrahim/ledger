@@ -108,24 +108,7 @@ private fun UserProfileHeader(onEditClick: () -> Unit, viewModel: UserProfileVie
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Large Profile Avatar — a signature gradient (the same accent/system
-        // pairing LedgerHeroCard and the Liquid Glass ambient backdrop use)
-        // rather than a flat inset fill, so the one truly personal element on
-        // this screen doesn't read as a placeholder.
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(CircleShape)
-                .background(
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        listOf(LedgerTheme.colors.positive, LedgerTheme.colors.system),
-                    ),
-                )
-                .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(profile.initials, style = LedgerTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
-        }
+        com.sherif.ledger.core.designsystem.component.LedgerAvatar(initials = profile.initials, size = 100.dp)
 
         Spacer(Modifier.height(LedgerSpacing.Medium))
 

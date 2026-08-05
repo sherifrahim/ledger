@@ -107,6 +107,26 @@ fun MerchantScreen(
             }
         }
 
+        if (state.transactions.isNotEmpty()) {
+            item {
+                Section("Transactions") {
+                    LedgerSurface(level = LedgerSurfaceLevel.Inset, shape = LedgerRadius.Large, contentPadding = PaddingValues(horizontal = LedgerSpacing.Medium)) {
+                        state.transactions.forEachIndexed { i, txn ->
+                            com.sherif.ledger.core.designsystem.component.LedgerTransactionRow(
+                                title = state.name,
+                                amount = txn.amount,
+                                currency = state.currency,
+                                isExpense = txn.isExpense,
+                                explanation = txn.dateLabel,
+                                time = txn.time,
+                            )
+                            if (i < state.transactions.lastIndex) com.sherif.ledger.core.designsystem.component.LedgerDivider(alpha = 0.05f)
+                        }
+                    }
+                }
+            }
+        }
+
         if (state.insights.isNotEmpty()) {
             item {
                 Section("Insights") {

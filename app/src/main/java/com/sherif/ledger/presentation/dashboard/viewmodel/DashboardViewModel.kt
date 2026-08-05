@@ -75,7 +75,14 @@ class DashboardViewModel @Inject constructor(
         // rhythm. Reading the full set is not a new cost class here — computeNetWorth
         // below already replays every transaction on this same screen.
         transactionReadSource.observeAllTransactions(),
-    ) { recentResult, monthResult, _, allResult ->
+        // Real-world finding (design review, 2026-08-06): a capture that lands on a
+        // Candidate Account (unrecognized institution, or a transport/messaging
+        // relay never resolved to a real account) is invisible to totalBalance but
+        // still shows up in recentActivity below it — a hero number that silently
+        // disagrees with the list under it reads as broken. Cross-referenced against
+        // allResult below, never used to change what counts toward the balance.
+        accountRepository.observeCandidateAccounts(),
+    ) { recentResult, monthResult, _, allResult, candidateResult ->
 
         // Diagnostic-only, and debug-only: logs a structured report via LedgerLogger,
         // changes nothing displayed. Gated so it never runs in a release build.
@@ -99,9 +106,18 @@ class DashboardViewModel @Inject constructor(
         val monthTransactions = (monthResult as? LedgerResult.Success)?.data ?: emptyList()
         val analytics = getFinancialAnalyticsUseCase.compute(monthTransactions, currentMonthRange.first, currentMonthRange.second)
 
-        val balanceChangePercentage = getFinancialAnalyticsUseCase.computeMonthOverMonthChange(
-            analytics.netSpendMinor, currentMonthRange.first,
-        )
+        // A change badge comparing this month's spend against last month's is
+        // meaningless when this month's own spend is zero (there is nothing to have
+        // changed) — showing e.g. "-100% vs last month" beside a genuinely zero
+        // figure reads as an error, not as a real comparison. Real month-over-month
+        // math is otherwise untouched; this only decides whether the badge renders.
+        val balanceChangePercentage = if (analytics.netSpendMinor == 0L) {
+            null
+        } else {
+            getFinancialAnalyticsUseCase.computeMonthOverMonthChange(
+                analytics.netSpendMinor, currentMonthRange.first,
+            )
+        }
 
         val recentTransactions = (recentResult as? LedgerResult.Success)?.data ?: emptyList()
         // The ONLY place relationship-derived explanations/categories are resolved
@@ -142,6 +158,14 @@ class DashboardViewModel @Inject constructor(
         val allTransactions = (allResult as? LedgerResult.Success)?.data ?: emptyList()
         val upcoming = buildUpcoming(allTransactions)
 
+        val candidateAccountIds = (candidateResult as? LedgerResult.Success)?.data
+            ?.map { it.id }?.toSet() ?: emptySet()
+        val unattributedCount = if (candidateAccountIds.isEmpty()) {
+            0
+        } else {
+            allTransactions.count { it.accountId in candidateAccountIds }
+        }
+
         DashboardUiState(
             totalBalance = MoneyFormatter.format(Money(totalBalanceUnits, primaryCurrency), includeSymbol = true),
             isNegativeBalance = totalBalanceUnits < 0,
@@ -151,6 +175,7 @@ class DashboardViewModel @Inject constructor(
             recentActivity = activityGroups,
             intelligenceSummary = analytics.intelligenceSummary,
             upcoming = upcoming,
+            unattributedCount = unattributedCount,
             insights = emptyList()
         )
     }

@@ -65,6 +65,18 @@ object LedgerBrandRegistry {
         register("netflix", BrandIdentity(monogram = "N", color = Color(0xFFE50914)))
         register("spotify", BrandIdentity(icon = Icons.Filled.Smartphone, color = Color(0xFF1DB954)))
         register("carrefour", BrandIdentity(icon = Icons.Filled.LocalGroceryStore, color = Color(0xFF0066BE)))
+        // Design review finding F3 (2026-08-06): both fell through to the generic
+        // pale-blue letter fallback (resolveMerchantByKeyword only matches
+        // "mart"/"grocer"/"food"/"restaurant"-shaped substrings, and neither name
+        // contains one) despite being two of the most common UAE merchants this
+        // app actually captures — visibly inconsistent sitting beside Netflix/
+        // Amazon/Carrefour, which do have real icons.
+        register("spinneys", BrandIdentity(icon = Icons.Filled.LocalGroceryStore, color = Color(0xFF00573F)))
+        register("talabat", BrandIdentity(icon = Icons.Filled.Restaurant, color = Color(0xFFFF5A00)))
+        register("noon", BrandIdentity(icon = Icons.Filled.ShoppingBag, color = Color(0xFFFEEE00), backgroundColor = Color(0xFF1A1A1A)))
+        register("deliveroo", BrandIdentity(icon = Icons.Filled.Restaurant, color = Color(0xFF00CCBC)))
+        register("zomato", BrandIdentity(icon = Icons.Filled.Restaurant, color = Color(0xFFE23744)))
+        register("swiggy", BrandIdentity(icon = Icons.Filled.Restaurant, color = Color(0xFFFC8019)))
         register("costa", BrandIdentity(icon = Icons.Filled.Coffee, backgroundColor = Color(0xFF630821)))
         register("starbucks", BrandIdentity(icon = Icons.Filled.Coffee, color = Color(0xFF00704A)))
         register("uber", BrandIdentity(monogram = "U"))

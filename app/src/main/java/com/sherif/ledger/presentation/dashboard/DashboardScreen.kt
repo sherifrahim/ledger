@@ -90,6 +90,7 @@ fun DashboardScreen(
                         isNegative = state.isNegativeBalance,
                         change = state.balanceChangePercentage,
                         monthlySpend = state.monthlyExpenses,
+                        unattributedCount = state.unattributedCount,
                     )
                 }
             }
@@ -180,12 +181,7 @@ private fun GreetingHeader(viewModel: UserProfileViewModel = hiltViewModel()) {
         modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = LedgerSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier.size(44.dp).clip(CircleShape).background(LedgerTheme.colors.surfaceInset),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(profile.initials, style = LedgerTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        }
+        LedgerAvatar(initials = profile.initials, size = 44.dp)
         Spacer(Modifier.width(LedgerSpacing.Small))
         Column(Modifier.weight(1f)) {
             Text(
@@ -201,7 +197,7 @@ private fun GreetingHeader(viewModel: UserProfileViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, monthlySpend: String) {
+private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, monthlySpend: String, unattributedCount: Int = 0) {
     var hidden by remember { mutableStateOf(false) }
     LedgerHeroCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -250,7 +246,10 @@ private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, m
                     val down = change.startsWith("-")
                     val tint = if (down) LedgerTheme.colors.negative else LedgerTheme.colors.positive
                     Text(
-                        text = "$change vs last month",
+                        // "spend" named explicitly — this badge sits directly under the
+                        // BALANCE figure, and without the word it reads as describing
+                        // the balance itself, not this month's spend.
+                        text = "$change spend vs last month",
                         style = LedgerTextStyles.Caption.copy(fontWeight = FontWeight.SemiBold),
                         color = tint,
                         modifier = Modifier.clip(LedgerRadius.Full).background(tint.copy(alpha = 0.1f))
@@ -267,6 +266,24 @@ private fun BalanceHero(balance: String, isNegative: Boolean, change: String?, m
                     maxLines = 1,
                 )
             }
+        }
+        if (unattributedCount > 0) {
+            Spacer(Modifier.height(LedgerSpacing.Tiny))
+            // Design review finding F1 (2026-08-06): a capture that can't be linked
+            // to a real account is invisible to the balance above but still shows up
+            // in Recent Activity below — without this line the two numbers just
+            // silently disagree, which reads as broken rather than as a real, honest
+            // state. Never a tap target to a screen that doesn't exist yet (RC7
+            // Candidate Accounts are Developer-Console-only today) — just the truth.
+            Text(
+                if (unattributedCount == 1) {
+                    "1 transaction below isn't linked to an account yet, so it isn't counted here"
+                } else {
+                    "$unattributedCount transactions below aren't linked to an account yet, so they aren't counted here"
+                },
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.textTertiary,
+            )
         }
     }
 }

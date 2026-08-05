@@ -297,14 +297,20 @@ private fun BalanceConfirmationScreen(viewModel: SmsOnboardingViewModel, onCompl
         ) {
             Spacer(Modifier.height(LedgerSpacing.XLarge))
             Text(
-                text = "Confirm Starting Balance",
+                text = "Starting Balance",
                 style = LedgerTextStyles.Headline,
                 color = LedgerTheme.colors.textPrimary,
             )
             Spacer(Modifier.height(LedgerSpacing.Small))
+            // Tester-reported friction (real user testing): the original copy read as
+            // a form to fill in ("enter your real current balance for each account"),
+            // when every field is already pre-filled with a usable, real number —
+            // this reframes the screen as "confirm a default", which it already
+            // functionally was (see confirmBalances: an unedited field just keeps the
+            // computed figure, same as tapping the skip button below).
             Text(
-                text = "Ledger only imported the window you chose, so it doesn't know what you already had before that. " +
-                    "Enter your real current balance for each account to get this right — or leave it blank to skip.",
+                text = "Ledger already calculated a balance for each account below from your imported messages. " +
+                    "Looks right? Just continue. Only change a number if you know the real one.",
                 style = LedgerTextStyles.BodyMedium,
                 color = LedgerTheme.colors.textSecondary,
             )
@@ -318,15 +324,6 @@ private fun BalanceConfirmationScreen(viewModel: SmsOnboardingViewModel, onCompl
                     color = LedgerTheme.colors.textSecondary,
                 )
                 Spacer(Modifier.height(LedgerSpacing.Tiny))
-                // Show what Ledger computed from the imported window, so the correction
-                // is transparent: the user sees the machine's figure and enters the real
-                // one, and the difference is recorded as the balance held before the window.
-                Text(
-                    text = "Ledger calculated ${formatSignedPlainDecimal(account.computedBalanceMinor, account.currencyCode)} " +
-                        "from your imported messages. Enter your real balance and Ledger records the difference as your starting point.",
-                    style = LedgerTextStyles.Caption,
-                    color = LedgerTheme.colors.textTertiary,
-                )
                 Spacer(Modifier.height(LedgerSpacing.Tiny))
                 LedgerAmountInputField(
                     value = entries[account.accountId] ?: "",
@@ -341,7 +338,7 @@ private fun BalanceConfirmationScreen(viewModel: SmsOnboardingViewModel, onCompl
         Spacer(Modifier.height(LedgerSpacing.Medium))
 
         LedgerButton(
-            text = "Save & Finish",
+            text = "Continue",
             onClick = {
                 val corrections = accounts.mapNotNull { account ->
                     val decimalDigits = CurrencyRegistry.get(account.currencyCode).decimalDigits
@@ -352,12 +349,16 @@ private fun BalanceConfirmationScreen(viewModel: SmsOnboardingViewModel, onCompl
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(LedgerSpacing.Tiny))
-        TextButton(
-            onClick = { viewModel.confirmBalances(emptyMap(), onComplete) },
+        // Same phrasing/pattern as the notification-access skip step: names exactly
+        // where to fix it later (Profile → Adjust Starting Balance) instead of a
+        // vague "I'll fix this later" that reads as a chore being deferred.
+        Text(
+            text = "You can always correct this later from Profile → Adjust Starting Balance.",
+            style = LedgerTextStyles.Caption,
+            color = LedgerTheme.colors.textTertiary,
+            textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Skip, I'll fix this later", color = LedgerTheme.colors.tertiaryLabel)
-        }
+        )
         Spacer(Modifier.height(LedgerSpacing.Medium))
     }
 }

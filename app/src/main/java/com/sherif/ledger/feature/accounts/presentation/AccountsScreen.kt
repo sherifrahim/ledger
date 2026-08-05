@@ -58,7 +58,7 @@ fun AccountsScreen(
         ) {
             item { AccountsHeader(onBackClick) }
 
-            item { TotalBalanceCard(currency, state.netWorth, state.netWorthIsNegative, state.assetsTotal, state.liabilitiesTotal) }
+            item { TotalBalanceCard(currency, state.netWorth, state.netWorthIsNegative, state.assetsTotal, state.liabilitiesTotal, state.unattributedCount) }
 
             if (hasAccounts) {
                 state.sections.forEach { section ->
@@ -127,7 +127,7 @@ private fun AccountsHeader(onBackClick: () -> Unit) {
 }
 
 @Composable
-private fun TotalBalanceCard(currency: String, netWorth: String, isNegative: Boolean, assets: String, liabilities: String) {
+private fun TotalBalanceCard(currency: String, netWorth: String, isNegative: Boolean, assets: String, liabilities: String, unattributedCount: Int = 0) {
     LedgerHeroCard {
         // "Net Worth", not "Total Balance". This figure is assets MINUS card debt,
         // while the Dashboard's "Total Balance" is the cash you hold — two different
@@ -144,6 +144,19 @@ private fun TotalBalanceCard(currency: String, netWorth: String, isNegative: Boo
         Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.XLarge)) {
             Breakdown("Assets", "$currency $assets", LedgerTheme.colors.positive)
             Breakdown("Liabilities", "$currency $liabilities", LedgerTheme.colors.textSecondary)
+        }
+        if (unattributedCount > 0) {
+            Spacer(Modifier.height(LedgerSpacing.Small))
+            // See DashboardScreen's BalanceHero — same F1 finding.
+            Text(
+                if (unattributedCount == 1) {
+                    "1 captured transaction isn't linked to an account yet, so it isn't counted here"
+                } else {
+                    "$unattributedCount captured transactions aren't linked to an account yet, so they aren't counted here"
+                },
+                style = LedgerTextStyles.Caption,
+                color = LedgerTheme.colors.textTertiary,
+            )
         }
     }
 }

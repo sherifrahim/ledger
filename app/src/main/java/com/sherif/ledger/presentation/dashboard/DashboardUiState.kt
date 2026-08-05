@@ -27,6 +27,14 @@ data class DashboardUiState(
      * one observation behind it is a guess, and this screen does not guess.
      */
     val upcoming: List<UpcomingUiModel> = emptyList(),
+    /**
+     * Count of captured transactions that exist (visible in [recentActivity]) but
+     * sit on an unattributed/candidate account — see AccountIdentityDecision.CANDIDATE
+     * -- and so are NOT included in [totalBalance]. Zero in the common case. When
+     * non-zero, the UI must say so: a hero balance that silently disagrees with the
+     * activity feed directly below it reads as broken, not as "working as designed".
+     */
+    val unattributedCount: Int = 0,
     // V2 Compatibility
     val insights: List<InsightUiModel> = emptyList()
 )

@@ -12,12 +12,14 @@ import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
 import com.sherif.ledger.feature.merchant.presentation.CategorySlice
+import com.sherif.ledger.feature.merchant.presentation.MerchantTransactionUi
 import com.sherif.ledger.feature.merchant.presentation.MerchantUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -78,6 +80,22 @@ class MerchantViewModel @Inject constructor(
             .filter { it.isNotBlank() }
             .distinct().take(4).map { prettify(it) }.toList()
 
+        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        val transactions = mine.sortedByDescending { it.timestamp }.take(MAX_LISTED_TRANSACTIONS).map { txn ->
+            val date = txn.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+            MerchantTransactionUi(
+                id = txn.id.toString(),
+                amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
+                isExpense = txn.type == TransactionType.EXPENSE,
+                dateLabel = when (date) {
+                    LocalDate.now() -> "Today"
+                    LocalDate.now().minusDays(1) -> "Yesterday"
+                    else -> date.format(DateTimeFormatter.ofPattern("d MMM"))
+                },
+                time = txn.timestamp.atZone(ZoneId.systemDefault()).format(timeFormatter),
+            )
+        }
+
         return MerchantUiState(
             name = prettify(merchantKey),
             since = "Since " + firstSeen.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM yyyy")),
@@ -89,6 +107,7 @@ class MerchantViewModel @Inject constructor(
             insights = buildInsights(mine.size, money(largestMinor), currency.name, categories.firstOrNull()?.label),
             categories = categories,
             related = related,
+            transactions = transactions,
             loaded = true,
         )
     }
@@ -100,10 +119,24 @@ class MerchantViewModel @Inject constructor(
             add("Largest was $currency $largest")
         }
 
-    /** Turn a raw merchant/category token into a display label. */
+    /**
+     * Turn a raw merchant/category token into a display label.
+     *
+     * Design review finding F6 (2026-08-06): category names are raw enum
+     * constants (`FOOD_DELIVERY`), and splitting only on whitespace left the
+     * underscore in place — "Mostly Food_delivery" was showing verbatim on this
+     * screen. Replacing '_' with a space before the word-split fixes every
+     * category label this function produces, not just the one that was seen.
+     */
     private fun prettify(raw: String): String = raw.trim()
+        .replace('_', ' ')
         .lowercase()
         .split(Regex("\\s+"))
         .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
         .ifBlank { "Merchant" }
+
+    private companion object {
+        /** A relationship page, not a full ledger — cap and let Search/Story hold the rest. */
+        const val MAX_LISTED_TRANSACTIONS = 20
+    }
 }

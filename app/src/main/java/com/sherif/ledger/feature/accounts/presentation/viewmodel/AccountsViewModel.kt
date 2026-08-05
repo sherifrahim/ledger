@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.Money
+import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.usecase.analytics.GetFinancialAnalyticsUseCase
 import com.sherif.ledger.core.domain.util.MoneyFormatter
@@ -14,7 +15,7 @@ import com.sherif.ledger.presentation.dashboard.InsightUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.flowOn
 class AccountsViewModel @Inject constructor(
     private val transactionReadSource: TransactionReadSource,
     private val getFinancialAnalyticsUseCase: GetFinancialAnalyticsUseCase,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     init {
@@ -48,9 +50,11 @@ class AccountsViewModel @Inject constructor(
     // recompute" (reusing the existing repository stream, no new query) — the
     // actual balance/net-worth figures always come from computeNetWorth(), a full
     // replay, never from anything cached in this flow's emitted list.
-    val uiState: StateFlow<AccountsUiState> = transactionReadSource
-        .observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second)
-        .map { monthResult -> buildUiState(monthResult) }
+    val uiState: StateFlow<AccountsUiState> = combine(
+        transactionReadSource.observeTransactionsBetween(currentMonthRange.first, currentMonthRange.second),
+        transactionReadSource.observeAllTransactions(),
+        accountRepository.observeCandidateAccounts(),
+    ) { monthResult, allResult, candidateResult -> buildUiState(monthResult, allResult, candidateResult) }
         // Same reason as DashboardViewModel: a combine transform runs on the
         // collector's context, and this one replays balances and analytics.
         .flowOn(Dispatchers.Default)
@@ -60,7 +64,11 @@ class AccountsViewModel @Inject constructor(
             initialValue = EMPTY_STATE
         )
 
-    private suspend fun buildUiState(monthResult: LedgerResult<List<com.sherif.ledger.core.domain.model.Transaction>>): AccountsUiState {
+    private suspend fun buildUiState(
+        monthResult: LedgerResult<List<com.sherif.ledger.core.domain.model.Transaction>>,
+        allResult: LedgerResult<List<com.sherif.ledger.core.domain.model.Transaction>>,
+        candidateResult: LedgerResult<List<com.sherif.ledger.core.domain.model.Account>>,
+    ): AccountsUiState {
         val netWorth = getFinancialAnalyticsUseCase.computeNetWorth()
 
         val accounts = netWorth.accountBalances.map { summary ->
@@ -100,6 +108,19 @@ class AccountsViewModel @Inject constructor(
             )
         } else null
 
+        // Same finding as DashboardViewModel (F1, design review 2026-08-06): a
+        // capture on a Candidate Account is invisible to netWorth but still exists
+        // as real captured data. Surfaced so "Net Worth AED 0.00" never silently
+        // contradicts data the user knows was captured.
+        val candidateAccountIds = (candidateResult as? LedgerResult.Success)?.data
+            ?.map { it.id }?.toSet() ?: emptySet()
+        val allTransactions = (allResult as? LedgerResult.Success)?.data ?: emptyList()
+        val unattributedCount = if (candidateAccountIds.isEmpty()) {
+            0
+        } else {
+            allTransactions.count { it.accountId in candidateAccountIds }
+        }
+
         return AccountsUiState(
             netWorth = MoneyFormatter.format(Money(netWorth.netWorthMinor, netWorth.currency), includeSymbol = false),
             netWorthIsNegative = netWorth.netWorthMinor < 0,
@@ -114,6 +135,7 @@ class AccountsViewModel @Inject constructor(
                 )
             ) else emptyList(),
             insight = insight,
+            unattributedCount = unattributedCount,
         )
     }
 

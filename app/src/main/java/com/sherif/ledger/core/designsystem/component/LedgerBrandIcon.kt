@@ -33,7 +33,15 @@ fun LedgerBrandIcon(
     size: Dp = LedgerTheme.iconSize.Large,
 ) {
     val identity = remember(name, type) { LedgerBrandRegistry.resolve(name, type) }
-    val accent = identity.color ?: LedgerTheme.colors.tint
+    // Design review finding F3 (2026-08-06): every still-unmatched merchant fell
+    // back to the exact same flat pale-blue circle (LedgerTheme.colors.tint),
+    // which read as broken/random the moment two adjacent rows in a list had one
+    // real brand icon and one identical generic placeholder. A hashed identity
+    // colour — same idea as Slack/Gmail's unknown-contact avatars — makes every
+    // still-unmatched merchant look intentionally distinct instead of uniformly
+    // generic, without touching LedgerColors' four semantic accents (Mint/Rose/
+    // Azure/Amber stay reserved for their actual meaning, never decoration).
+    val accent = identity.color ?: LedgerAvatarPalette.forName(name)
     val bg = identity.backgroundColor ?: accent.copy(alpha = LedgerTheme.opacity.Fill)
     val contentColor = if (identity.backgroundColor != null) accent else accent
 
