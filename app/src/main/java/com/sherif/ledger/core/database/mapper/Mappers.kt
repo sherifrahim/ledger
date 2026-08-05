@@ -31,6 +31,7 @@ fun AccountEntity.toDomain(): Account = Account(
     bankBrandId = bankBrandId,
     isCandidate = isCandidate,
     creditLimitMinor = creditLimitMinor,
+    isDefault = isDefault,
 )
 
 fun Account.toEntity(): AccountEntity = AccountEntity(
@@ -44,6 +45,7 @@ fun Account.toEntity(): AccountEntity = AccountEntity(
     bankBrandId = bankBrandId,
     isCandidate = isCandidate,
     creditLimitMinor = creditLimitMinor,
+    isDefault = isDefault,
 )
 
 fun BrandEntity.toDomain(): Brand = Brand(

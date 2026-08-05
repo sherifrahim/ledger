@@ -371,3 +371,41 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
         db.execSQL("CREATE INDEX IF NOT EXISTS index_goals_account_id ON goals(account_id)")
     }
 }
+
+/**
+ * Gives the fallback account an explicit identity instead of a position.
+ *
+ * Before this, "the default account" was `accounts.first().id` inside
+ * EnsureDefaultAccountUseCase — whatever account happened to occupy that
+ * position, decided purely by insert order. A real, recognised institution's
+ * account could end up there by coincidence, which is exactly the shape of a
+ * confirmed bug on the owner's real device: their real ADCB balance was seeded
+ * onto an untailed "Primary Account" while the real ADCB transactions
+ * accumulated on a separate, later-created account, because the untailed one
+ * happened to be created first.
+ * DeterministicAccountIdentityResolver already refuses to bind an unrecognised
+ * institution's transaction to the default account — the fallback and a real
+ * bank account are supposed to be two different rows, never the same one by
+ * accident. `is_default` is what turns that into a guarantee: from this point
+ * on it is set on exactly one account, only by EnsureDefaultAccountUseCase
+ * itself, never derived from where a row happens to sit.
+ *
+ * The backfill marks the SAME account `accounts.first().id` would already have
+ * returned (lowest id among non-deleted, non-candidate rows) — deliberately
+ * preserving today's live behavior across the upgrade rather than silently
+ * redirecting an existing install's fallback captures to a different account.
+ * Nothing about already-attributed transactions changes; this only affects
+ * which account future unmatched captures land on.
+ */
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE accounts ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0")
+        db.execSQL(
+            """
+            UPDATE accounts SET is_default = 1 WHERE id = (
+                SELECT id FROM accounts WHERE is_deleted = 0 AND is_candidate = 0 ORDER BY id ASC LIMIT 1
+            )
+            """.trimIndent(),
+        )
+    }
+}

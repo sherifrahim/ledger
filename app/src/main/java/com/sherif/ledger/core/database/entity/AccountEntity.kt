@@ -54,6 +54,14 @@ data class AccountEntity(
     // correction sets it. Nullable + no default — existing rows migrate to null.
     // Kept LAST to match the migration's ADD COLUMN and avoid positional breakage.
     @ColumnInfo(name = "opening_balance_as_of")
-    val openingBalanceAsOfMillis: Long? = null
+    val openingBalanceAsOfMillis: Long? = null,
+
+    // True for exactly the one account EnsureDefaultAccountUseCase created (or,
+    // for an install that predates this column, the one row the migration backfills
+    // to preserve current behavior). See Account.isDefault for why this exists as
+    // an explicit column rather than a derived position. Kept LAST to match the
+    // migration's ADD COLUMN and avoid positional breakage.
+    @ColumnInfo(name = "is_default", defaultValue = "0")
+    val isDefault: Boolean = false,
 )
 

@@ -46,5 +46,26 @@ data class Account(
     // arithmetic itself — purely a provenance/anchor date. Kept LAST so positional
     // Account(...) constructions are unaffected. See ADR-0009 follow-up.
     val openingBalanceAsOf: java.time.Instant? = null,
+    /**
+     * True for exactly the one account [com.sherif.ledger.core.domain.usecase.account.EnsureDefaultAccountUseCase]
+     * created (or, for an install that already existed when this flag was
+     * introduced, the one account already playing that role).
+     *
+     * Before this flag existed, "the default account" was not a property of any
+     * row — it was `accounts.first().id`, whatever account happened to occupy
+     * that position. A real, recognised institution's account could end up there
+     * by nothing more than creation order, which is exactly the shape of a
+     * confirmed bug: the owner's real ADCB balance was seeded onto an untailed
+     * "Primary Account" while the real ADCB transactions accumulated on a
+     * separate, later-created account, because the untailed account happened to
+     * be first. [com.sherif.ledger.core.domain.service.account.DeterministicAccountIdentityResolver]
+     * deliberately refuses to bind an unrecognised institution's transaction to
+     * the default account — so the fallback and a real bank account must be two
+     * different rows, never the same one by coincidence. This flag is what makes
+     * that a guarantee instead of an accident of insert order: an account created
+     * for a recognised institution is never marked default, and the default
+     * account is never adopted as a real institution's account.
+     */
+    val isDefault: Boolean = false,
 )
 

@@ -36,9 +36,9 @@
 
 ## Latency
 - Average: 1.56 ms
-- P95: 1.44 ms
-- P99: 1.86 ms
-- Max: 58.46 ms
+- P95: 1.29 ms
+- P99: 1.93 ms
+- Max: 56.02 ms
 
 ## Confidence calibration
 - heuristic: claims 96, actual 100.0% (n=61)

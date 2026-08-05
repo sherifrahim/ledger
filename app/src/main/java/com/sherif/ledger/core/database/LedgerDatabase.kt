@@ -49,7 +49,7 @@ import com.sherif.ledger.core.database.dao.TagDao
         com.sherif.ledger.core.database.entity.BudgetEntity::class,
         com.sherif.ledger.core.database.entity.GoalEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(LedgerConverters::class)
@@ -73,7 +73,7 @@ abstract class LedgerDatabase : RoomDatabase() {
         // Kept in sync with the @Database(version = ...) annotation above by
         // hand — Room doesn't expose that value as a runtime constant, and
         // AppInfoCollector needs a real number for its diagnostic bundle.
-        const val DATABASE_VERSION = 17
+        const val DATABASE_VERSION = 18
     }
 }
 

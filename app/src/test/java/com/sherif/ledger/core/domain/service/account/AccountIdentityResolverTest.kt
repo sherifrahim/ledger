@@ -27,7 +27,7 @@ class AccountIdentityResolverTest {
 
     private class FakeAccountRepository : AccountRepository {
         val accounts = mutableListOf(
-            Account(1L, "Primary Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), null, null),
+            Account(1L, "Primary Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), null, null, isDefault = true),
         )
         override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.toList()))
         override suspend fun getAccountById(id: Long): LedgerResult<Account> =
@@ -363,7 +363,7 @@ class AccountIdentityResolverTest {
      *  concurrent resolve() calls can both pass the check before either commits. */
     private class DelayedAccountRepository : AccountRepository {
         val accounts = java.util.Collections.synchronizedList(mutableListOf(
-            Account(1L, "Primary Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), null, null),
+            Account(1L, "Primary Account", AccountType.CHECKING, Money.zero(CurrencyCode.AED), null, null, isDefault = true),
         ))
         override fun observeAllAccounts(): Flow<LedgerResult<List<Account>>> = flowOf(LedgerResult.Success(accounts.toList()))
         override suspend fun getAccountById(id: Long): LedgerResult<Account> =
