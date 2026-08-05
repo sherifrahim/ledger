@@ -153,7 +153,7 @@ fun MerchantScreen(
 
 @Composable
 private fun RelationshipHeader(state: MerchantUiState) {
-    LedgerCard(elevation = LedgerCardDefaults.ElevationLow) {
+    com.sherif.ledger.core.designsystem.component.LedgerHeroCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             LedgerBrandIcon(name = state.name, size = 64.dp)
             Spacer(Modifier.width(LedgerSpacing.Medium))

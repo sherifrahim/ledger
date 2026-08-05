@@ -84,32 +84,38 @@ fun TransactionDetailsScreen(
         ) {
             item {
                 Spacer(Modifier.height(LedgerSpacing.Large))
-                LedgerBrandIcon(name = state.merchant, size = 64.dp)
-                Spacer(Modifier.height(LedgerSpacing.Medium))
-                Text(state.merchant, style = LedgerTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text(state.merchantCategory, style = LedgerTheme.typography.bodyMedium, color = LedgerTheme.colors.textSecondary)
-                
-                Spacer(Modifier.height(LedgerSpacing.Large))
-                Text(
-                    text = state.sign + state.amount,
-                    style = LedgerTheme.typography.displayLarge.copy(fontSize = 40.sp),
-                    fontWeight = FontWeight.Black
-                )
-                
-                Spacer(Modifier.height(LedgerSpacing.Small))
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(LedgerTheme.colors.surfaceInset)
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = if (state.isIncome) "Income" else "Expense",
-                        style = LedgerTheme.typography.labelLarge,
-                        color = LedgerTheme.colors.textSecondary
-                    )
+                com.sherif.ledger.core.designsystem.component.LedgerHeroCard {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        LedgerBrandIcon(name = state.merchant, size = 64.dp)
+                        Spacer(Modifier.height(LedgerSpacing.Medium))
+                        Text(state.merchant, style = LedgerTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text(state.merchantCategory, style = LedgerTheme.typography.bodyMedium, color = LedgerTheme.colors.textSecondary)
+
+                        Spacer(Modifier.height(LedgerSpacing.Large))
+                        Text(
+                            text = state.sign + state.amount,
+                            style = LedgerTheme.typography.displayLarge.copy(fontSize = 40.sp),
+                            fontWeight = FontWeight.Black
+                        )
+
+                        Spacer(Modifier.height(LedgerSpacing.Small))
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(LedgerTheme.colors.surfaceInset)
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = if (state.isIncome) "Income" else "Expense",
+                                style = LedgerTheme.typography.labelLarge,
+                                color = LedgerTheme.colors.textSecondary
+                            )
+                        }
+                    }
                 }
-                
                 Spacer(Modifier.height(LedgerSpacing.Massive))
             }
 

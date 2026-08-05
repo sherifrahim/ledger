@@ -84,7 +84,7 @@ fun InsightsScreen(state: InsightsUiState, onBackClick: () -> Unit = {}) {
 
 @Composable
 private fun CashflowCard(income: String, spent: String) {
-    LedgerCard(elevation = LedgerCardDefaults.Elevation) {
+    com.sherif.ledger.core.designsystem.component.LedgerHeroCard {
         Text("This month", style = LedgerTextStyles.Label.copy(fontWeight = FontWeight.Bold), color = LedgerTheme.colors.textSecondary)
         Spacer(Modifier.height(LedgerSpacing.Medium))
         Row(Modifier.fillMaxWidth()) {
