@@ -45,6 +45,12 @@ jobs:
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
 
+      # gradlew's executable bit is now fixed in git (2026-08-06), but this
+      # runs anyway in case a future commit from a Windows checkout drops it
+      # again — Windows/git routinely fails to preserve +x.
+      - name: Ensure gradlew is executable
+        run: chmod +x ./gradlew
+
       - name: Decode release keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
 
