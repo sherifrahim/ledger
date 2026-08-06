@@ -193,6 +193,16 @@ object ExtractionHelpers {
         // credit indicators already curated as income signals in FinancialPhraseLibrary,
         // so a "credited" transfer is no longer mis-defaulted to OUTGOING.
         "a/c credited", "acct credited", "amount credited", "credited to a/c", "credited to ac",
+        // Real-device bug (2026-08-06): "cr. transaction"/"cr transaction" are
+        // already income/credit signals in FinancialPhraseLibrary.creditIndicatorPhrases
+        // (this list's own comment above says it mirrors those) but were never
+        // added here -- so a message like "A Cr. transaction of AED 500.00 on
+        // your account ... was successful" (now correctly typed TRANSFER, not
+        // INCOME -- see HeuristicExtractor.inferType) fell to this function's
+        // OUTGOING default and displayed as money leaving the account when it
+        // was money arriving. Same bank-agnostic template either list should
+        // recognize identically.
+        "cr. transaction", "cr transaction",
     )
 
     // Explicit money-LEAVING indicators. Used only as a guard so a bare
