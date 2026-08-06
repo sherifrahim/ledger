@@ -3,6 +3,7 @@ package com.sherif.ledger.feature.transactions.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sherif.ledger.core.domain.model.LedgerResult
+import com.sherif.ledger.core.domain.model.isOutflow
 import com.sherif.ledger.core.domain.repository.MerchantRepository
 import com.sherif.ledger.core.domain.repository.TransactionReadSource
 import com.sherif.ledger.core.domain.service.transaction.TransactionDisplayName
@@ -56,7 +57,12 @@ class TransactionsViewModel @Inject constructor(
                             merchant = TransactionDisplayName.resolve(txn, brandNames, merchantResolver),
                             category = toUiCategory(txn, stories[txn.id]?.category),
                             amount = MoneyFormatter.format(txn.amount, includeSymbol = false),
-                            subtitle = txn.source.name
+                            subtitle = txn.source.name,
+                            // Single source of truth for sign (Transaction.isOutflow), not a
+                            // category-name guess — a category-based check can't distinguish
+                            // an incoming transfer from an outgoing one, so it previously
+                            // showed every transfer as a negative "−" regardless of direction.
+                            isExpense = txn.isOutflow,
                         )
                     }
 

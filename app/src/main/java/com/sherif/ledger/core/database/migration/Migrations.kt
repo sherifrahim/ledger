@@ -409,3 +409,52 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
         )
     }
 }
+
+/**
+ * `financial_events.transfer_direction` — the mirror event never carried this
+ * (see EventToTransaction.kt), so every TRANSFER read through the event-sourced
+ * path (Dashboard/Transactions/Story recent-activity) rendered as an outflow
+ * regardless of its real direction, because `isOutflow` treats a direction-less
+ * transfer as conservative-outflow. Additive/nullable column, then backfilled
+ * from the authoritative `transactions.transfer_direction` for every existing
+ * mirror event that still links to its originating transaction (coexistence
+ * events always do) — so already-captured transfers get their correct sign
+ * immediately, not only ones captured after this migration.
+ */
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE financial_events ADD COLUMN transfer_direction TEXT")
+        db.execSQL(
+            """
+            UPDATE financial_events
+            SET transfer_direction = (
+                SELECT transactions.transfer_direction FROM transactions
+                WHERE transactions.id = financial_events.transaction_id
+            )
+            WHERE transaction_id IS NOT NULL
+            """.trimIndent(),
+        )
+    }
+}
+
+/**
+ * Re-runs MIGRATION_18_19's backfill. An earlier build of that migration shipped
+ * without the backfill UPDATE (column-add only); any device that already opened
+ * that build has `user_version = 19` and will never re-run 18→19, so its
+ * financial_events rows are stuck at NULL forever without this. No-op (empty
+ * UPDATE) on a device that only ever saw the corrected 18→19.
+ */
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            UPDATE financial_events
+            SET transfer_direction = (
+                SELECT transactions.transfer_direction FROM transactions
+                WHERE transactions.id = financial_events.transaction_id
+            )
+            WHERE transaction_id IS NOT NULL AND transfer_direction IS NULL
+            """.trimIndent(),
+        )
+    }
+}

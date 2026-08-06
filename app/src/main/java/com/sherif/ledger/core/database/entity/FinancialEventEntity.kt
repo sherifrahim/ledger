@@ -9,6 +9,7 @@ import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.FinancialEventStatus
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.model.TransferDirection
 
 /**
  * Room persistence for the canonical [com.sherif.ledger.core.domain.model.FinancialEvent]
@@ -81,4 +82,7 @@ data class FinancialEventEntity(
 
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
+
+    @ColumnInfo(name = "transfer_direction")
+    val transferDirection: TransferDirection? = null,
 )

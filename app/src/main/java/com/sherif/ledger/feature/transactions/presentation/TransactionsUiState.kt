@@ -8,7 +8,7 @@ data class TransactionGroupUi(val id:String,val title:String,val summary:DaySumm
 
 data class DaySummaryUi(val spent:String,val income:String,val transactionCount:Int,val dominantCategory:MerchantCategory)
 
-data class TransactionUi(val id:String,val merchant:String,val category:MerchantCategory,val amount:String,val subtitle:String,val state:TransactionState=TransactionState.Posted)
+data class TransactionUi(val id:String,val merchant:String,val category:MerchantCategory,val amount:String,val subtitle:String,val isExpense:Boolean=true,val state:TransactionState=TransactionState.Posted)
 
 enum class TransactionState{Posted,Pending,Recurring}
 enum class MerchantCategory{Grocery,Shopping,Coffee,Fuel,Salary,Bills,Transport,Entertainment,Electronics,Food,Healthcare,Travel,Education}

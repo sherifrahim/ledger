@@ -27,6 +27,7 @@ fun FinancialEventEntity.toDomain(): FinancialEvent = FinancialEvent(
     fingerprint = fingerprint,
     rawText = rawText,
     createdAt = Instant.ofEpochMilli(createdAt),
+    transferDirection = transferDirection,
 )
 
 fun FinancialEvent.toEntity(): FinancialEventEntity = FinancialEventEntity(
@@ -46,4 +47,5 @@ fun FinancialEvent.toEntity(): FinancialEventEntity = FinancialEventEntity(
     fingerprint = fingerprint,
     rawText = rawText,
     createdAt = createdAt.toEpochMilli(),
+    transferDirection = transferDirection,
 )

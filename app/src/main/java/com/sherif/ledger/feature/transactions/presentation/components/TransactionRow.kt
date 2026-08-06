@@ -18,7 +18,7 @@ fun TransactionRow(
     onClick: (() -> Unit)? = null,
 ) {
     com.sherif.ledger.core.common.logging.LedgerLogger.d("RENDERING: TransactionRow(id=${transaction.id}, merchant=${transaction.merchant}, amount=${transaction.amount})")
-    val isIncome = transaction.category == MerchantCategory.Salary
+    val isIncome = !transaction.isExpense
     val amountColor = if (isIncome) LedgerTheme.colors.income else LedgerTheme.colors.expense
     val status = when (transaction.state) {
         TransactionState.Pending -> "\u25CF Pending"
@@ -32,6 +32,7 @@ fun TransactionRow(
         subtitle = transaction.subtitle,
         metadata = transaction.category.displayName(),
         status = status,
+        isExpense = transaction.isExpense,
         amountColor = amountColor,
         dimmed = transaction.state == TransactionState.Pending,
         onClick = onClick,

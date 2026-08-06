@@ -49,5 +49,6 @@ object FinancialEventFactory {
         // captured message itself stays where it is evidence: transactions.raw_text.
         rawText = transaction.merchantOrRawText,
         createdAt = createdAt,
+        transferDirection = transaction.transferDirection,
     )
 }

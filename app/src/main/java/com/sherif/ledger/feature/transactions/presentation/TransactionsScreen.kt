@@ -76,7 +76,7 @@ fun TransactionsScreen(
                         amount = txn.amount,
                         explanation = if (txn.category == MerchantCategory.Salary) "Income" else txn.category.name,
                         currency = "AED",
-                        isExpense = txn.category != MerchantCategory.Salary,
+                        isExpense = txn.isExpense,
                         onClick = { onTransactionClick(txn.id) }
                     )
                     LedgerDivider(alpha = 0.05f)

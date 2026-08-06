@@ -40,6 +40,14 @@ data class FinancialEvent(
     val fingerprint: String,
     val rawText: String?,
     val createdAt: Instant,
+    /**
+     * Mirrors [Transaction.transferDirection]. Added after [transaction_id] display
+     * reads (Dashboard/Transactions/Story recent-activity rows) started consuming
+     * [com.sherif.ledger.core.domain.model.isOutflow] — a direction-less transfer is
+     * conservatively treated as outflow, so every mirrored transfer rendered as an
+     * outgoing "−" regardless of its real direction. See EventToTransaction.kt.
+     */
+    val transferDirection: TransferDirection? = null,
 )
 
 /**
