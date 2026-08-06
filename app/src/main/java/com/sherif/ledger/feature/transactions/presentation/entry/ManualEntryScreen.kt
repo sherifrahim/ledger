@@ -42,6 +42,7 @@ import com.sherif.ledger.core.designsystem.theme.LedgerTheme
 import com.sherif.ledger.core.designsystem.tokens.LedgerRadius
 import com.sherif.ledger.core.domain.model.CurrencyRegistry
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.model.TransferDirection
 import com.sherif.ledger.core.domain.util.parsePlainDecimalToMinor
 import com.sherif.ledger.feature.transactions.presentation.entry.viewmodel.ManualAccountOption
 import com.sherif.ledger.feature.transactions.presentation.entry.viewmodel.ManualEntryViewModel
@@ -63,7 +64,8 @@ fun ManualEntryScreen(
 
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var isExpense by remember { mutableStateOf(true) }
+    var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
+    var transferDirection by remember { mutableStateOf(TransferDirection.OUTGOING) }
     var selectedAccount by remember(accounts) { mutableStateOf(accounts.firstOrNull()) }
     var dateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -111,8 +113,18 @@ fun ManualEntryScreen(
 
         FieldLabel("Type")
         Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
-            SelectChip("Expense", selected = isExpense) { isExpense = true }
-            SelectChip("Income", selected = !isExpense) { isExpense = false }
+            SelectChip("Expense", selected = selectedType == TransactionType.EXPENSE) { selectedType = TransactionType.EXPENSE }
+            SelectChip("Income", selected = selectedType == TransactionType.INCOME) { selectedType = TransactionType.INCOME }
+            SelectChip("Transfer", selected = selectedType == TransactionType.TRANSFER) { selectedType = TransactionType.TRANSFER }
+        }
+
+        if (selectedType == TransactionType.TRANSFER) {
+            Spacer(Modifier.height(LedgerSpacing.Medium))
+            FieldLabel("Direction")
+            Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpacing.Small)) {
+                SelectChip("Sent", selected = transferDirection == TransferDirection.OUTGOING) { transferDirection = TransferDirection.OUTGOING }
+                SelectChip("Received", selected = transferDirection == TransferDirection.INCOMING) { transferDirection = TransferDirection.INCOMING }
+            }
         }
 
         Spacer(Modifier.height(LedgerSpacing.Large))
@@ -171,9 +183,10 @@ fun ManualEntryScreen(
                     accountId = acc.id,
                     amountMinor = minor,
                     currency = acc.currency,
-                    type = if (isExpense) TransactionType.EXPENSE else TransactionType.INCOME,
+                    type = selectedType,
                     timestamp = Instant.ofEpochMilli(dateMillis),
                     description = description,
+                    transferDirection = if (selectedType == TransactionType.TRANSFER) transferDirection else null,
                 )
             },
             enabled = canSave,

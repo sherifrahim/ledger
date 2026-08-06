@@ -6,6 +6,7 @@ import com.sherif.ledger.core.domain.model.CurrencyCode
 import com.sherif.ledger.core.domain.model.IngestionSource
 import com.sherif.ledger.core.domain.model.LedgerResult
 import com.sherif.ledger.core.domain.model.TransactionType
+import com.sherif.ledger.core.domain.model.TransferDirection
 import com.sherif.ledger.core.domain.repository.AccountRepository
 import com.sherif.ledger.core.domain.usecase.transaction.InsertTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -62,6 +63,7 @@ class ManualEntryViewModel @Inject constructor(
         type: TransactionType,
         timestamp: Instant,
         description: String,
+        transferDirection: TransferDirection? = null,
     ) {
         if (_saving.value) return
         _saving.value = true
@@ -76,6 +78,7 @@ class ManualEntryViewModel @Inject constructor(
                     timestamp = timestamp,
                     source = IngestionSource.MANUAL,
                     rawMerchantText = description.ifBlank { "Manual entry" },
+                    transferDirection = transferDirection,
                 ),
             )
             _saving.value = false
