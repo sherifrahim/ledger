@@ -14,6 +14,12 @@
          AiSettingsRepository.isAiEnabled (defaults false) and AIOrchestrator, which
          checks it before doing anything else. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- feature/update: installing a downloaded GitHub-release APK requires
+         this on Android 8+. Requested by redirecting to
+         Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES only when the user taps
+         "Update" and it isn't already granted (see UpdateDialog) — never
+         requested unprompted. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 

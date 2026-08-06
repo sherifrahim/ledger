@@ -12,6 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -207,7 +210,35 @@ private fun AboutSection(onPrivacyClick: () -> Unit, onLicensesClick: () -> Unit
             PreferenceRow(icon = Icons.Default.Shield, label = "Privacy Policy", onClick = onPrivacyClick)
             LedgerDivider(alpha = 0.05f)
             PreferenceRow(icon = Icons.Default.Description, label = "Open Source Licenses", onClick = onLicensesClick)
+            LedgerDivider(alpha = 0.05f)
+            UpdateCheckRow()
         }
+    }
+}
+
+/** Manual, user-triggered counterpart to MainActivity's silent launch-time check. */
+@Composable
+private fun UpdateCheckRow(
+    viewModel: com.sherif.ledger.feature.update.presentation.UpdateViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsState()
+    var showDialog by remember { mutableStateOf(false) }
+
+    PreferenceRow(
+        icon = Icons.Default.SystemUpdate,
+        label = "Check for Updates",
+        onClick = {
+            showDialog = true
+            viewModel.checkNow()
+        },
+    )
+
+    if (showDialog) {
+        com.sherif.ledger.feature.update.presentation.UpdateDialog(
+            state = state,
+            onDismiss = { showDialog = false; viewModel.dismiss() },
+            onInstall = viewModel::downloadAndInstall,
+        )
     }
 }
 

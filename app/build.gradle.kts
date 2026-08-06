@@ -34,12 +34,18 @@ android {
     namespace = "com.sherif.ledger"
     compileSdk = 36
 
+    // CI passes -PverCode=<github.run_number> so every pushed build has a
+    // strictly increasing versionCode the update checker can compare against
+    // (see feature/update). Local builds fall back to 1 — they're never
+    // published as a release, so the exact value doesn't matter.
+    val ciVersionCode = (project.findProperty("verCode") as String?)?.toIntOrNull() ?: 1
+
     defaultConfig {
         applicationId = "com.sherif.ledger"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = ciVersionCode
+        versionName = "1.0.$ciVersionCode"
         buildConfigField("String", "GIT_HASH", "\"$gitHash\"")
     }
 

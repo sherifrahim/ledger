@@ -102,6 +102,20 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                // Silent counterpart to the manual "Check for Updates" row in
+                // Settings — checks once per launch, only interrupts the user
+                // when there's actually something to install.
+                val updateViewModel: com.sherif.ledger.feature.update.presentation.UpdateViewModel = hiltViewModel()
+                val updateState by updateViewModel.state.collectAsState()
+                LaunchedEffect(Unit) { updateViewModel.checkNow() }
+                if (updateState.hasChecked && updateState.available != null) {
+                    com.sherif.ledger.feature.update.presentation.UpdateDialog(
+                        state = updateState,
+                        onDismiss = updateViewModel::dismiss,
+                        onInstall = updateViewModel::downloadAndInstall,
+                    )
+                }
+
                 val isSmsImported by mainViewModel.isSmsImported.collectAsState()
                 val isProfileSetup by mainViewModel.isProfileSetup.collectAsState()
 

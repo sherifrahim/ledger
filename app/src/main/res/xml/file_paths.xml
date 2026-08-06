@@ -2,6 +2,8 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Matches DiagnosticBundleGenerator's output directory: context.cacheDir/diagnostics -->
     <cache-path name="diagnostics" path="diagnostics/" />
+    <!-- Matches UpdateDownloader's output directory: context.cacheDir/updates -->
+    <cache-path name="updates" path="updates/" />
 </paths>
 
 

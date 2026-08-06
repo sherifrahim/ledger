@@ -1,0 +1,76 @@
+name: Release
+
+# Builds signed debug + release APKs on every push to main and publishes them
+# as a GitHub Release, so the in-app update checker (feature/update) has
+# something to find. versionCode is the GitHub Actions run number, which is
+# unique and strictly increasing across all workflow runs in this repo — the
+# app compares this against its own BuildConfig.VERSION_CODE.
+#
+# Requires four repo secrets (Settings -> Secrets and variables -> Actions),
+# populated from the same keystore already used for local release builds
+# (see keystore.properties, gitignored):
+#   KEYSTORE_BASE64    - `base64 -w0 your.keystore` output
+#   KEYSTORE_PASSWORD
+#   KEY_ALIAS
+#   KEY_PASSWORD
+# Until these are set, the assembleRelease step fails; assembleDebug does not
+# need them (debug builds sign with the auto-generated debug key).
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: Build & publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode release keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+
+      - name: Write keystore.properties
+        run: |
+          cat > keystore.properties <<EOF
+          storeFile=../release.keystore
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: Build debug + release APKs
+        run: ./gradlew --no-daemon assembleDebug assembleRelease -PverCode=${{ github.run_number }}
+
+      - name: Remove keystore material
+        if: always()
+        run: rm -f release.keystore keystore.properties
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          body: |
+            Automated build from ${{ github.sha }}.
+            versionCode ${{ github.run_number }} · versionName 1.0.${{ github.run_number }}
+          files: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release.apk
