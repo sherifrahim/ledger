@@ -1,6 +1,7 @@
 package com.sherif.ledger.feature.capture.source
 
 import android.service.notification.StatusBarNotification
+import com.sherif.ledger.feature.capture.notification.FinancialContentHeuristics
 import com.sherif.ledger.feature.capture.notification.NotificationEnvelope
 import java.time.Instant
 import javax.inject.Inject
@@ -20,14 +21,42 @@ class NotificationSourceAdapter @Inject constructor() : PushSourceAdapter<Status
             @Suppress("DEPRECATION")
             extras.get(key)?.toString()?.let { mappedExtras[key] = it }
         }
+
         return NotificationEnvelope(
             packageName = raw.packageName ?: "unknown",
             title = extras.getCharSequence("android.title")?.toString() ?: "",
-            text = extras.getCharSequence("android.text")?.toString() ?: "",
+            text = resolveText(mappedExtras),
             subText = extras.getCharSequence("android.subText")?.toString(),
             timestamp = Instant.ofEpochMilli(raw.postTime),
             notificationKey = raw.key ?: "",
             extras = mappedExtras,
         )
+    }
+
+    companion object {
+        /**
+         * Pure (no Android framework types, so it's unit-testable without
+         * Robolectric) resolution of which extras field holds the real
+         * notification body. Some apps' notifications carry a redaction
+         * placeholder in the standard android.text/android.bigText fields for
+         * third-party listeners (observed: ADCB's com.adcb.nexgen posting
+         * "Sensitive notification content hidden") while the real transaction
+         * text sits in a non-standard extras key — here "content", a common
+         * cross-platform push-SDK (FCM/Notifee) payload field, not
+         * ADCB-specific. Rather than matching the placeholder string (fragile,
+         * OEM/locale-dependent), prefer whichever candidate actually looks
+         * financial — the same content-based-admission approach
+         * NotificationFilter already uses for bank package-name drift. Falls
+         * back to the standard field when nothing looks financial, so ordinary
+         * notifications (and BigTextStyle notifications where bigText is
+         * simply the fuller version of text) are unaffected either way.
+         */
+        fun resolveText(extras: Map<String, String>): String {
+            val standardText = extras["android.text"] ?: ""
+            val bigText = extras["android.bigText"] ?: ""
+            return sequenceOf(bigText, standardText, extras["content"] ?: "")
+                .firstOrNull { FinancialContentHeuristics.looksLikeFinancialAmount(it) }
+                ?: standardText
+        }
     }
 }
