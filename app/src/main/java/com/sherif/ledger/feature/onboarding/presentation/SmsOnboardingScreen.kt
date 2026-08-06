@@ -175,10 +175,18 @@ private fun ImportScanScreen(viewModel: SmsOnboardingViewModel, onComplete: () -
     val isImporting by viewModel.isImporting.collectAsState()
     val importResult by viewModel.importResult.collectAsState()
 
+    // Requests READ_SMS and RECEIVE_SMS together: READ_SMS alone (the previous
+    // behavior) let the historical inbox scan run, but silently left the live
+    // SmsReceiver (registered for android.provider.Telephony.SMS_RECEIVED,
+    // manifest-declared but never runtime-granted) unable to fire on any bank
+    // SMS arriving after onboarding — found by cross-checking a real ADCB
+    // salary-credit SMS against the device's Ledger DB, where it never
+    // appeared (2026-08-06). Both permissions share the same OS permission
+    // group, so this is still a single system dialog, not extra friction.
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        if (grants[android.Manifest.permission.READ_SMS] == true) {
             viewModel.startImport()
         } else {
             onComplete()
@@ -249,7 +257,14 @@ private fun ImportScanScreen(viewModel: SmsOnboardingViewModel, onComplete: () -
             }
             else -> {
                 Button(
-                    onClick = { launcher.launch(android.Manifest.permission.READ_SMS) },
+                    onClick = {
+                        launcher.launch(
+                            arrayOf(
+                                android.Manifest.permission.READ_SMS,
+                                android.Manifest.permission.RECEIVE_SMS,
+                            )
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = LedgerTheme.colors.tint)
                 ) {
