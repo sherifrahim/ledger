@@ -62,6 +62,24 @@ class DeterministicFinancialIntentClassifier @Inject constructor() : FinancialIn
         // and asserted FINANCIAL_EVENT, turning a BNPL provider's receipt
         // acknowledgement into a brand-new inflow.
         "received your payment",
+        // Real-device verification, 2026-08-06 (owner's own phone, cross-checked
+        // against the exact captured notification text via adb): two DIFFERENT
+        // real messages missed the phrase above by one word each, both still
+        // becoming phantom credits --
+        //  - Tabby's real wording: "Successful payment 🙌 We've received
+        //    A payment of AED 114.03" -- indefinite article, not "your".
+        //  - A Truecaller-relayed Mashreq card-bill payment, condensed by
+        //    Truecaller's OWN notification preview into "AED 1,500 • Mashre
+        //    • Credited to card" -- the SAME event as "credited to your
+        //    card" (already a signal above) but missing "your" because
+        //    Truecaller's shorthand strips possessives.
+        // Both are the identical class of miss, not two one-off strings: a
+        // confirmation phrase list that only matches the possessive form misses
+        // every provider/relay that phrases it with an article instead. Adding
+        // the "a"/"the" variants closes the general gap, not just these two
+        // messages.
+        "received a payment", "received the payment",
+        "credited to card", "credited to the card",
     )
 
     // Pure information: statements, reminders, balance/limit notices. Not money moving.

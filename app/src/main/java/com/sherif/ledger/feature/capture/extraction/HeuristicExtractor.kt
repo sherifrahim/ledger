@@ -231,7 +231,20 @@ class HeuristicExtractor @Inject constructor(
 
     private fun inferType(lower: String): TransactionType = when {
         phrases.containsAny(phrases.salaryPhrases, lower) -> TransactionType.INCOME
-        phrases.containsAny(phrases.creditIndicatorPhrases, lower) -> TransactionType.INCOME
+        // Real-device bug (2026-08-06, cross-checked against the owner's actual
+        // captured notification via adb): "A Cr. transaction of AED 500.00 on
+        // your account no. XXX920001 was successful." -- a real incoming ADCB
+        // transfer from another person -- matched creditIndicatorPhrases
+        // ("cr. transaction") and was recorded as INCOME, with merchantName
+        // falling back to the literal word "Income" for lack of a real name.
+        // salaryPhrases is checked FIRST (above) and found nothing salary-
+        // specific in this text, so by the time creditIndicatorPhrases matches,
+        // all we actually know is "money moved in, source unstated" -- TRANSFER
+        // is the honest label for that, not INCOME, which claims earnings the
+        // message never claimed. This is the bank-agnostic vocabulary (per its
+        // own doc comment), so the fix applies to every bank using this same
+        // generic "Cr./credited" template, not only ADCB.
+        phrases.containsAny(phrases.creditIndicatorPhrases, lower) -> TransactionType.TRANSFER
         phrases.containsAny(phrases.loanDisbursePhrases, lower) -> TransactionType.INCOME
         phrases.containsAny(phrases.refundPhrases, lower) -> TransactionType.REFUND
         phrases.containsAny(phrases.cardPaymentPhrases, lower) && lower.contains("card") -> TransactionType.TRANSFER
