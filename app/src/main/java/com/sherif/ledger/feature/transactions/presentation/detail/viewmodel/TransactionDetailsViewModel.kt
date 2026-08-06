@@ -210,6 +210,27 @@ class TransactionDetailsViewModel @Inject constructor(
         val tags = tagRepository.observeTagsFor(id).first()
         _uiState.value = _uiState.value?.copy(tags = tags)
     }
+
+    /**
+     * No production UI could remove a wrongly-captured transaction before this —
+     * a real gap, surfaced fixing three real mis-captures on the owner's own
+     * device (2026-08-06). Soft delete via [TransactionRepository.deleteTransaction]
+     * (sets is_deleted, voids the mirror financial_event) — reversible at the data
+     * layer, same mechanism [com.sherif.ledger.core.domain.usecase.intelligence.AiFalsePositiveGuardUseCase]
+     * already uses. [onDeleted] runs only after a confirmed success, never
+     * optimistically, so the screen doesn't navigate away from a delete that failed.
+     */
+    fun deleteTransaction(onDeleted: () -> Unit) {
+        val id = transactionId?.toLongOrNull() ?: return
+        viewModelScope.launch {
+            val result = transactionRepository.deleteTransaction(id)
+            if (result is LedgerResult.Success) {
+                onDeleted()
+            } else {
+                com.sherif.ledger.core.common.logging.LedgerLogger.e("TransactionDetailsViewModel: delete failed for id=$id: $result")
+            }
+        }
+    }
 }
 
 

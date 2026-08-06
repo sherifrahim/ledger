@@ -338,6 +338,7 @@ fun LedgerNavHost(
                     onAddTag = { name -> viewModel.addTag(name) },
                     onRemoveTag = { tagId -> viewModel.removeTag(tagId) },
                     knownTags = knownTags,
+                    onDeleteConfirmed = { viewModel.deleteTransaction(onDeleted = { navController.popBackStack() }) },
                 )
             }
         }

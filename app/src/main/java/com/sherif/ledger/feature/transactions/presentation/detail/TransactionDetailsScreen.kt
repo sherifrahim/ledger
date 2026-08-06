@@ -45,9 +45,24 @@ fun TransactionDetailsScreen(
     /** Tags already in use anywhere, offered as suggestions so the vocabulary
      *  converges instead of accumulating near-duplicates. */
     knownTags: List<com.sherif.ledger.core.domain.model.Tag> = emptyList(),
+    onDeleteConfirmed: () -> Unit = {},
 ) {
     var editingNote by remember { mutableStateOf(false) }
     var addingTag by remember { mutableStateOf(false) }
+    var confirmingDelete by remember { mutableStateOf(false) }
+    if (confirmingDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmingDelete = false },
+            title = { Text("Delete this transaction?") },
+            text = { Text("This removes it from your activity and balance. This can't be undone from here.") },
+            confirmButton = {
+                TextButton(onClick = { confirmingDelete = false; onDeleteConfirmed() }) {
+                    Text("Delete", color = LedgerTheme.colors.negative)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text("Cancel") } },
+        )
+    }
     if (addingTag) {
         TagEditorDialog(
             suggestions = knownTags.filterNot { known -> state.tags.any { it.id == known.id } },
@@ -137,6 +152,13 @@ fun TransactionDetailsScreen(
                     text = "Split",
                     onClick = onSplitClick,
                     style = LedgerButtonStyle.Tonal,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(LedgerSpacing.Small))
+                LedgerButton(
+                    text = "Delete transaction",
+                    onClick = { confirmingDelete = true },
+                    style = LedgerButtonStyle.Ghost,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(LedgerSpacing.Large))
